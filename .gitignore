@@ -1,0 +1,8 @@
+node_modules/
+.npm-cache/
+.next/
+output/
+.playwright-cli/
+.tools/
+*.tsbuildinfo
+*.log
