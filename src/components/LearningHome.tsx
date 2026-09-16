@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowUpRight, CalendarDays, Sprout } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { countdownText, shiftMonth, validDate } from "@/lib/dates";
-import { getLesson, mockExamDate, mockUser } from "@/data/mock";
+import { getLesson, mockExamDate } from "@/data/mock";
 import { useToday } from "./StudyProvider";
 import { TopStatus } from "./TopStatus";
 import { StudyCalendar } from "./StudyCalendar";
@@ -14,7 +14,6 @@ function ExamCountdown({ today }: { today: string }) {
     <div className="exam-countdown">
       <CalendarDays size={17} />
       <span>{countdownText(today, mockExamDate)}</span>
-      <span className="exam-dot" />
     </div>
   );
 }
@@ -38,28 +37,40 @@ export function LearningHome() {
     const measure = () => {
       const cell = stage.querySelector(`[data-date="${selected}"]`);
       const node = stage.querySelector("[data-node-anchor]");
-      if (!cell || !node) {
+      const grid = stage.querySelector(".days");
+      if (!cell || !node || !grid) {
         setPath("");
         return;
       }
       const outer = stage.getBoundingClientRect();
-      const a = cell.getBoundingClientRect();
+      const cellBounds = cell.getBoundingClientRect();
+      const a = (
+        cell.querySelector(".day-face") ?? cell
+      ).getBoundingClientRect();
       const b = node.getBoundingClientRect();
+      const gridBounds = grid.getBoundingClientRect();
       if (window.innerWidth >= 768) {
-        const x = a.right - outer.left + 3;
-        const y = a.top + a.height / 2 - outer.top;
-        const endX = b.left - outer.left;
-        const endY = b.top + b.height / 2 - outer.top;
-        setPath(
-          `M ${x} ${y} C ${x + 65} ${y}, ${endX - 90} ${endY}, ${endX} ${endY}`,
-        );
-      } else {
+        // Travel through the row gutter so the route touches only its selected date.
         const x = a.left + a.width / 2 - outer.left;
         const y = a.bottom - outer.top;
+        const rowGap = parseFloat(getComputedStyle(grid).rowGap) || 0;
+        const laneY = cellBounds.bottom - outer.top + rowGap / 2;
+        const endX = b.left - outer.left;
+        const endY = b.top + b.height / 2 - outer.top;
+        const bend = gridBounds.right - outer.left + 24;
+        setPath(
+          `M ${x} ${y} Q ${x} ${laneY} ${x + 12} ${laneY} H ${bend - 16} Q ${bend} ${laneY} ${bend} ${(laneY + endY) / 2} T ${endX} ${endY}`,
+        );
+      } else {
+        // The column boundary leaves a clear lane beside the smaller date faces.
+        const x = a.right - outer.left;
+        const y = a.top + a.height / 2 - outer.top;
+        const laneX = cellBounds.right - outer.left;
         const endX = b.left + b.width / 2 - outer.left;
         const endY = b.top - outer.top;
+        const bend = gridBounds.bottom - outer.top + 14;
         setPath(
-          `M ${x} ${y} C ${x} ${y + 45}, ${endX} ${endY - 70}, ${endX} ${endY}`,
+          `M ${x} ${y} Q ${laneX} ${y} ${laneX} ${y + 10} V ${bend - 10} Q ${laneX} ${bend} ${(laneX + endX) / 2} ${bend} T ${endX} ${endY}`,
         );
       }
     };
@@ -77,27 +88,12 @@ export function LearningHome() {
       <TopStatus />
       <main className="home">
         <section className="welcome">
-          <div>
-            <div className="eyebrow">A LITTLE EVERY DAY</div>
-            <h1>
-              {mockUser.nickname}，今天也向前一点
-              <span className="greeting-dot">.</span>
-            </h1>
-            <p>不必一口气走很远，每天一点就很好。</p>
-          </div>
+          <h1>
+            每天一点，靠近六级<span className="greeting-dot">.</span>
+          </h1>
           <ExamCountdown today={today} />
         </section>
         <section className="journey">
-          <div className="journey-heading">
-            <div>
-              <span className="chapter-label">CET-6</span>
-              <span className="journey-title">你的每日学习路线</span>
-            </div>
-            <span className="journey-caption">
-              <Sprout size={15} />
-              让努力慢慢发芽
-            </span>
-          </div>
           <div className="study-stage" ref={stageRef}>
             <svg className="journey-connection" aria-hidden="true">
               <path d={path} />
@@ -118,21 +114,8 @@ export function LearningHome() {
               onSelect={select}
             />
           </div>
-          <div className="journey-footer">
-            <span>
-              <span className="small-spark">✦</span>{" "}
-              每个打勾的日子，都在带你靠近目标。
-            </span>
-            <span>
-              ONE DAY CLOSER <ArrowUpRight size={13} />
-            </span>
-          </div>
         </section>
         <PracticeModules />
-        <footer className="home-footer">
-          <Sprout size={15} />
-          <span>保持节奏，好事正在发生。</span>
-        </footer>
       </main>
     </>
   );

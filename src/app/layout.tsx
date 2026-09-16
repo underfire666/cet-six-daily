@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { todayInShanghai } from "@/lib/dates";
 import { StudyProvider } from "@/components/StudyProvider";
 import { BottomNavigation } from "@/components/Navigation";
@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   description: "日历里的六级学习路线，每天一点，慢慢靠近目标。",
 };
 export const dynamic = "force-dynamic";
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {

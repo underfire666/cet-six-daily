@@ -68,40 +68,25 @@ export function StudyCalendar({
                 aria-pressed={date === selected}
                 aria-current={date === today ? "date" : undefined}
               >
-                <span>{Number(date.slice(8))}</span>
-                <span className="day-indicator">
-                  {status === "completed" ? (
-                    <Check size={12} strokeWidth={3} />
-                  ) : status === "adjusted" ? (
-                    <RotateCw size={11} />
-                  ) : status === "locked" ? (
-                    <LockKeyhole size={10} />
-                  ) : (
-                    <span className="today-dot" />
-                  )}
+                <span className="day-face">
+                  <span>{Number(date.slice(8))}</span>
+                  <span className="day-indicator">
+                    {status === "completed" ? (
+                      <Check size={12} strokeWidth={3} />
+                    ) : status === "adjusted" ? (
+                      <RotateCw size={11} />
+                    ) : status === "locked" ? (
+                      <LockKeyhole size={10} />
+                    ) : (
+                      <span className="today-dot" />
+                    )}
+                  </span>
                 </span>
               </button>
             );
           })}
         </div>
       </div>
-      <div className="calendar-legend">
-        <span>
-          <i className="legend-complete">
-            <Check size={10} />
-          </i>
-          已完成
-        </span>
-        <span>
-          <RotateCw size={12} />
-          已调整
-        </span>
-        <span>
-          <LockKeyhole size={11} />
-          待解锁
-        </span>
-      </div>
-      <p className="calendar-note">偶尔停一停也没关系，按自己的节奏来。</p>
     </section>
   );
 }
