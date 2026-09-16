@@ -1,7 +1,9 @@
+"use client";
 import { Flame, Zap } from "lucide-react";
-import { mockUser } from "@/data/mock";
+import { useLearning } from "./LearningProvider";
 import { Brand } from "./Navigation";
 export function TopStatus() {
+  const { user: mockUser } = useLearning();
   return (
     <header className="topbar">
       <Brand />

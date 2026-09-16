@@ -1,7 +1,16 @@
 export type DateKey = string;
-export type CalendarStatus = "today" | "completed" | "adjusted" | "locked";
+export type CalendarStatus =
+  | "today"
+  | "completed"
+  | "adjusted"
+  | "locked"
+  | "available";
 export type ModuleKey =
-  "vocabulary" | "listening" | "reading" | "translation" | "writing";
+  | "vocabulary"
+  | "listening"
+  | "reading"
+  | "translation"
+  | "writing";
 export interface User {
   nickname: string;
   streak: number;
@@ -16,4 +25,5 @@ export interface Lesson {
   modules: ModuleKey[];
   status: CalendarStatus;
   rescheduledTo?: DateKey;
+  inProgress?: boolean;
 }

@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { todayInShanghai } from "@/lib/dates";
 import { StudyProvider } from "@/components/StudyProvider";
-import { BottomNavigation } from "@/components/Navigation";
+import { AppShell } from "@/components/AppShell";
+import { LearningProvider } from "@/components/LearningProvider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "六级日常 · 每天向前一点",
@@ -20,11 +21,9 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         <StudyProvider initialToday={todayInShanghai()}>
-          <a href="#page-content" className="skip-link">
-            跳到主要内容
-          </a>
-          <div id="page-content">{children}</div>
-          <BottomNavigation />
+          <LearningProvider>
+            <AppShell>{children}</AppShell>
+          </LearningProvider>
         </StudyProvider>
       </body>
     </html>

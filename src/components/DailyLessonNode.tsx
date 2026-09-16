@@ -43,8 +43,10 @@ export function DailyLessonNode({
       ? "查看调整后的计划"
       : completed
         ? "重新练习"
-        : "开始学习";
-  const href = `/lesson/${lesson.date}`;
+        : lesson.inProgress
+          ? "继续学习"
+          : "开始学习";
+  const href = `/lesson/${lesson.date}${completed ? "?review=1" : ""}`;
   return (
     <section
       className={`lesson-node ${locked || adjusted ? "subdued" : ""}`}

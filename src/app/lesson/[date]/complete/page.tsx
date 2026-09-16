@@ -1,7 +1,7 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { validDate } from "@/lib/dates";
-import { Suspense } from "react";
-import { LessonEntry } from "@/components/lesson/LessonPlayer";
+import { LessonComplete } from "@/components/lesson/LessonComplete";
 export default async function Page({
   params,
 }: {
@@ -11,7 +11,7 @@ export default async function Page({
   if (!validDate(date)) notFound();
   return (
     <Suspense>
-      <LessonEntry date={date} />
+      <LessonComplete date={date} />
     </Suspense>
   );
 }

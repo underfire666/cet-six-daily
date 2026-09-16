@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 import { countdownText, shiftMonth, validDate } from "@/lib/dates";
-import { getLesson, mockExamDate } from "@/data/mock";
+import { mockExamDate } from "@/data/mock";
+import { useLearning } from "./LearningProvider";
 import { useToday } from "./StudyProvider";
 import { TopStatus } from "./TopStatus";
 import { StudyCalendar } from "./StudyCalendar";
@@ -18,6 +19,7 @@ function ExamCountdown({ today }: { today: string }) {
   );
 }
 export function LearningHome() {
+  const { getLesson } = useLearning();
   const today = useToday();
   const query = useSearchParams().get("date");
   const selected = query && validDate(query) ? query : today;
@@ -109,10 +111,7 @@ export function LearningHome() {
                 select(next === today.slice(0, 7) ? today : `${next}-01`);
               }}
             />
-            <DailyLessonNode
-              lesson={getLesson(selected, today)}
-              onSelect={select}
-            />
+            <DailyLessonNode lesson={getLesson(selected)} onSelect={select} />
           </div>
         </section>
         <PracticeModules />

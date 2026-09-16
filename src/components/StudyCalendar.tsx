@@ -6,7 +6,7 @@ import {
   RotateCw,
 } from "lucide-react";
 import { monthCells, shortDate } from "@/lib/dates";
-import { getLesson } from "@/data/mock";
+import { useLearning } from "./LearningProvider";
 export function StudyCalendar({
   today,
   month,
@@ -22,6 +22,7 @@ export function StudyCalendar({
   onMonth: (delta: number) => void;
   onToday: () => void;
 }) {
+  const { getLesson } = useLearning();
   return (
     <section className="calendar" aria-label="学习月历">
       <div className="calendar-heading">
@@ -51,18 +52,19 @@ export function StudyCalendar({
           {monthCells(month).map((date, index) => {
             if (!date)
               return <span key={`empty-${index}`} className="empty-day" />;
-            const { status } = getLesson(date, today);
+            const { status } = getLesson(date);
             const label = {
               today: "今天",
               completed: "已完成",
               adjusted: "已调整",
               locked: "未解锁",
+              available: "未完成",
             }[status];
             return (
               <button
                 key={date}
                 data-date={date}
-                className={`day ${status} ${date === selected ? "selected" : ""}`}
+                className={`day ${status} ${date === today ? "today" : ""} ${date === selected ? "selected" : ""}`}
                 onClick={() => onSelect(date)}
                 aria-label={`${shortDate(date)}，${label}`}
                 aria-pressed={date === selected}
