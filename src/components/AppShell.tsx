@@ -2,7 +2,11 @@
 import { usePathname } from "next/navigation";
 import { BottomNavigation } from "./Navigation";
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const exercise = usePathname().startsWith("/lesson/");
+  const path = usePathname();
+  const exercise =
+    path.startsWith("/lesson/") ||
+    path.startsWith("/practice/vocabulary/session") ||
+    path.startsWith("/practice/vocabulary/complete");
   return (
     <>
       <a href="#page-content" className="skip-link">

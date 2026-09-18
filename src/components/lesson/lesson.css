@@ -54,6 +54,9 @@
   transition: width 180ms ease;
 }
 .exercise-body {
+  min-height: 0;
+  min-width: 0;
+  scroll-padding-bottom: 32px;
   width: 100%;
   max-width: 660px;
   margin: 0 auto;
@@ -243,10 +246,14 @@
 }
 .exercise-feedback {
   margin-bottom: 16px;
-  max-height: calc(48dvh - 130px);
+  max-height: max(80px, calc(48dvh - 130px));
   overflow: auto;
   scrollbar-width: thin;
 }
+.unmastered-list article {padding:18px 0;border-bottom:1px solid var(--border);font-size:14px;line-height:1.8;text-align:left;overflow-wrap:anywhere;}
+.unmastered-list h3 {font-size:17px;margin:0 0 12px;font-weight:700;}
+.unmastered-list strong {display:block;color:var(--primary-dark);margin-top:14px;}
+.unmastered-list summary {min-height:44px;align-content:center;cursor:pointer;color:var(--muted);}
 .exercise-feedback h2 {
   display: flex;
   align-items: center;

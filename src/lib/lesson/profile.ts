@@ -10,6 +10,7 @@ export const createProfile = (today: string): StudyProfile => ({
   anchorDate: today,
   completedLessons: {},
   rewardsByDay: {},
+  bonusXpEvents: {},
 });
 export function streakFor(profile: StudyProfile, today: string) {
   const days = new Set([
@@ -27,7 +28,8 @@ export function streakFor(profile: StudyProfile, today: string) {
 export function userFor(profile: StudyProfile, today: string) {
   const total =
     mockUser.xp +
-    Object.values(profile.rewardsByDay).reduce((n, reward) => n + reward.xp, 0);
+    Object.values(profile.rewardsByDay).reduce((n, reward) => n + reward.xp, 0) +
+    Object.values(profile.bonusXpEvents ?? {}).reduce((n, xp) => n + xp, 0);
   return {
     ...mockUser,
     streak: streakFor(profile, today),

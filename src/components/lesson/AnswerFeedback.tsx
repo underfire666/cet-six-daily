@@ -31,7 +31,7 @@ export function AnswerFeedback({
                   ? "回答正确"
                   : result === "unmastered"
                     ? "暂未掌握，也没关系"
-                    : "记住这个知识点"}
+                    : "解析"}
             </h2>
             {terminal && (
               <>

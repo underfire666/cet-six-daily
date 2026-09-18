@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Flame, Sprout, Zap } from "lucide-react";
 import { modules } from "@/data/mock";
+import {mockLesson} from '@/data/mockLesson';
+import {UnmasteredReview,unresolvedQuestions} from './UnmasteredReview';
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
 import { LessonDialog } from "./LessonDialog";
@@ -15,6 +17,7 @@ export function LessonComplete({ date }: { date: string }) {
   const session = sessions[key];
   const router = useRouter();
   const [choose, setChoose] = useState(false);
+  const [reviewMistakes,setReviewMistakes]=useState(false);
   const badge = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (ready && (date > today || session?.phase !== "complete"))
@@ -51,9 +54,7 @@ export function LessonComplete({ date }: { date: string }) {
         正在整理学习成果…
       </div>
     );
-  const unmastered = Object.values(session.records).filter(
-    (r) => r.retestResult === "unmastered",
-  ).length;
+  const unmastered = unresolvedQuestions(session,mockLesson).length;
   return (
     <main className="exercise-complete">
       {notice && <p className="exercise-notice">{notice}</p>}
@@ -95,9 +96,7 @@ export function LessonComplete({ date }: { date: string }) {
         <Sprout size={22} />
       </div>
       {unmastered > 0 && (
-        <p className="exercise-subtle">
-          还有 {unmastered} 个知识点值得再看看，今天先到这里。
-        </p>
+        <button className="exercise-text-button" onClick={()=>setReviewMistakes(true)}>本次未掌握 · {unmastered} 个知识点 →</button>
       )}
       {session.reward.xp === 0 && (
         <p className="exercise-subtle">
@@ -112,6 +111,7 @@ export function LessonComplete({ date }: { date: string }) {
           返回首页
         </Link>
       </div>
+      {reviewMistakes && <UnmasteredReview session={session} lesson={mockLesson} onClose={()=>setReviewMistakes(false)}/>}
       {choose && (
         <LessonDialog title="想再练哪一项？" onClose={() => setChoose(false)}>
           <div className="exercise-module-list">

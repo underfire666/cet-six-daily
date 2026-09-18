@@ -141,7 +141,6 @@ function LessonPlayer({ date, mode }: { date: string; mode: SessionMode }) {
               <button
                 className="exercise-ai"
                 onClick={() => {
-                  dispatch(key, { type: "hint" });
                   setDialog("hint");
                 }}
               >
@@ -168,12 +167,12 @@ function LessonPlayer({ date, mode }: { date: string; mode: SessionMode }) {
         />
       )}
       {dialog === "hint" && (
-        <AiHint hint={question.hint} onClose={() => setDialog(null)} />
+        <AiHint hint={question.hint} onClose={() => setDialog(null)} onViewed={() => dispatch(key, { type: 'hint' })} />
       )}
       {dialog === "exit" && (
         <LessonExitDialog
           onClose={() => setDialog(null)}
-          onExit={() => router.push(`/?date=${date}`)}
+          onExit={() => {setDialog(null);router.push(`/?date=${date}`);}}
         />
       )}
     </div>

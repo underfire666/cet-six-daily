@@ -5,15 +5,19 @@ export function LessonDialog({
   title,
   onClose,
   children,
+  onOpen,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  onOpen?: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const opened = useRef(onOpen);
   useEffect(() => {
     const dialog = ref.current;
     dialog?.showModal();
+    if (dialog?.open) opened.current?.();
     return () => dialog?.close();
   }, []);
   return (
@@ -43,12 +47,14 @@ export function LessonDialog({
 export function AiHint({
   hint,
   onClose,
+  onViewed,
 }: {
   hint: string;
   onClose: () => void;
+  onViewed?: () => void;
 }) {
   return (
-    <LessonDialog title="一起想一想" onClose={onClose}>
+    <LessonDialog title="一起想一想" onClose={onClose} onOpen={onViewed}>
       <div className="exercise-hint-icon">
         <Sparkles size={25} />
       </div>

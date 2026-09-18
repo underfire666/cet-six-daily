@@ -1,5 +1,6 @@
 import { validDate } from "@/lib/dates";
 import { mockLesson } from "@/data/mockLesson";
+import type { LessonDefinition } from '@/types/question';
 import type {
   FeedbackSettings,
   LessonSession,
@@ -35,12 +36,12 @@ const results = [
   "wrong",
   "unmastered",
 ];
-export function validSession(v: unknown): v is LessonSession {
+export function validSession(v: unknown, lesson: LessonDefinition = mockLesson, requireReward = true): v is LessonSession {
   if (
     !object(v) ||
     v.schemaVersion !== 1 ||
-    v.lessonId !== mockLesson.id ||
-    v.lessonVersion !== mockLesson.version ||
+    v.lessonId !== lesson.id ||
+    v.lessonVersion !== lesson.version ||
     typeof v.id !== "string" ||
     typeof v.date !== "string" ||
     !validDate(v.date) ||
@@ -58,7 +59,7 @@ export function validSession(v: unknown): v is LessonSession {
     v.index < 0
   )
     return false;
-  const ids = mockLesson.questions.map((q) => q.id);
+  const ids = lesson.questions.map((q) => q.id);
   if (
     v.retestQueue.some((id) => typeof id !== "string" || !ids.includes(id)) ||
     new Set(v.retestQueue).size !== v.retestQueue.length
@@ -66,8 +67,8 @@ export function validSession(v: unknown): v is LessonSession {
     return false;
   const q =
     v.round === "initial"
-      ? mockLesson.questions[v.index]
-      : mockLesson.questions.find(
+      ? lesson.questions[v.index]
+      : lesson.questions.find(
           (q) => q.id === (v.retestQueue as unknown[])[v.index as number],
         );
   if (
@@ -76,7 +77,7 @@ export function validSession(v: unknown): v is LessonSession {
   )
     return false;
   for (const [id, record] of Object.entries(v.records)) {
-    const question = mockLesson.questions.find((q) => q.id === id);
+    const question = lesson.questions.find((q) => q.id === id);
     if (!question || !object(record) || typeof record.hintUsed !== "boolean")
       return false;
     for (const round of ["initial", "retest"]) {
@@ -104,7 +105,7 @@ export function validSession(v: unknown): v is LessonSession {
   }
   if (
     v.phase === "complete" &&
-    (!object(v.reward) ||
+    ((requireReward && !object(v.reward)) ||
       typeof v.completedDay !== "string" ||
       !validDate(v.completedDay) ||
       typeof v.completedAt !== "string" ||
@@ -132,10 +133,10 @@ export function validSession(v: unknown): v is LessonSession {
       v.reward.streak < 0)
   )
     return false;
-  return consistentSession(v as unknown as LessonSession);
+  return consistentSession(v as unknown as LessonSession, lesson);
 }
-function consistentSession(s: LessonSession) {
-  for (const q of mockLesson.questions) {
+function consistentSession(s: LessonSession, lesson: LessonDefinition) {
+  for (const q of lesson.questions) {
     const r = s.records[q.id];
     if (!r) continue;
     for (const round of ["initial", "retest"] as const) {
@@ -171,14 +172,14 @@ function consistentSession(s: LessonSession) {
         return false;
     }
   }
-  const expectedQueue = mockLesson.questions
+  const expectedQueue = lesson.questions
     .filter((q) => s.records[q.id]?.initialResult === "wrong")
     .map((q) => q.id);
   if (JSON.stringify(expectedQueue) !== JSON.stringify(s.retestQueue))
     return false;
   const order =
     s.round === "initial"
-      ? mockLesson.questions.map((q) => q.id)
+      ? lesson.questions.map((q) => q.id)
       : s.retestQueue;
   const resultKey = s.round === "initial" ? "initialResult" : "retestResult";
   for (let i = 0; i < order.length; i++) {
@@ -188,7 +189,7 @@ function consistentSession(s: LessonSession) {
   }
   if (
     s.round === "retest" &&
-    mockLesson.questions.some((q) => !s.records[q.id]?.initialResult)
+    lesson.questions.some((q) => !s.records[q.id]?.initialResult)
   )
     return false;
   if (
@@ -213,7 +214,7 @@ function consistentSession(s: LessonSession) {
   if (
     s.phase === "review_intro" &&
     (s.round !== "initial" ||
-      s.index !== mockLesson.questions.length - 1 ||
+      s.index !== lesson.questions.length - 1 ||
       !s.retestQueue.length ||
       !current?.initialResult)
   )
@@ -228,7 +229,7 @@ function consistentSession(s: LessonSession) {
   if (
     s.reward &&
     (s.phase !== "complete" ||
-      s.reward.accuracy !== firstSubmissionAccuracy(s, mockLesson))
+      s.reward.accuracy !== firstSubmissionAccuracy(s, lesson))
   )
     return false;
   return true;
@@ -250,7 +251,12 @@ function validProfile(v: unknown): v is StudyProfile {
         object(r) &&
         r.xp === 45 &&
         typeof r.sessionId === "string",
-    )
+    ) &&
+    (v.bonusXpEvents === undefined ||
+      (object(v.bonusXpEvents) &&
+        Object.values(v.bonusXpEvents).every(
+          (xp) => typeof xp === "number" && xp >= 0,
+        )))
   );
 }
 export function createStudyStorage(

@@ -114,7 +114,7 @@ export function reduceSession(
   if (action.type === "hint")
     return {
       ...session,
-      records: { ...session.records, [q.id]: { ...record, hintUsed: true } },
+      records: { ...session.records, [q.id]: { ...record, hintUsed: true, usedAiHint: true } },
     };
   if (action.type === "select")
     return q.options.some((option) => option.id === action.optionId)

@@ -121,6 +121,21 @@ function useLearningState() {
     },
     [commit],
   );
+  const awardXp = useCallback(
+    (eventId: string, xp: number) => {
+      if (latest.current.profile.bonusXpEvents?.[eventId] !== undefined) return;
+      const profile = {
+        ...latest.current.profile,
+        bonusXpEvents: {
+          ...(latest.current.profile.bonusXpEvents ?? {}),
+          [eventId]: xp,
+        },
+      };
+      storage.current?.saveProfile(profile);
+      commit({ ...latest.current, profile });
+    },
+    [commit],
+  );
   return {
     ...saved,
     ready,
@@ -129,6 +144,7 @@ function useLearningState() {
     dispatch,
     markCelebration,
     setSettings,
+    awardXp,
     user: userFor(saved.profile, today),
     getLesson: (date: string) =>
       calendarLesson(date, today, saved.profile, saved.sessions),

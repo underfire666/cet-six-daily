@@ -13,6 +13,7 @@ export interface AnswerRecord {
   initial: Attempt[];
   retest: Attempt[];
   hintUsed: boolean;
+  usedAiHint?: boolean;
   initialResult?: AnswerResult;
   retestResult?: AnswerResult;
 }
@@ -46,6 +47,7 @@ export interface StudyProfile {
   anchorDate: string;
   completedLessons: Record<string, string>;
   rewardsByDay: Record<string, { xp: number; sessionId: string }>;
+  bonusXpEvents?: Record<string, number>;
 }
 export type SessionAction =
   | { type: "select"; optionId: string }

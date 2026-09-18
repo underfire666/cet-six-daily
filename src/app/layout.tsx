@@ -3,6 +3,7 @@ import { todayInShanghai } from "@/lib/dates";
 import { StudyProvider } from "@/components/StudyProvider";
 import { AppShell } from "@/components/AppShell";
 import { LearningProvider } from "@/components/LearningProvider";
+import { VocabularyProvider } from "@/components/vocabulary/VocabularyProvider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "六级日常 · 每天向前一点",
@@ -22,7 +23,9 @@ export default function RootLayout({
       <body>
         <StudyProvider initialToday={todayInShanghai()}>
           <LearningProvider>
-            <AppShell>{children}</AppShell>
+            <VocabularyProvider>
+              <AppShell>{children}</AppShell>
+            </VocabularyProvider>
           </LearningProvider>
         </StudyProvider>
       </body>
