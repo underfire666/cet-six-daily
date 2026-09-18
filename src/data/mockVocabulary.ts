@@ -1,4 +1,5 @@
 import type { VocabularySettings, Word } from "@/types/vocabulary";
+import { readingVocabulary } from "./readingVocabulary";
 
 export const vocabularySettings: VocabularySettings = {
   dailyNewWords: 20,
@@ -336,4 +337,5 @@ export const mockVocabulary: Word[] = [
 ];
 
 export const wordById = (id: string) =>
-  mockVocabulary.find((word) => word.id === id);
+  mockVocabulary.find((word) => word.id === id) ??
+  readingVocabulary.find((word) => word.id === id);

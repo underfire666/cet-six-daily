@@ -39,6 +39,12 @@
 .exercise-icon-button:hover {
   background: var(--surface-soft);
 }
+.exercise-header-label {
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
 .exercise-progress {
   height: 12px;
   flex: 1;

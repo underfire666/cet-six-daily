@@ -33,7 +33,9 @@ function Choices({ question, selected, disabled, onSelect }: Props) {
 export function ChoiceQuestion(props: Props) {
   return (
     <>
-      <span className="exercise-eyebrow">词汇理解</span>
+      <span className="exercise-eyebrow">
+        {props.question.module === "reading" ? "阅读理解" : "词汇理解"}
+      </span>
       <h1 className="exercise-prompt">{props.question.prompt}</h1>
       <Choices {...props} />
     </>

@@ -6,6 +6,7 @@ import {
 import type {
   VocabularyStore,
   VocabularySessionMode,
+  Word,
 } from "@/types/vocabulary";
 import { vocabularyLesson, questionTypeFor } from "./questions";
 import {
@@ -51,6 +52,26 @@ export function vocabularyDayStats(store: VocabularyStore, date: string) {
     xp: Object.entries(store.xpLedger)
       .filter(([key]) => key.startsWith(`day:${date}:`))
       .reduce((n, [, xp]) => n + xp, 0),
+  };
+}
+/**
+ * 把任意来源的单词写入统一生词本（V5 阅读收藏复用此入口）。
+ * 已收藏时返回原 store 与 added=false，保证不重复添加。
+ */
+export function addWordToWordbook(
+  store: VocabularyStore,
+  word: Word,
+  now: string,
+): { store: VocabularyStore; added: boolean } {
+  const previous = store.states[word.id];
+  if (previous?.addedToWordbook) return { store, added: false };
+  const state = {
+    ...(previous ?? newVocabularyState(word, now)),
+    addedToWordbook: true,
+  };
+  return {
+    store: { ...store, states: { ...store.states, [word.id]: state } },
+    added: true,
   };
 }
 function rankedWords(store: VocabularyStore) {

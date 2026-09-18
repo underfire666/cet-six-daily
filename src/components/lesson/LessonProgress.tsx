@@ -2,9 +2,11 @@ import { X } from "lucide-react";
 export function LessonProgress({
   progress,
   onExit,
+  label,
 }: {
   progress: number;
   onExit: () => void;
+  label?: string;
 }) {
   return (
     <header className="exercise-header">
@@ -15,6 +17,7 @@ export function LessonProgress({
       >
         <X size={22} />
       </button>
+      {label !== undefined && <span className="exercise-header-label">{label}</span>}
       <div
         className="exercise-progress"
         role="progressbar"

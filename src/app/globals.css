@@ -525,6 +525,17 @@ button:disabled {
   font-size: 13px;
   font-weight: 550;
 }
+.practice-module-status {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.practice-module-status.is-done {
+  color: var(--success);
+  font-weight: 600;
+}
 .bottom-nav {
   position: fixed;
   inset: auto 0 0;

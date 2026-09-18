@@ -17,6 +17,7 @@ import {
   updateVocabulary,
   batchProgress,
   vocabularyDayStats,
+  addWordToWordbook,
 } from "@/lib/vocabulary/store";
 import {
   emptyVocabularyStore,
@@ -27,6 +28,7 @@ import type { VocabularyAction } from "@/lib/vocabulary/session";
 import type {
   VocabularySessionMode,
   VocabularyStore,
+  Word,
 } from "@/types/vocabulary";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
@@ -125,6 +127,18 @@ function useVocabularyState() {
     },
     [commit],
   );
+  const addWordbookWord = useCallback(
+    (word: Word) => {
+      const result = addWordToWordbook(
+        latest.current,
+        word,
+        new Date().toISOString(),
+      );
+      if (result.store !== latest.current) commit(result.store);
+      return result.added;
+    },
+    [commit],
+  );
   const plan = planFor(store, today);
   const active = Object.values(store.sessions).find(
     (s) => s.mode === "learn" && s.date === today && s.phase !== "complete",
@@ -162,6 +176,7 @@ function useVocabularyState() {
     start,
     dispatch,
     toggleWordbook,
+    addWordbookWord,
   };
 }
 export function VocabularyProvider({

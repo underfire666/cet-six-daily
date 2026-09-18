@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import {
   BookOpen,
@@ -7,8 +8,12 @@ import {
   SpellCheck,
 } from "lucide-react";
 import { modules } from "@/data/mock";
+import { useReading } from "./reading/ReadingProvider";
 const icons = [SpellCheck, Headphones, BookOpen, Languages, NotebookPen];
 export function PracticeModules() {
+  const reading = useReading();
+  const done = reading.progress.completedArticleIds.length;
+  const total = reading.progress.articleIds.length;
   return (
     <section className="practice-section">
       <div className="section-heading">
@@ -28,6 +33,15 @@ export function PracticeModules() {
               </span>
               <div>
                 <strong>{module.name}</strong>
+                {module.key === "reading" && (
+                  <span
+                    className={`practice-module-status${reading.dailyComplete ? " is-done" : ""}`}
+                  >
+                    {reading.dailyComplete
+                      ? `今日 ${total}/${total} ✓`
+                      : `今日 ${done}/${total}`}
+                  </span>
+                )}
               </div>
             </Link>
           );

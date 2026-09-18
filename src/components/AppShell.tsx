@@ -6,7 +6,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const exercise =
     path.startsWith("/lesson/") ||
     path.startsWith("/practice/vocabulary/session") ||
-    path.startsWith("/practice/vocabulary/complete");
+    path.startsWith("/practice/vocabulary/complete") ||
+    path.startsWith("/practice/reading/session") ||
+    path.startsWith("/practice/reading/complete");
   return (
     <>
       <a href="#page-content" className="skip-link">
