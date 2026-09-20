@@ -1,8 +1,20 @@
 # 六级日常项目上下文
 
-## 当前稳定版本：V5
+## 当前稳定版本：V6（V7 待验收）
 
-### V6 本地听力修复记录（2026-09-20，待用户验收）
+### V7 翻译 + 写作专项（2026-09-20，feature/v7-writing-translation 待验收）
+
+- 新增翻译、写作两个主观题专项，共享 `src/types/subjective.ts` 的 `SubjectiveFeedback` 结构（score/maxScore/summary/issues/details/referenceAnswer/provider/createdAt），当前 provider 固定 `"mock"`，V8 接真实 AI 时前端结果页不用改。
+- 每日任务各 1 篇（`DAILY_TRANSLATION_COUNT=1` / `DAILY_WRITING_COUNT=1`），按 epochDay 确定性轮换；完成后可"再练一篇"，额外练习独立计数，不挤占今日 0/1。
+- 草稿自动保存到 session.draft，退出/刷新可恢复；提交前参考译文/范文隐藏，提交后才展开；字数偏少弹"仍然提交"确认但不阻止。
+- Mock 批改：翻译按关键词覆盖 + 长度，写作按字数 + 段落数 + 连接词 + 关键词，满分 15；结果页先简后详（估分 → 主要问题 → 参考译文/范文 → 详细分析）。
+- 历史记录存在各自 store.history，首页底部显示最近 3 次，可删除。
+- LocalStorage：`cet-daily:v1:translation`、`cet-daily:v1:writing`（schemaVersion=1），未改 v3:vocabulary / v1:reading / v1:listening。
+- XP：基础 12 + 表现分（0–3），首次完成给基础分，跨日重复仅表现分，同日重复同题 +0；账本 key `translation:first:<taskId>` / `writing:first:<taskId>`。
+- 自动测试 107/107（V6 基线 77 + V7 新增 30），typecheck/lint/build 全绿。
+- 五大专项全部开放：词汇 / 阅读 / 听力 / 翻译 / 写作。
+
+### V6 本地听力修复记录（2026-09-20，已发布 v6.0）
 
 - 本地已接入听力专项；V5 仍为已发布稳定版本，下列改动尚未发布。
 - 7 组现有 Mock 材料使用本地生成的英文 WAV 音频（`public/audio/listening/`），由原有文本通过本机 Microsoft Zira 生成，不接入外部服务或真实题库。
@@ -16,9 +28,9 @@
 专项状态：
 - 词汇：已开放
 - 阅读：已开放
-- 听力：敬请期待
-- 翻译：敬请期待
-- 写作：敬请期待
+- 听力：已开放
+- 翻译：已开放（V7）
+- 写作：已开放（V7）
 
 V5 已正式开放并验收通过“阅读”专项：每日固定 3 篇阅读、完成页展示首次答对 / 重试掌握 / 仍需加强 / 本篇生词四栏真实统计、生词点击查义并加入统一生词本（跨专项去重）、当日 3 篇完成即阅读专项完成。已合并 main、打 v5.0 tag 并发布 GitHub Release。后续开发须由用户明确提出，不自行开始 V6。
 
