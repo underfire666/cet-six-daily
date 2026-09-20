@@ -30,9 +30,13 @@ export function ReadingComplete({ id }: { id: string }) {
     );
   const article = readingArticleById(session.articleId)!;
   const definition = readingLesson(article);
-  const independent = definition.questions.filter(
-    (q) => session.lesson.records[q.id]?.initial[0]?.correct,
+  const firstTry = definition.questions.filter(
+    (q) => session.lesson.records[q.id]?.initialResult === "first_try_correct",
   ).length;
+  const retryMastered = definition.questions.filter((q) => {
+    const r = session.lesson.records[q.id]?.initialResult;
+    return r === "second_try_correct" || r === "ai_hint_correct";
+  }).length;
   const needImprove = unresolvedQuestions(session.lesson, definition).length;
   const collected = session.collectedWordIds.length;
   return (
@@ -46,18 +50,15 @@ export function ReadingComplete({ id }: { id: string }) {
       </p>
       <div className="reading-stats">
         <div className="reading-stat">
-          <span>本篇答题</span>
-          <strong>
-            {independent}
-            <small style={{ fontSize: 13 }}> / {definition.questions.length} 题</small>
-          </strong>
+          <span>首次答对</span>
+          <strong>{firstTry} 题</strong>
         </div>
         <div className="reading-stat">
-          <span>独立答对</span>
-          <strong>{independent} 题</strong>
+          <span>重试掌握</span>
+          <strong>{retryMastered} 题</strong>
         </div>
         <div className="reading-stat">
-          <span>需要加强</span>
+          <span>仍需加强</span>
           <strong>{needImprove} 题</strong>
         </div>
         <div className="reading-stat">
