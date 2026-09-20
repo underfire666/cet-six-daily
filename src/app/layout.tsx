@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { LearningProvider } from "@/components/LearningProvider";
 import { VocabularyProvider } from "@/components/vocabulary/VocabularyProvider";
 import { ReadingProvider } from "@/components/reading/ReadingProvider";
+import { ListeningProvider } from "@/components/listening/ListeningProvider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "六级日常 · 每天向前一点",
@@ -26,7 +27,9 @@ export default function RootLayout({
           <LearningProvider>
             <VocabularyProvider>
               <ReadingProvider>
-                <AppShell>{children}</AppShell>
+                <ListeningProvider>
+                  <AppShell>{children}</AppShell>
+                </ListeningProvider>
               </ReadingProvider>
             </VocabularyProvider>
           </LearningProvider>

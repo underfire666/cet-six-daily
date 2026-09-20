@@ -9,11 +9,15 @@ import {
 } from "lucide-react";
 import { modules } from "@/data/mock";
 import { useReading } from "./reading/ReadingProvider";
+import { useListening } from "./listening/ListeningProvider";
 const icons = [SpellCheck, Headphones, BookOpen, Languages, NotebookPen];
 export function PracticeModules() {
   const reading = useReading();
+  const listening = useListening();
   const done = reading.progress.completedArticleIds.length;
   const total = reading.progress.articleIds.length;
+  const lDone = listening.progress.completedMaterialIds.length;
+  const lTotal = listening.progress.materialIds.length;
   return (
     <section className="practice-section">
       <div className="section-heading">
@@ -40,6 +44,15 @@ export function PracticeModules() {
                     {reading.dailyComplete
                       ? `今日 ${total}/${total} ✓`
                       : `今日 ${done}/${total}`}
+                  </span>
+                )}
+                {module.key === "listening" && (
+                  <span
+                    className={`practice-module-status${listening.dailyComplete ? " is-done" : ""}`}
+                  >
+                    {listening.dailyComplete
+                      ? `今日 ${lTotal}/${lTotal} ✓`
+                      : `今日 ${lDone}/${lTotal}`}
                   </span>
                 )}
               </div>
