@@ -239,6 +239,21 @@
 .subjective-saved {
   color: var(--primary, #3aa66b);
 }
+.subjective-save-fail {
+  color: #b4552a;
+  font-weight: 600;
+}
+.subjective-history-text {
+  background: #f8faf8;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.subjective-history-text p {
+  margin: 4px 0;
+}
 .subjective-warn {
   font-size: 13px;
   color: #b4552a;

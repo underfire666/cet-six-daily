@@ -39,13 +39,18 @@ function useTranslationState() {
   const storage = useRef<Storage | undefined>(undefined);
   const [ready, setReady] = useState(false),
     [notice, setNotice] = useState("");
+  const [lastSaveOk, setLastSaveOk] = useState<boolean | null>(null);
   const [, forceRender] = useState(0);
 
   const commit = useCallback((next: TranslationStore) => {
     latest.current = next;
     setStore(next);
-    if (!saveTranslationStore(storage.current, next))
+    if (saveTranslationStore(storage.current, next)) {
+      setLastSaveOk(true);
+    } else {
+      setLastSaveOk(false);
       setNotice("浏览器暂时无法保存翻译进度，关闭或刷新后记录可能丢失。");
+    }
   }, []);
 
   useEffect(() => {
@@ -58,6 +63,7 @@ function useTranslationState() {
       const loaded = loadTranslationStore(storage.current);
       latest.current = loaded.store;
       setStore(loaded.store);
+      if (!loaded.persistent) setLastSaveOk(false);
       if (loaded.issue) setNotice(loaded.issue);
       setReady(true);
     });
@@ -118,6 +124,7 @@ function useTranslationState() {
   return {
     ready,
     notice,
+    lastSaveOk,
     store,
     history: store.history,
     plan,

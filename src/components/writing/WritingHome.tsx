@@ -113,6 +113,18 @@ export function WritingHome() {
                   <span>
                     {entry.score} / {entry.feedback.maxScore} · {entry.wordCount} 词
                   </span>
+                  {entry.sessionId && (
+                    <button
+                      className="subjective-link-button"
+                      onClick={() =>
+                        router.push(
+                          `/practice/writing/session/${entry.sessionId}`,
+                        )
+                      }
+                    >
+                      查看
+                    </button>
+                  )}
                   <button
                     className="subjective-link-button"
                     onClick={() => w.removeHistory(realIndex)}

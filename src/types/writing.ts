@@ -52,6 +52,8 @@ export interface WritingDailyProgress {
 
 export interface WritingHistoryEntry {
   taskId: string;
+  /** 对应 session id，用于历史回看；旧数据可能没有 */
+  sessionId?: string;
   submittedText: string;
   feedback: SubjectiveFeedback;
   score: number;

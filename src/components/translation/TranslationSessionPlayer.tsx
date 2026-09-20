@@ -7,7 +7,7 @@ import { translationTaskById } from "@/data/mockTranslation";
 import { useTranslation } from "./TranslationProvider";
 
 export function TranslationSessionPlayer({ id }: { id: string }) {
-  const { ready, store, dispatch } = useTranslation();
+  const { ready, store, dispatch, lastSaveOk } = useTranslation();
   const router = useRouter();
   const session = store.sessions[id];
   const task = session ? translationTaskById(session.taskId) : undefined;
@@ -24,16 +24,16 @@ export function TranslationSessionPlayer({ id }: { id: string }) {
     force((n) => n + 1);
   };
 
-  // 草稿已保存轻提示
-  const [savedHint, setSavedHint] = useState(false);
+  // 草稿已保存轻提示（按最近一次落盘结果显示成功/失败）
+  const [savedHint, setSavedHint] = useState<"ok" | "fail" | null>(null);
   useEffect(() => {
     if (!dirtyRef.current) return;
     const t = setTimeout(() => {
-      setSavedHint(true);
-      setTimeout(() => setSavedHint(false), 1500);
+      setSavedHint(lastSaveOk ? "ok" : "fail");
+      setTimeout(() => setSavedHint(null), 1500);
     }, 600);
     return () => clearTimeout(t);
-  }, [session?.draft]);
+  }, [session?.draft, lastSaveOk]);
 
   if (!ready) return <div className="exercise-loading">正在准备翻译…</div>;
   if (!session || !task) {
@@ -95,7 +95,12 @@ export function TranslationSessionPlayer({ id }: { id: string }) {
             />
             <div className="subjective-editor-meta">
               <span>已输入 {wordCount} 词</span>
-              {savedHint && <span className="subjective-saved">草稿已保存</span>}
+              {savedHint === "ok" && (
+                <span className="subjective-saved">草稿已保存</span>
+              )}
+              {savedHint === "fail" && (
+                <span className="subjective-save-fail">保存失败</span>
+              )}
             </div>
             {confirmSubmit && (
               <p className="subjective-warn">
@@ -123,88 +128,109 @@ export function TranslationSessionPlayer({ id }: { id: string }) {
         </>
       )}
 
-      {session.phase === "reviewing" && session.feedback && (
-        <section className="subjective-result">
-          <h1>翻译完成</h1>
-          <p className="subjective-result-sub">六级估分（Mock）</p>
-          <div className="subjective-score">
-            <strong>{session.feedback.score}</strong>
-            <span>/ {session.feedback.maxScore}</span>
-          </div>
-          <p className="subjective-summary">{session.feedback.summary}</p>
-
-          {session.feedback.issues.length > 0 && (
-            <div className="subjective-issues">
-              <h2>主要问题</h2>
-              {session.feedback.issues.map((issue, i) => (
-                <div key={i} className="subjective-issue">
-                  <strong>{issue.title}</strong>
-                  <p>{issue.description}</p>
-                </div>
-              ))}
+      {(session.phase === "reviewing" || session.phase === "complete") &&
+        session.feedback && (
+          <section className="subjective-result">
+            <h1>{session.phase === "complete" ? "翻译回顾" : "翻译完成"}</h1>
+            <p className="subjective-result-sub">六级估分（Mock）</p>
+            <div className="subjective-score">
+              <strong>{session.feedback.score}</strong>
+              <span>/ {session.feedback.maxScore}</span>
             </div>
-          )}
+            <p className="subjective-summary">{session.feedback.summary}</p>
 
-          <button
-            className="subjective-text-button"
-            onClick={() => setShowRef((v) => !v)}
-          >
-            <ChevronDown
-              size={16}
-              style={{ transform: showRef ? "rotate(180deg)" : undefined }}
-            />
-            查看参考译文
-          </button>
-          {showRef && (
-            <div className="subjective-reference">
-              <p>{task.referenceTranslation}</p>
-            </div>
-          )}
+            {session.phase === "complete" && session.submittedText && (
+              <div className="subjective-history-text">
+                <p className="subjective-prompt-label">你的译文</p>
+                <p style={{ whiteSpace: "pre-wrap" }}>
+                  {session.submittedText}
+                </p>
+              </div>
+            )}
 
-          <button
-            className="subjective-text-button"
-            onClick={() => setShowDetail((v) => !v)}
-          >
-            <ChevronDown
-              size={16}
-              style={{ transform: showDetail ? "rotate(180deg)" : undefined }}
-            />
-            查看详细分析
-          </button>
-          {showDetail && (
-            <div className="subjective-details">
-              {session.feedback.details.map((d, i) => (
-                <div key={i} className="subjective-detail">
-                  {d.excerpt && (
-                    <p>
-                      <em>原文：</em>
-                      {d.excerpt}
-                    </p>
-                  )}
-                  {d.userExpression && (
-                    <p>
-                      <em>你的表达：</em>
-                      {d.userExpression}
-                    </p>
-                  )}
-                  {d.referenceExpression && (
-                    <p>
-                      <em>参考表达：</em>
-                      {d.referenceExpression}
-                    </p>
-                  )}
-                  {d.note && <p className="subjective-note">{d.note}</p>}
-                </div>
-              ))}
-            </div>
-          )}
+            {session.feedback.issues.length > 0 && (
+              <div className="subjective-issues">
+                <h2>主要问题</h2>
+                {session.feedback.issues.map((issue, i) => (
+                  <div key={i} className="subjective-issue">
+                    <strong>{issue.title}</strong>
+                    <p>{issue.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
-          <button className="subjective-button" onClick={finish}>
-            <Languages size={18} />
-            完成并结算
-          </button>
-        </section>
-      )}
+            <button
+              className="subjective-text-button"
+              onClick={() => setShowRef((v) => !v)}
+            >
+              <ChevronDown
+                size={16}
+                style={{ transform: showRef ? "rotate(180deg)" : undefined }}
+              />
+              查看参考译文
+            </button>
+            {showRef && (
+              <div className="subjective-reference">
+                <p>{task.referenceTranslation}</p>
+              </div>
+            )}
+
+            <button
+              className="subjective-text-button"
+              onClick={() => setShowDetail((v) => !v)}
+            >
+              <ChevronDown
+                size={16}
+                style={{ transform: showDetail ? "rotate(180deg)" : undefined }}
+              />
+              查看详细分析
+            </button>
+            {showDetail && (
+              <div className="subjective-details">
+                {session.feedback.details.map((d, i) => (
+                  <div key={i} className="subjective-detail">
+                    {d.excerpt && (
+                      <p>
+                        <em>原文：</em>
+                        {d.excerpt}
+                      </p>
+                    )}
+                    {d.userExpression && (
+                      <p>
+                        <em>你的表达：</em>
+                        {d.userExpression}
+                      </p>
+                    )}
+                    {d.referenceExpression && (
+                      <p>
+                        <em>参考表达：</em>
+                        {d.referenceExpression}
+                      </p>
+                    )}
+                    {d.note && <p className="subjective-note">{d.note}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {session.phase === "reviewing" && (
+              <button className="subjective-button" onClick={finish}>
+                <Languages size={18} />
+                完成并结算
+              </button>
+            )}
+            {session.phase === "complete" && (
+              <Link
+                className="subjective-button"
+                href="/practice/translation"
+              >
+                <ArrowLeft size={18} />
+                返回翻译
+              </Link>
+            )}
+          </section>
+        )}
     </main>
   );
 }

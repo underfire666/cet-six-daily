@@ -142,6 +142,7 @@ export function updateWriting(
         ...store.history,
         {
           taskId: completed.taskId,
+          sessionId: completed.id,
           submittedText: completed.submittedText ?? "",
           feedback: completed.feedback!,
           score: completed.feedback!.score,

@@ -114,6 +114,18 @@ export function TranslationHome() {
                 <div key={realIndex} className="subjective-history-item">
                   <span>{new Date(entry.createdAt).toLocaleDateString("zh-CN")}</span>
                   <span>{entry.score} / {entry.feedback.maxScore}</span>
+                  {entry.sessionId && (
+                    <button
+                      className="subjective-link-button"
+                      onClick={() =>
+                        router.push(
+                          `/practice/translation/session/${entry.sessionId}`,
+                        )
+                      }
+                    >
+                      查看
+                    </button>
+                  )}
                   <button
                     className="subjective-link-button"
                     onClick={() => t.removeHistory(realIndex)}
