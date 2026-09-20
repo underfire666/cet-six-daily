@@ -10,7 +10,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     path.startsWith("/practice/reading/session") ||
     path.startsWith("/practice/reading/complete") ||
     path.startsWith("/practice/listening/session") ||
-    path.startsWith("/practice/listening/complete");
+    path.startsWith("/practice/listening/complete") ||
+    path.startsWith("/practice/translation/session") ||
+    path.startsWith("/practice/translation/complete") ||
+    path.startsWith("/practice/writing/session") ||
+    path.startsWith("/practice/writing/complete");
   return (
     <>
       <a href="#page-content" className="skip-link">

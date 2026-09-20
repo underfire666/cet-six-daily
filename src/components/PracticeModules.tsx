@@ -10,14 +10,22 @@ import {
 import { modules } from "@/data/mock";
 import { useReading } from "./reading/ReadingProvider";
 import { useListening } from "./listening/ListeningProvider";
+import { useTranslation } from "./translation/TranslationProvider";
+import { useWriting } from "./writing/WritingProvider";
 const icons = [SpellCheck, Headphones, BookOpen, Languages, NotebookPen];
 export function PracticeModules() {
   const reading = useReading();
   const listening = useListening();
+  const translation = useTranslation();
+  const writing = useWriting();
   const done = reading.progress.completedArticleIds.length;
   const total = reading.progress.articleIds.length;
   const lDone = listening.progress.completedMaterialIds.length;
   const lTotal = listening.progress.materialIds.length;
+  const tDone = translation.progress.completedTaskIds.length;
+  const tTotal = translation.progress.taskIds.length;
+  const wDone = writing.progress.completedTaskIds.length;
+  const wTotal = writing.progress.taskIds.length;
   return (
     <section className="practice-section">
       <div className="section-heading">
@@ -53,6 +61,24 @@ export function PracticeModules() {
                     {listening.dailyComplete
                       ? `今日 ${lTotal}/${lTotal} ✓`
                       : `今日 ${lDone}/${lTotal}`}
+                  </span>
+                )}
+                {module.key === "translation" && (
+                  <span
+                    className={`practice-module-status${translation.dailyComplete ? " is-done" : ""}`}
+                  >
+                    {translation.dailyComplete
+                      ? `今日 ${tTotal}/${tTotal} ✓`
+                      : `今日 ${tDone}/${tTotal}`}
+                  </span>
+                )}
+                {module.key === "writing" && (
+                  <span
+                    className={`practice-module-status${writing.dailyComplete ? " is-done" : ""}`}
+                  >
+                    {writing.dailyComplete
+                      ? `今日 ${wTotal}/${wTotal} ✓`
+                      : `今日 ${wDone}/${wTotal}`}
                   </span>
                 )}
               </div>

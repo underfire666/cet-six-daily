@@ -6,6 +6,8 @@ import { LearningProvider } from "@/components/LearningProvider";
 import { VocabularyProvider } from "@/components/vocabulary/VocabularyProvider";
 import { ReadingProvider } from "@/components/reading/ReadingProvider";
 import { ListeningProvider } from "@/components/listening/ListeningProvider";
+import { TranslationProvider } from "@/components/translation/TranslationProvider";
+import { WritingProvider } from "@/components/writing/WritingProvider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "六级日常 · 每天向前一点",
@@ -28,7 +30,11 @@ export default function RootLayout({
             <VocabularyProvider>
               <ReadingProvider>
                 <ListeningProvider>
-                  <AppShell>{children}</AppShell>
+                  <TranslationProvider>
+                    <WritingProvider>
+                      <AppShell>{children}</AppShell>
+                    </WritingProvider>
+                  </TranslationProvider>
                 </ListeningProvider>
               </ReadingProvider>
             </VocabularyProvider>
