@@ -7,7 +7,6 @@ import type {
 } from "@/types/dailyPlan";
 import {
   DAILY_LOAD_CAP,
-  INTENSITY_MINUTES,
   MODULE_MINUTES,
   moduleWeights,
   phaseFactor,
@@ -26,17 +25,15 @@ function seedFromDate(date: string): number {
 function pickModules(
   date: string,
   pref: StudyPreferences,
-  phase: ReturnType<typeof studyPhase>,
 ): PlanModule[] {
   const weights = moduleWeights(pref);
   // 词汇每天必学
   const pool: PlanModule[] = ["reading", "listening", "translation", "writing"];
   const seed = seedFromDate(date);
 
-  // 按权重随机选 2 个（sprint 期选 3 个）
-  const targetExtra = phase === "sprint" ? 2 : 1;
+  // 时长档位决定任务量，专项重点决定优先选择哪些模块。
+  const targetExtra = pref.intensity === "light" ? 1 : pref.intensity === "standard" ? 2 : 3;
   const chosen = new Set<PlanModule>();
-  let cursor = seed;
   const weighted = pool
     .map((m) => ({ m, w: weights[m] }))
     .sort((a, b) => {
@@ -48,7 +45,6 @@ function pickModules(
   for (const { m } of weighted) {
     if (chosen.size >= targetExtra) break;
     chosen.add(m);
-    cursor = (cursor * 1103515245 + 12345) & 0x7fffffff;
   }
   // 保底：至少选 1 个
   if (chosen.size === 0) chosen.add(weighted[0].m);
@@ -79,9 +75,12 @@ export function generatePlan(
 ): DailyPlan {
   const daysUntilExam = dayDifference(date, examDate);
   const phase = studyPhase(daysUntilExam);
-  const modules = pickModules(date, pref, phase);
+  const modules = pickModules(date, pref);
 
-  let tasks: DailyTask[] = modules.map((m, i) => makeTask(m, i));
+  let tasks: DailyTask[] = modules.map((m, i) => makeTask(m, i, { id: `${date}:${m}` }));
+  if (pref.intensity === "light") {
+    tasks[0] = { ...tasks[0], target: "10 个", estimatedMinutes: 4 };
+  }
 
   // 加入顺延任务
   for (const { fromDate, task } of rescheduledTasks) {
@@ -96,8 +95,6 @@ export function generatePlan(
   }
 
   // 负荷控制：超过 DAILY_LOAD_CAP 时，按优先级低的顺延任务砍掉
-  const [minM, maxM] = INTENSITY_MINUTES[pref.intensity];
-  const targetMin = Math.round(((minM + maxM) / 2) * phaseFactor(phase));
   let total = tasks.reduce((n, t) => n + t.estimatedMinutes, 0);
   if (total > DAILY_LOAD_CAP) {
     // 砍 rescheduled 且 low/normal 的任务
@@ -122,7 +119,7 @@ export function generatePlan(
   return {
     date,
     phase,
-    estimatedMinutes: Math.min(estimatedMinutes, Math.max(DAILY_LOAD_CAP, targetMin)),
+    estimatedMinutes,
     tasks,
     status: adjusted ? "adjusted" : "empty",
     generatedAt: new Date(`${date}T00:00:00Z`).toISOString(),
@@ -135,14 +132,29 @@ export function generatePlan(
 /** 判断某天是否已完成（根据专项 Adapter 快照） */
 export function planStatus(
   plan: DailyPlan,
-  completion: Record<PlanModule, { completed: boolean }>,
+  completion: PlanCompletion,
 ): "completed" | "in_progress" | "empty" {
   const active = plan.tasks.filter((t) => !t.removed);
   if (active.length === 0) return "empty";
-  const done = active.filter((t) => completion[t.module]?.completed).length;
+  const done = active.filter((t) => taskCompleted(plan, t, completion)).length;
   if (done === active.length) return "completed";
   if (done > 0) return "in_progress";
   return "empty";
+}
+
+export type PlanCompletion = Record<PlanModule, { completed: boolean; done?: number }>;
+
+/** 同模块多项任务按顺序分配完成数量，不能用一次学习抵扣两项。 */
+export function taskCompleted(plan: DailyPlan, task: DailyTask, completion: PlanCompletion): boolean {
+  if (task.removed) return false;
+  const progress = completion[task.module];
+  if (progress.done === undefined) return progress.completed;
+  let required = 0;
+  for (const item of plan.tasks) {
+    if (!item.removed && item.module === task.module) required += Number.parseInt(item.target, 10) || 1;
+    if (item.id === task.id) break;
+  }
+  return progress.done >= required;
 }
 
 /** 未来 N 天预览（不持久化，不用于完成判断） */

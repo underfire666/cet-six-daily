@@ -34,6 +34,8 @@ export interface DailyTask {
 }
 
 export interface DailyPlan {
+  /** 当天单独设置；缺省时沿用全局偏好。 */
+  preferences?: StudyPreferences;
   date: string;
   phase: StudyPhase;
   estimatedMinutes: number;

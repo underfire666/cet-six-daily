@@ -18,6 +18,7 @@ import {
 import { useToday } from "@/components/StudyProvider";
 import { useDailyPlan } from "@/components/dailyPlan/DailyPlanProvider";
 import { shortDate } from "@/lib/dates";
+import { taskCompleted } from "@/lib/dailyPlan/generator";
 import type { DailyTask, PlanModule } from "@/types/dailyPlan";
 
 const ICONS: Record<PlanModule, typeof BookOpen> = {
@@ -40,7 +41,7 @@ export default function DailyPlanPage() {
   const params = useParams();
   const router = useRouter();
   const today = useToday();
-  const { getPlan, completion, ready } = useDailyPlan();
+  const { getPlan, getCompletion, ready, notice } = useDailyPlan();
   const date = String(params.date ?? today);
   const plan = getPlan(date);
   const isFuture = date > today;
@@ -48,12 +49,12 @@ export default function DailyPlanPage() {
 
   const taskStatus = (task: DailyTask): "completed" | "active" | "locked" => {
     if (isFuture) return "locked";
-    if (completion[task.module]?.completed) return "completed";
+    if (plan && taskCompleted(plan, task, getCompletion(date))) return "completed";
     return "active";
   };
 
   const doneCount = plan
-    ? plan.tasks.filter((t) => taskStatus(t) === "completed").length
+    ? plan.tasks.filter((t) => !t.removed && taskStatus(t) === "completed").length
     : 0;
   const totalCount = plan ? plan.tasks.filter((t) => !t.removed).length : 0;
   const allDone = totalCount > 0 && doneCount === totalCount;
@@ -116,8 +117,9 @@ export default function DailyPlanPage() {
       </section>
 
       <section className="plan-tasks">
+        {notice && <p role="alert" className="plan-warn">{notice}</p>}
         {!ready && <p className="plan-loading">正在加载今日计划…</p>}
-        {ready && !plan && <p className="plan-loading">这一天还没有生成计划。</p>}
+        {ready && !plan && <Link className="primary-button" href={`/lesson/${date}`}>打开这一天的历史关卡</Link>}
         {ready &&
           plan &&
           plan.tasks.filter((t) => !t.removed).map((task) => {

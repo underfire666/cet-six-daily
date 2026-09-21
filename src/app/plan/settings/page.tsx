@@ -19,12 +19,16 @@ const MODULES: { key: PlanModule; name: string }[] = [
 ];
 
 export default function PlanSettingsPage() {
-  const router = useRouter();
-  const { preferences, updatePreferences, ready } = useDailyPlan();
-  const [draft, setDraft] = useState<StudyPreferences>(preferences);
-  const [msg, setMsg] = useState("");
-
+  const { ready, preferences, todayPlan } = useDailyPlan();
   if (!ready) return <main className="plan-page"><p>加载中…</p></main>;
+  return <PlanSettingsForm initial={todayPlan?.preferences ?? preferences} />;
+}
+
+function PlanSettingsForm({ initial }: { initial: StudyPreferences }) {
+  const router = useRouter();
+  const { updatePreferences, notice, todayPlan } = useDailyPlan();
+  const [draft, setDraft] = useState<StudyPreferences>(initial);
+  const [msg, setMsg] = useState("");
 
   const advancedTotal = Object.values(draft.advanced).reduce((n, x) => n + x, 0);
   const advancedOk = draft.mode === "simple" || advancedTotal === 100;
@@ -34,8 +38,8 @@ export default function PlanSettingsPage() {
       setMsg("高级权重合计必须是 100%，当前 " + advancedTotal + "%");
       return;
     }
-    updatePreferences(draft, syncFuture);
-    setMsg(syncFuture ? "已保存，后续计划已重新生成。" : "已保存，只修改今天。");
+    const saved = updatePreferences(draft, syncFuture);
+    setMsg(!saved ? "本次修改仅在当前页面有效，未能保存。" : todayPlan?.status === "completed" ? (syncFuture ? "已保存后续偏好，今日已完成计划保持不变。" : "今日计划已完成，保留原任务。") : syncFuture ? "已保存，今日及后续计划已调整。" : "已保存，仅调整今天，后续偏好保持不变。");
   };
 
   return (
@@ -127,6 +131,7 @@ export default function PlanSettingsPage() {
         </section>
       )}
 
+      {notice && <p className="plan-warn" role="alert">{notice}</p>}
       {msg && <p className="plan-msg" role="status">{msg}</p>}
 
       <div className="plan-settings-save">

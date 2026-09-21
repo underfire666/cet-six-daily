@@ -50,6 +50,7 @@ function validPlan(v: unknown): v is DailyPlan {
     num(v.estimatedMinutes) &&
     Array.isArray(v.tasks) &&
     v.tasks.every(validTask) &&
+    (v.preferences === undefined || validPref(v.preferences)) &&
     ["empty", "in_progress", "completed", "adjusted"].includes(String(v.status)) &&
     str(v.generatedAt) &&
     bool(v.adjusted) &&

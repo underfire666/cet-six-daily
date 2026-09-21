@@ -2,7 +2,6 @@ import { addDays } from "@/lib/dates";
 import type {
   DailyPlan,
   DailyTask,
-  PlanModule,
   StudyPreferences,
 } from "@/types/dailyPlan";
 import { DAILY_LOAD_CAP, RESCHEDULE_WINDOW, makeTask } from "./config";
