@@ -6,7 +6,7 @@ import {
   RotateCw,
 } from "lucide-react";
 import { monthCells, shortDate } from "@/lib/dates";
-import { useLearning } from "./LearningProvider";
+import { useDailyPlan } from "./dailyPlan/DailyPlanProvider";
 export function StudyCalendar({
   today,
   month,
@@ -22,7 +22,7 @@ export function StudyCalendar({
   onMonth: (delta: number) => void;
   onToday: () => void;
 }) {
-  const { getLesson } = useLearning();
+  const { getLesson } = useDailyPlan();
   return (
     <section className="calendar" aria-label="学习月历">
       <div className="calendar-heading">

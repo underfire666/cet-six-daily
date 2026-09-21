@@ -13,12 +13,14 @@ import type { Lesson } from "@/types/study";
 export function DailyLessonNode({
   lesson,
   onSelect,
+  href = `/lesson/${lesson.date}`,
 }: {
   lesson: Lesson;
   onSelect: (date: string) => void;
+  href?: string;
 }) {
   const locked = lesson.status === "locked";
-  const adjusted = lesson.status === "adjusted";
+  const adjusted = lesson.status === "adjusted" && !!lesson.rescheduledTo;
   const completed = lesson.status === "completed";
   const title =
     lesson.status === "today"
@@ -46,7 +48,6 @@ export function DailyLessonNode({
         : lesson.inProgress
           ? "继续学习"
           : "开始学习";
-  const href = `/lesson/${lesson.date}${completed ? "?review=1" : ""}`;
   return (
     <section
       className={`lesson-node ${locked || adjusted ? "subdued" : ""}`}
