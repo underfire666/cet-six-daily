@@ -1,4 +1,14 @@
 import type { ReviewMastery, ReviewResult } from "@/types/review";
+import { addDays, todayInShanghai, validDate } from "@/lib/dates";
+
+/** 接受日历日期或带时区的时间戳，统一按上海日期排期。 */
+export function reviewDate(value: string): string {
+  if (validDate(value)) return value;
+  if (!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value) || !validDate(value.slice(0, 10)) || !Number.isFinite(Date.parse(value))) {
+    throw new RangeError("Invalid review date");
+  }
+  return todayInShanghai(new Date(value));
+}
 
 // 复习间隔（天），全部配置化
 export const INTERVALS = {
@@ -43,9 +53,9 @@ export function calculateNextReviewDate(
   }
   // 复习答对：按连续正确次数拉长
   if (result === "review_correct") {
-    if (correctStreak >= MASTERED_STREAK + 2) return addDaysSafe(today, INTERVALS.correct_4);
-    if (correctStreak >= MASTERED_STREAK + 1) return addDaysSafe(today, INTERVALS.correct_3);
-    if (correctStreak >= MASTERED_STREAK) return addDaysSafe(today, INTERVALS.correct_2);
+    if (correctStreak >= 4) return addDaysSafe(today, INTERVALS.correct_4);
+    if (correctStreak >= 3) return addDaysSafe(today, INTERVALS.correct_3);
+    if (correctStreak >= 2) return addDaysSafe(today, INTERVALS.correct_2);
     return addDaysSafe(today, INTERVALS.review_correct);
   }
   // 当天二次答对
@@ -63,7 +73,8 @@ export function calculateNextMastery(
   if (result === "wrong" || result === "unmastered") {
     return { status: "weak", priority: PRIORITY_RANK.weak };
   }
-  if (result === "second_try_correct" || result === "review_correct") {
+  if (result === "second_try_correct") return { status: "reviewing", priority: PRIORITY_RANK.reviewing };
+  if (result === "review_correct") {
     const next: ReviewMastery =
       correctStreak >= MASTERED_STREAK ? "mastered" : "reviewing";
     return { status: next, priority: PRIORITY_RANK[next] };
@@ -72,7 +83,5 @@ export function calculateNextMastery(
 }
 
 function addDaysSafe(date: string, n: number): string {
-  const d = new Date(`${date}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
+  return addDays(reviewDate(date), n);
 }

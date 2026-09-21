@@ -1,18 +1,16 @@
 import type {
   ReviewItem,
-  ReviewMastery,
   ReviewResult,
   ReviewSession,
   ReviewSourceModule,
 } from "@/types/review";
 import {
   DAILY_REVIEW_CAP,
-  MASTERED_STREAK,
   PRIORITY_RANK,
   calculateNextMastery,
   calculateNextReviewDate,
+  reviewDate,
 } from "./config";
-import { dayDifference } from "@/lib/dates";
 
 /** 同一 questionId+sourceActivityId 唯一 */
 export function reviewItemId(
@@ -68,8 +66,8 @@ export function recordWrong(
     nextReviewAt,
     masteryStatus: status,
     reviewCount: (existing?.reviewCount ?? 0) + 1,
-    correctStreak:
-      result === "second_try_correct" ? (existing?.correctStreak ?? 0) + 1 : 0,
+    // 二次答对仍经历过错误，不累加独立复习连续正确次数。
+    correctStreak: 0,
     wrongCount:
       result === "second_try_correct"
         ? existing?.wrongCount ?? 0
@@ -92,7 +90,8 @@ export function applyReviewResult(
   source: ReviewSession["source"],
 ): Record<string, ReviewItem> {
   const existing = items[itemId];
-  if (!existing) return items;
+  if (!existing || existing.removed) return items;
+  if (source === "end_of_day" && existing.history.some(h => h.source === source && reviewDate(h.reviewedAt) === reviewDate(now))) return items;
   const result: ReviewResult = correct ? "review_correct" : "wrong";
   const correctStreak = correct
     ? existing.correctStreak + 1
@@ -140,7 +139,7 @@ export function getDueReviews(
   today: string,
 ): ReviewItem[] {
   return Object.values(items)
-    .filter((i) => !i.removed && i.nextReviewAt <= today && i.masteryStatus !== "mastered")
+    .filter((i) => !i.removed && i.nextReviewAt <= reviewDate(today))
     .sort(compareByPriority);
 }
 
@@ -149,14 +148,8 @@ function compareByPriority(a: ReviewItem, b: ReviewItem): number {
   const pa = PRIORITY_RANK[a.masteryStatus];
   const pb = PRIORITY_RANK[b.masteryStatus];
   if (pa !== pb) return pa - pb;
-  const overdueA = dayDifference(a.nextReviewAt, today);
-  const overdueB = dayDifference(b.nextReviewAt, today);
-  if (overdueA !== overdueB) return overdueB - overdueA;
-  return a.createdAt.localeCompare(b.createdAt);
+  return a.nextReviewAt.localeCompare(b.nextReviewAt) || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id);
 }
-
-let today = ""; // 闭包用
-function _setToday(d: string) { today = d; }
 
 /** 从到期 items 里按 cap 选今天复习的一批 */
 export function selectDailyReviews(
@@ -164,7 +157,6 @@ export function selectDailyReviews(
   today: string,
   intensity: "light" | "standard" | "intense",
 ): ReviewItem[] {
-  _setToday(today);
   const due = getDueReviews(items, today);
   const cap = DAILY_REVIEW_CAP[intensity];
   return due.slice(0, cap);
@@ -191,16 +183,16 @@ export function createReviewSession(
   source: ReviewSession["source"],
 ): ReviewSession {
   return {
-    id: `rs-${Date.now().toString(36)}`,
-    date,
+    id: `rs-${crypto.randomUUID()}`,
+    date: reviewDate(date),
     mode,
-    itemIds: items.map((i) => i.id),
+    itemIds: [...new Set(items.filter(i => !i.removed).map((i) => i.id))],
     currentIndex: 0,
     answers: {},
     startedAt: new Date().toISOString(),
     source,
     applied: false,
-    rewardXp: items.length > 0 ? Math.min(items.length * 2, 20) : 0,
+    rewardXp: 0,
   };
 }
 
@@ -209,12 +201,25 @@ export function finishReviewSession(
   items: Record<string, ReviewItem>,
   session: ReviewSession,
   now: string,
-): { items: Record<string, ReviewItem>; xpByItem: Record<string, number> } {
+  ledger: Record<string, number> = {},
+): { items: Record<string, ReviewItem>; xpByItem: Record<string, number>; session: ReviewSession; xpLedger: Record<string, number> } {
+  const unchanged = { items, xpByItem: {}, session, xpLedger: ledger };
+  if (session.applied || session.itemIds.length === 0 || session.currentIndex !== session.itemIds.length || new Set(session.itemIds).size !== session.itemIds.length) return unchanged;
+  if (Object.keys(session.answers).length !== session.itemIds.length || session.itemIds.some(id => !items[id] || !session.answers[id] || (session.answers[id].correct ? session.answers[id].result !== "review_correct" : session.answers[id].result !== "wrong"))) return unchanged;
   let next = items;
   const xpByItem: Record<string, number> = {};
-  for (const [itemId, answer] of Object.entries(session.answers)) {
+  const xpLedger = { ...ledger };
+  const date = reviewDate(now);
+  let rewardXp = 0;
+  for (const itemId of session.itemIds) {
+    const answer = session.answers[itemId];
+    const before = next[itemId];
     next = applyReviewResult(next, itemId, answer.correct, now, session.source);
-    xpByItem[itemId] = answer.correct ? 2 : 0;
+    const key = `review:${date}:${itemId}`;
+    const xp = before !== next[itemId] && answer.correct && xpLedger[key] === undefined && rewardXp < 20 ? 2 : 0;
+    xpByItem[itemId] = xp;
+    if (xp) xpLedger[key] = xp;
+    rewardXp += xp;
   }
-  return { items: next, xpByItem };
+  return { items: next, xpByItem, xpLedger, session: { ...session, applied: true, completedAt: now, rewardXp } };
 }

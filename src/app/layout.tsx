@@ -9,6 +9,7 @@ import { ListeningProvider } from "@/components/listening/ListeningProvider";
 import { TranslationProvider } from "@/components/translation/TranslationProvider";
 import { WritingProvider } from "@/components/writing/WritingProvider";
 import { DailyPlanProvider } from "@/components/dailyPlan/DailyPlanProvider";
+import { ReviewProvider } from "@/components/review/ReviewProvider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "六级日常 · 每天向前一点",
@@ -34,7 +35,9 @@ export default function RootLayout({
                   <TranslationProvider>
                     <WritingProvider>
                       <DailyPlanProvider>
-                        <AppShell>{children}</AppShell>
+                        <ReviewProvider>
+                          <AppShell>{children}</AppShell>
+                        </ReviewProvider>
                       </DailyPlanProvider>
                     </WritingProvider>
                   </TranslationProvider>

@@ -8,7 +8,6 @@ import {
   recordWrong,
   reviewItemId,
   selectDailyReviews,
-  selectManualReviews,
 } from "../src/lib/review/scheduler";
 import {
   MASTERED_STREAK,
@@ -111,8 +110,10 @@ test("9. 末尾复测仍错 -> unmastered", () => {
 test("10. 当天每题最多复测一次", () => {
   let s = recordWrong({}, "reading", "a", "q1", TODAY, "wrong");
   s = applyReviewResult(s, reviewItemId("reading", "a", "q1"), false, TODAY, "end_of_day");
+  const repeated = applyReviewResult(s, reviewItemId("reading", "a", "q1"), true, TODAY, "end_of_day");
+  assert.strictEqual(repeated, s);
   const h = s[reviewItemId("reading", "a", "q1")].history;
-  assert.ok(h.length >= 2);
+  assert.equal(h.length, 2);
 });
 
 // 11. nextReviewAt
@@ -140,8 +141,8 @@ test("13. unmastered 优先", () => {
 // 14. overdue 优先
 test("14. overdue 优先", () => {
   const items: Record<string, ReviewItem> = {
-    a: item("reading", "a", "q1", { nextReviewAt: addDays(TODAY, -5), masteryStatus: "reviewing" }),
     b: item("reading", "b", "q1", { nextReviewAt: TODAY, masteryStatus: "reviewing" }),
+    a: item("reading", "a", "q1", { nextReviewAt: addDays(TODAY, -5), masteryStatus: "reviewing" }),
   };
   const due = getDueReviews(items, TODAY);
   assert.equal(due[0].id, item("reading", "a", "q1").id);
@@ -179,20 +180,24 @@ test("17. ReviewSession 创建", () => {
 // 18. ReviewSession 恢复（mock：currentIndex 保留）
 test("18. ReviewSession 恢复", () => {
   const s = createReviewSession([item("reading", "a", "q1"), item("reading", "b", "q1")], TODAY, "manual", "manual");
-  s.currentIndex = 3;
-  s.answers = { "x": { correct: true, result: "review_correct" } };
-  assert.equal(s.currentIndex, 3);
+  s.currentIndex = 1;
+  s.answers = { [s.itemIds[0]]: { correct: true, result: "review_correct" } };
+  const store = emptyReviewStore();
+  for (const q of [item("reading", "a", "q1"), item("reading", "b", "q1")]) store.items[q.id] = q;
+  store.sessions[s.id] = s;
+  const loaded = loadReviewStore({length:1,clear:()=>{},key:()=>null,getItem:()=>JSON.stringify(store),setItem:()=>{},removeItem:()=>{}});
+  assert.deepEqual(loaded.store.sessions[s.id], s);
 });
 
 // 19. ReviewSession 完成
 test("19. ReviewSession 完成", () => {
-  let items: Record<string, ReviewItem> = {
-    a: item("reading", "a", "q1"),
-  };
+  const q = item("reading", "a", "q1");
+  const items = { [q.id]: q };
   const s = createReviewSession(Object.values(items), TODAY, "daily", "daily_plan");
-  s.answers = { a: { correct: true, result: "review_correct" } };
+  s.answers = { [q.id]: { correct: true, result: "review_correct" } };
+  s.currentIndex = 1;
   const { items: next } = finishReviewSession(items, s, TODAY);
-  assert.equal(next.a.correctStreak, 1);
+  assert.equal(next[q.id].correctStreak, 1);
 });
 
 // 20. XP 防重复（ledger key）
@@ -263,7 +268,7 @@ test("28. 听力生词来源", () => {
 
 // 29. 多来源合并
 test("29. 多来源合并", () => {
-  let s: Record<string, ReviewItem> = {
+  const s: Record<string, ReviewItem> = {
     "word:sign": { ...item("reading", "art1", "sign"), contentType: "word", sources: ["reading"] },
   };
   const cur = s["word:sign"];
@@ -273,7 +278,7 @@ test("29. 多来源合并", () => {
 
 // 30. 生词不重复
 test("30. 生词不重复", () => {
-  let s: Record<string, ReviewItem> = {};
+  const s: Record<string, ReviewItem> = {};
   const id = "word:sign";
   s[id] = { ...item("reading", "art1", "sign"), contentType: "word" };
   s[id] = { ...s[id], sources: ["reading", "listening"] };
@@ -309,7 +314,7 @@ test("34. masteredThreshold", () => {
 
 // 35. 手动标记掌握
 test("35. 手动标记掌握", () => {
-  let s = recordWrong({}, "vocabulary", "b", "w1", TODAY, "wrong");
+  const s = recordWrong({}, "vocabulary", "b", "w1", TODAY, "wrong");
   const id = reviewItemId("vocabulary", "b", "w1");
   s[id] = { ...s[id], masteryStatus: "mastered" };
   assert.equal(s[id].masteryStatus, "mastered");
@@ -326,7 +331,7 @@ test("36. 已掌握再次答错降级", () => {
 
 // 37. Review History
 test("37. Review History", () => {
-  let s = recordWrong({}, "reading", "a", "q1", TODAY, "wrong");
+  const s = recordWrong({}, "reading", "a", "q1", TODAY, "wrong");
   const it = s[reviewItemId("reading", "a", "q1")];
   assert.equal(it.history.length, 1);
   assert.equal(it.history[0].result, "wrong");
@@ -378,10 +383,11 @@ test("43. LocalStorage persistence", () => {
     removeItem: (k: string) => void mem.delete(k),
   } as unknown as Storage;
   const s = emptyReviewStore();
-  s.items["a"] = item("reading", "a", "q1");
+  const q = item("reading", "a", "q1");
+  s.items[q.id] = q;
   storage.setItem("cet-daily:v1:review", JSON.stringify(s));
   const loaded = loadReviewStore(storage);
-  assert.ok(loaded.store.items["a"]);
+  assert.ok(loaded.store.items[q.id]);
 });
 
 // 44. schemaVersion

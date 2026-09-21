@@ -34,7 +34,7 @@ export interface ReviewHistoryEntry {
 }
 
 export interface ReviewItem {
-  id: string; // `${sourceModule}:${questionId}` 或 `word:${wordId}`
+  id: string; // `${sourceModule}:${sourceActivityId}:${questionId}` 或 `word:${wordId}`
   contentType: ReviewContentType;
   sourceModule: ReviewSourceModule;
   sourceActivityId: string; // 哪篇阅读/听力/词集
