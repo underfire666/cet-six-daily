@@ -1,14 +1,7 @@
 import { addDays, dayDifference } from "@/lib/dates";
-import type { Lesson, ModuleKey, User } from "@/types/study";
-export const mockUser: User = {
-  nickname: "一翔",
-  streak: 7,
-  level: 12,
-  title: "进阶者",
-  xp: 1240,
-  nextLevelXp: 1500,
-};
-// Fixed at implementation time: 2026-09-15 + 87 calendar days. Not an official exam date.
+import type { Lesson, ModuleKey } from "@/types/study";
+// NOTE: mockUser 演示基线（1240 XP / Lv.12 / streak 7）已从生产逻辑移除，
+// 生产用户状态由 src/lib/lesson/profile.ts userFor 从真实学习记录推导（0 基线）。
 export const mockExamDate = "2026-12-11";
 export const modules: {
   key: ModuleKey;

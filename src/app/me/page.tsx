@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, Flame, BookMarked, RotateCcw, Settings, Bell, Volume2, Info, Target, CalendarDays, BarChart3 } from "lucide-react";
+import { ArrowRight, BookMarked, RotateCcw, Settings, Bell, Volume2, Info, Target, CalendarDays } from "lucide-react";
 import { useProfile } from "@/components/profile/ProfileProvider";
 
 export default function MePage() {
-  const { profile, stats, examDate, examDaysLeft, ready } = useProfile();
+  const { profile, stats, examDate, examText, ready } = useProfile();
 
   if (!ready || !profile || !stats) {
     return <main className="me-page"><p className="me-loading">加载中…</p></main>;
@@ -21,7 +21,7 @@ export default function MePage() {
           <div>
             <h2>六级备考</h2>
             <p className="me-hero-sub">
-              目标 {profile.targetScore} 分 · {examDate ? `距考试 ${examDaysLeft ?? "-"} 天` : "未设置考试日期"}
+              目标 {profile.targetScore} 分 · {examDate ? examText : "未设置考试日期"}
             </p>
           </div>
           <div className="me-hero-badges">
