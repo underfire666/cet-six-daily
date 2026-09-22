@@ -1,17 +1,24 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V9 数据层（尚未接入页面，不可标记整版完成）
+## 当前工作版本：V10 Content System 1.0（修复完成，待人工验收，feature/v10-content-system）
 
-### V9 检查与数据层修复（2026-09-21）
+### V10 修复（2026-09-22）
 
-- 检查提交 `c228eef`：仅新增 review 类型、配置、算法、存储和测试，没有应用层调用；提交标题中的“complete V9”不代表需求已完整实现。
-- 修复日期计算：同时接受日历日期和带时区时间戳，按 Asia/Shanghai 处理跨午夜、跨年与闰年；无效日期明确拒绝。
-- 到期排序去掉隐式全局日期，按掌握状态、到期日、创建时间和 ID 稳定排序；已掌握内容到期后仍允许低频复习。
-- 二次答对只进入待巩固，不累加独立复习连续正确次数；复习间隔按 3/7/14/30 天递增。当天末尾复测每题按上海日期最多应用一次。
-- 新建 session 使用 UUID、题目去重、奖励初始为 0；未答完、外来答案、已结算会话不能结算。`completeReview` 同步提交题目状态、会话和账本，同题同日奖励去重，按实际完成日计 XP，每批最多 20 XP。
-- 存储校验覆盖有效日期、历史记录、计数、会话索引、答案、ID 一致性及题目引用；坏记录隔离并提示，不清空其他有效记录。增加实际回归测试，修复原测试中的 ESLint 错误。
-- **尚未实现**：ReviewProvider 与正常学习自动收录、错题本列表/详情/答题/结果页、收藏/移除 UI、V8 Daily Plan 自动插入及负荷比例控制、当天末尾复测入口、生词本 2.0 来源合并与迁移、复习奖励接入全局 XP。这些属于未实现功能，不能用现有纯函数测试通过来代替验收。
-- 本轮仅修复已提交复习数据层，不新增上述页面或改动 V4–V8 学习流程；未提交或上传修复。
+- V10 = 统一 Content Layer：页面（词汇/阅读/听力/翻译/写作）不再直读 Mock 数组，全部经 `@/content/learning`（application adapters）→ Content Repository → Registry → ContentPack。Mock 数据注册为 5 个内置 Pack（`pack-*-mock`），来源 `src-mock-original`（type=mock, license=unknown）。
+- Review Repository Replay：`/review/session/[id]` 经 Content Repository 回放原题（题干/选项/正确答案/用户作答/短解析），Reading 关联原文、Listening 关联材料与 Transcript；ReviewItem 只存稳定 ID + 可选最小快照 `lastWrongOptionId`；旧数据/缺失内容优雅降级不白屏。
+- Content Importer：`src/content/importer.ts` 实现 Raw JSON → Parse → Normalize → Validate → Duplicate Check → Pack → Registry 流水线（`importContentPackFromJson` / `importAndRegisterContentPack`），拒绝 invalid JSON / missing id / unknown source / duplicate id / invalid correctAnswer / invalid contentType；纯元数据补默认，关键字段严格校验。
+- Schema 补齐：`skillTags` 已支持；`PassageQuestion.evidence` / `ListeningQuestion.evidence`（可选 `{paragraphId?, sentenceId?}`）新增，Mock 内容不伪造。
+- Difficulty 统一：`src/content/difficulty.ts` 的 `unifiedDifficulty()` 把词汇 1–5 映射 easy/normal/hard，阅读/听力原值，翻译/写作注册时补 normal；`content:stats` 不再出现 `unspecified`。
+- DailyPlan 分层保持：V8 PlanGenerator 只选模块/数量，专项经 ContentSelector + Repository 取内容（集成测试证明五专项计划 ID 均可经 Repository 解析，同日刷新结果稳定）。
+- 文档：新增 `V10交付说明.md`；lint 0 error 0 warning（清理 ReviewProvider/review 页未用变量，不用 eslint-disable）。
+- 验证：263/263 测试通过，typecheck / lint / build / content:validate(0 error) / content:stats 全绿。
+- 未 merge main、未打 v10.0、未建 Release、未开始 V11（等人工验收）。
+
+### V9 数据层与完整学习闭环（2026-09-21，已 merge main + v9.0 tag）
+
+- V9 完整实现错题本/生词本/自动复习 2.0：ReviewProvider 自动收录阅读/听力答题记录（首错+复测错→wrong，首错+复测对→second_try_correct；词汇由 V4 自己管），错题本列表/筛选/收藏/移除/重新激活，手动复习、每日到期复习、当天末尾复测（每题每日最多一次），复习答题页 + 结果页 + 刷新恢复；XP 复用全局机制，单题同日上限 2、单 session 上限 20，`completeReview` 原子提交。
+- 生词本 2.0：词汇/阅读/听力来源合并，同词不重复建档，复用 V4 掌握状态体系；错题本与生词本独立入口。
+- 存储 `cet-daily:v1:review`（schemaVersion=1），坏记录单独隔离不清空；日期统一 Asia/Shanghai；保存失败明确提示。
 
 ### V8 个性化每日计划修复（2026-09-21）
 
@@ -85,7 +92,8 @@ V5 已正式开放并验收通过“阅读”专项：每日固定 3 篇阅读�
 - 每日总关卡：通用答题、一次重试、末尾一次复测、Mock AI 提示、解析、未掌握详情、完成奖励及断点续学。
 - 词汇：30 个示例词、卡片、浏览器发音、三类巩固题、掌握状态、简单间隔复习、生词本与本地持久化。
 - 阅读：6 篇原创文章、每日 3 篇、阅读→答题→复测流程、生词点击查义并加入统一生词本、完成页正确率与 XP。
-- AI、我的及听力、翻译、写作专项继续占位。没有数据库、真实登录、真实 AI API、真实 CET-6 词库。
+- 听力/翻译/写作：听力 7 组本地音频、每日任务、即时变速；翻译/写作每日各 1 篇、草稿恢复、Mock 批改。
+- V10 内容层：所有专项内容经统一 Content Layer（ContentSource/Pack/Registry/Repository/Selector/Validator/Importer）获取；内容仍为 Mock，未接真实题库。没有数据库、真实登录、真实 AI API、真实 CET-6 词库。
 
 ## V4 规则
 
@@ -125,6 +133,6 @@ V5 已正式开放并验收通过“阅读”专项：每日固定 3 篇阅读�
 
 ## 检查命令
 
-`npm test`、`npm run typecheck`、`npm run lint`、`npm run build`。
+`npm test`、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run content:validate`、`npm run content:stats`。
 
-重点验收：每日 20→额外 10→再额外 20，仍保持每日 20/20、额外累计 30；刷新恢复、收藏、XP 去重、跨日、375/390/430px 与桌面布局，以及原每日关卡回归。阅读：每日 3 篇进度与完成态、阅读→答题→复测全流程、生词点击查义加入统一生词本且与词汇生词去重、XP 首次/跨日/同日重复规则、刷新恢复、`/practice/reading` 系列路由 200。
+重点验收：每日 20→额外 10→再额外 20，仍保持每日 20/20、额外累计 30；刷新恢复、收藏、XP 去重、跨日、375/390/430px 与桌面布局，以及原每日关卡回归。阅读：每日 3 篇进度与完成态、阅读→答题→复测全流程、生词点击查义加入统一生词本且与词汇生词去重、XP 首次/跨日/同日重复规则、刷新恢复、`/practice/reading` 系列路由 200。V10：错题复习页回放原题（题干/选项/用户作答/答案/解析）、阅读/听力原文关联、缺失内容降级、Importer 拒绝坏 JSON、content:stats 无 unspecified。

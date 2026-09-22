@@ -1,4 +1,7 @@
-import { mockTranslationTasks } from "@/data/mockTranslation";
+import { translationTaskById } from "@/content/learning";
+import { selectContent } from "@/content/selector";
+import { getTranslationTasks } from "@/content/learning";
+
 import { todayInShanghai } from "@/lib/dates";
 import type {
   TranslationDailyProgress,
@@ -30,14 +33,7 @@ export function pickDailyTranslation(
   date: string,
   count = DAILY_TRANSLATION_COUNT,
 ): string[] {
-  const total = mockTranslationTasks.length;
-  if (!total) return [];
-  const dayNumber = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
-  const seed = ((dayNumber % total) + total) % total;
-  const ids: string[] = [];
-  for (let i = 0; i < count; i++)
-    ids.push(mockTranslationTasks[(seed + i) % total].id);
-  return ids;
+  return selectContent({pool:getTranslationTasks(),limit:count,seed:date+":translation",idOf:item=>item.id}).items.map(item=>item.id);
 }
 
 export function planFor(store: TranslationStore, date: string): TranslationDailyProgress {
@@ -50,21 +46,19 @@ export function planFor(store: TranslationStore, date: string): TranslationDaily
   };
 }
 
-function pickExtraTask(store: TranslationStore, plannedIds: string[]): string {
+function pickExtraTask(store: TranslationStore, plannedIds: string[]): string | undefined {
   const planned = new Set(plannedIds);
   const completed = new Set(
     Object.values(store.sessions)
       .filter((s) => s.applied)
       .map((s) => s.taskId),
   );
-  const fresh = mockTranslationTasks
+  const fresh = getTranslationTasks()
     .map((t) => t.id)
     .find((id) => !planned.has(id) && !completed.has(id));
   if (fresh) return fresh;
   // 用完则循环（跨日重复仅得表现分 XP）
-  return mockTranslationTasks[
-    Math.floor(Math.random() * mockTranslationTasks.length)
-  ].id;
+  return selectContent({pool:getTranslationTasks(),limit:1,seed:plannedIds.join(":")+Object.keys(store.sessions).length,excludeIds:new Set([...planned,...completed]),idOf:item=>item.id,allowRepeat:true}).items[0]?.id;
 }
 
 export function startTranslation(
@@ -94,7 +88,7 @@ export function startTranslation(
     taskId = pickExtraTask(store, progress.taskIds);
   }
   if (!taskId) return { store, id: undefined };
-  const task = mockTranslationTasks.find((t) => t.id === taskId);
+  const task = translationTaskById(taskId);
   if (!task) return { store, id: undefined };
   const session = createTranslationSession(id, mode, date, task, now);
   return {
@@ -121,7 +115,7 @@ export function updateTranslation(
 ): TranslationStore {
   const previous = store.sessions[id];
   if (!previous || previous.applied) return store;
-  const task = mockTranslationTasks.find((t) => t.id === previous.taskId);
+  const task = translationTaskById(previous.taskId);
   if (!task) return store;
   const session = reduceTranslationSession(previous, action, task);
   if (session === previous) return store;

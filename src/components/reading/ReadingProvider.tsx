@@ -112,7 +112,7 @@ function useReadingState() {
     plan,
     progress: plan,
     dailyComplete:
-      plan.completedArticleIds.length === plan.articleIds.length,
+      plan.articleIds.length > 0 && plan.completedArticleIds.length === plan.articleIds.length,
     active,
     previousDaily: inProgress.find(
       (s) => s.mode === "daily" && s.planDate !== today,

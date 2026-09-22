@@ -3,16 +3,18 @@ import type { ReadingArticle } from "@/types/reading";
 import type { ListeningMaterial } from "@/types/listening";
 import type { TranslationTask } from "@/types/translation";
 import type { WritingTask } from "@/types/writing";
-import { getActiveItems, getContentPack } from "./registry";
+import { getActiveItems, getContentPack, getItems } from "./registry";
+import { resolveAlias } from "./aliases";
 import { registerBuiltinPacks } from "./packs";
 import { normalizeWord } from "./normalize";
 
-let bootstrapped = false;
 function ensureBootstrap() {
-  if (!bootstrapped) {
-    registerBuiltinPacks();
-    bootstrapped = true;
-  }
+  registerBuiltinPacks();
+}
+
+function byId<T extends { id: string }>(type: string, id: string): T | undefined {
+  ensureBootstrap();
+  return getItems<T>(type).find(item => item.id === resolveAlias(id));
 }
 
 export const vocabularyRepository = {
@@ -21,7 +23,7 @@ export const vocabularyRepository = {
     return getActiveItems<Word>("vocabulary");
   },
   getById(id: string): Word | undefined {
-    return this.all().find((w) => w.id === id);
+    return byId<Word>("vocabulary", id);
   },
   getByWord(word: string): Word | undefined {
     const n = normalizeWord(word);
@@ -54,7 +56,7 @@ export const readingRepository = {
     return getActiveItems<ReadingArticle>("reading");
   },
   getById(id: string): ReadingArticle | undefined {
-    return this.all().find((a) => a.id === id);
+    return byId<ReadingArticle>("reading", id);
   },
   getByDifficulty(d: "easy" | "normal" | "hard"): ReadingArticle[] {
     return this.all().filter((a) => a.difficulty === d);
@@ -70,7 +72,7 @@ export const listeningRepository = {
     return getActiveItems<ListeningMaterial>("listening");
   },
   getById(id: string): ListeningMaterial | undefined {
-    return this.all().find((m) => m.id === id);
+    return byId<ListeningMaterial>("listening", id);
   },
   getByDifficulty(d: "easy" | "normal" | "hard"): ListeningMaterial[] {
     return this.all().filter((m) => m.difficulty === d);
@@ -83,7 +85,7 @@ export const translationRepository = {
     return getActiveItems<TranslationTask>("translation");
   },
   getById(id: string): TranslationTask | undefined {
-    return this.all().find((t) => t.id === id);
+    return byId<TranslationTask>("translation", id);
   },
 };
 
@@ -93,7 +95,7 @@ export const writingRepository = {
     return getActiveItems<WritingTask>("writing");
   },
   getById(id: string): WritingTask | undefined {
-    return this.all().find((t) => t.id === id);
+    return byId<WritingTask>("writing", id);
   },
 };
 

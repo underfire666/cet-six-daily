@@ -53,6 +53,7 @@ function validItem(v: unknown): v is ReviewItem {
     num(v.priority) &&
     bool(v.favorite) &&
     bool(v.removed) &&
+    (v.lastWrongOptionId === undefined || str(v.lastWrongOptionId)) &&
     Array.isArray(v.history) &&
     v.history.every(validHistory) &&
     (v.sources === undefined || (Array.isArray(v.sources) && v.sources.every(s => ["vocabulary", "reading", "listening"].includes(String(s))))) &&

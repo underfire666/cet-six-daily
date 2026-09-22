@@ -999,3 +999,21 @@ button:disabled {
 .review-complete-note { color: #868e96; font-size: 13px; }
 .review-actions { display: flex; gap: 10px; margin-top: 16px; }
 .review-actions button { flex: 1; }
+
+/* ===== V10 Review Replay ===== */
+.review-replay-options { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; text-align: left; }
+.review-replay-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #dee2e6; border-radius: 10px; background: #fff; }
+.review-replay-option.correct { border-color: #2b8a3e; background: #ebfbee; }
+.review-replay-option.wrong-pick { border-color: #e03131; background: #fff5f5; }
+.review-replay-option-id { font-weight: 600; color: #495057; min-width: 18px; }
+.review-replay-option-text { flex: 1; font-size: 14px; }
+.review-replay-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+.review-replay-badge.ok { background: #b2f2bb; color: #2b8a3e; }
+.review-replay-badge.bad { background: #ffc9c9; color: #e03131; }
+.review-replay-explanation { margin-top: 12px; padding: 10px 12px; background: #f1f3f5; border-radius: 10px; font-size: 13px; color: #495057; text-align: left; }
+.review-replay-source { margin-top: 12px; border: 1px solid #e9ecef; border-radius: 10px; background: #fff; }
+.review-replay-source summary { display: flex; align-items: center; gap: 6px; padding: 10px 12px; font-size: 13px; color: #1971c2; cursor: pointer; }
+.review-replay-source p { margin: 0; padding: 0 12px 12px; font-size: 13px; color: #495057; line-height: 1.7; }
+.review-replay-missing { padding: 16px; border: 1px dashed #dee2e6; border-radius: 10px; background: #f8f9fa; margin-top: 12px; }
+.review-replay-missing h2 { font-size: 16px; margin: 0 0 8px; }
+.review-replay-missing p { font-size: 13px; color: #868e96; margin: 0; }

@@ -1,9 +1,11 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft, Check, FileText, X } from "lucide-react";
 import { useReview } from "@/components/review/ReviewProvider";
+import { replayReviewItem } from "@/lib/review/replay";
 import { useMemo } from "react";
 import { shortDate } from "@/lib/dates";
+import { reviewDate } from "@/lib/review/config";
 import type { ReviewMastery } from "@/types/review";
 
 const MASTERY_LABEL: Record<ReviewMastery, string> = {
@@ -11,6 +13,11 @@ const MASTERY_LABEL: Record<ReviewMastery, string> = {
   weak: "需加强",
   reviewing: "复习中",
   mastered: "已掌握",
+};
+const MODULE_LABEL: Record<string, string> = {
+  vocabulary: "词汇",
+  reading: "阅读",
+  listening: "听力",
 };
 
 export default function ReviewSessionPage() {
@@ -25,6 +32,11 @@ export default function ReviewSessionPage() {
     const id = session.itemIds[session.currentIndex];
     return id ? store.items[id] : null;
   }, [session, store.items]);
+
+  const replay = useMemo(
+    () => (currentItem ? replayReviewItem(currentItem) : null),
+    [currentItem],
+  );
 
   if (!ready) return <main className="review-page"><p>加载中…</p></main>;
   if (!session) return <main className="review-page"><p>会话不存在。<button onClick={() => router.push("/review")}>返回</button></p></main>;
@@ -51,7 +63,7 @@ export default function ReviewSessionPage() {
         <button className="exercise-icon-button" onClick={() => router.push("/review")}>
           <ArrowLeft size={20} />
         </button>
-        <span>今日复习 {progress} / {total}</span>
+        <span>复习 {progress} / {total}</span>
       </header>
 
       <div className="review-session-bar">
@@ -60,26 +72,66 @@ export default function ReviewSessionPage() {
 
       <section className="review-question">
         <p className="review-question-source">
-          {currentItem.sourceModule === "vocabulary" ? "词汇" : currentItem.sourceModule === "reading" ? "阅读" : "听力"}
-          · {currentItem.questionId}
+          {MODULE_LABEL[currentItem.sourceModule] ?? currentItem.sourceModule} · {replay?.activityTitle ?? currentItem.questionId}
         </p>
-        <h2>这道题你还记得答案吗？</h2>
         <p className="review-question-meta">
-          上次错于 {shortDate(currentItem.createdAt)} · 当前状态 {MASTERY_LABEL[currentItem.masteryStatus]} · 已复习 {currentItem.reviewCount} 次
-        </p>
-        <p className="review-question-hint">
-          复习模式：凭记忆回想，然后诚实地告诉自己是否掌握。
+          上次错于 {shortDate(reviewDate(currentItem.createdAt))} · 当前 {MASTERY_LABEL[currentItem.masteryStatus]} · 已复习 {currentItem.reviewCount} 次
         </p>
 
-        <div className="review-choices">
-          <button className="review-choice wrong" onClick={() => choose(false)}>
-            <X size={22} /> 还需加强
-          </button>
-          <button className="review-choice right" onClick={() => choose(true)}>
-            <Check size={22} /> 我会了
-          </button>
-        </div>
+        {replay ? (
+          <>
+            <h2>{replay.prompt}</h2>
+            <div className="review-replay-options">
+              {replay.options.map((opt) => {
+                const isCorrect = opt.id === replay.correctOptionId;
+                const isWrongPick = opt.id === replay.wrongOptionId;
+                let cls = "review-replay-option";
+                if (isCorrect) cls += " correct";
+                if (isWrongPick) cls += " wrong-pick";
+                return (
+                  <div key={opt.id} className={cls}>
+                    <span className="review-replay-option-id">{opt.id}</span>
+                    <span className="review-replay-option-text">{opt.text}</span>
+                    {isCorrect && <span className="review-replay-badge ok">正确答案</span>}
+                    {isWrongPick && <span className="review-replay-badge bad">你的作答</span>}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="review-replay-explanation">{replay.shortExplanation}</p>
+
+            {replay.articlePassage && (
+              <details className="review-replay-source">
+                <summary><FileText size={14} /> 查看原文</summary>
+                <p>{replay.articlePassage}</p>
+              </details>
+            )}
+            {replay.transcript && (
+              <details className="review-replay-source">
+                <summary><FileText size={14} /> 查看听力原文</summary>
+                <p>{replay.transcript}</p>
+              </details>
+            )}
+          </>
+        ) : (
+          <div className="review-replay-missing">
+            <h2>原题内容已不可用</h2>
+            <p>
+              题目来源（{MODULE_LABEL[currentItem.sourceModule] ?? currentItem.sourceModule} · {currentItem.questionId}）
+              已不在当前内容库中。你仍可凭记忆自评，不会影响其余复习。
+            </p>
+          </div>
+        )}
       </section>
+
+      <div className="review-choices">
+        <button className="review-choice wrong" onClick={() => choose(false)}>
+          <X size={22} /> 还需加强
+        </button>
+        <button className="review-choice right" onClick={() => choose(true)}>
+          <Check size={22} /> 我会了
+        </button>
+      </div>
     </main>
   );
 }

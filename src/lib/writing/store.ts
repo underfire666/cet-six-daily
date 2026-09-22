@@ -1,4 +1,7 @@
-import { mockWritingTasks } from "@/data/mockWriting";
+import { writingTaskById } from "@/content/learning";
+import { selectContent } from "@/content/selector";
+import { getWritingTasks } from "@/content/learning";
+
 import { todayInShanghai } from "@/lib/dates";
 import type {
   WritingDailyProgress,
@@ -29,14 +32,7 @@ export function pickDailyWriting(
   date: string,
   count = DAILY_WRITING_COUNT,
 ): string[] {
-  const total = mockWritingTasks.length;
-  if (!total) return [];
-  const dayNumber = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
-  const seed = ((dayNumber % total) + total) % total;
-  const ids: string[] = [];
-  for (let i = 0; i < count; i++)
-    ids.push(mockWritingTasks[(seed + i) % total].id);
-  return ids;
+  return selectContent({pool:getWritingTasks(),limit:count,seed:date+":writing",idOf:item=>item.id}).items.map(item=>item.id);
 }
 
 export function planWritingFor(store: WritingStore, date: string): WritingDailyProgress {
@@ -49,20 +45,18 @@ export function planWritingFor(store: WritingStore, date: string): WritingDailyP
   };
 }
 
-function pickExtraTask(store: WritingStore, plannedIds: string[]): string {
+function pickExtraTask(store: WritingStore, plannedIds: string[]): string | undefined {
   const planned = new Set(plannedIds);
   const completed = new Set(
     Object.values(store.sessions)
       .filter((s) => s.applied)
       .map((s) => s.taskId),
   );
-  const fresh = mockWritingTasks
+  const fresh = getWritingTasks()
     .map((t) => t.id)
     .find((id) => !planned.has(id) && !completed.has(id));
   if (fresh) return fresh;
-  return mockWritingTasks[
-    Math.floor(Math.random() * mockWritingTasks.length)
-  ].id;
+  return selectContent({pool:getWritingTasks(),limit:1,seed:plannedIds.join(":")+Object.keys(store.sessions).length,excludeIds:new Set([...planned,...completed]),idOf:item=>item.id,allowRepeat:true}).items[0]?.id;
 }
 
 export function startWriting(
@@ -92,7 +86,7 @@ export function startWriting(
     taskId = pickExtraTask(store, progress.taskIds);
   }
   if (!taskId) return { store, id: undefined };
-  const task = mockWritingTasks.find((t) => t.id === taskId);
+  const task = writingTaskById(taskId);
   if (!task) return { store, id: undefined };
   const session = createWritingSession(id, mode, date, task, now);
   return {
@@ -116,7 +110,7 @@ export function updateWriting(
 ): WritingStore {
   const previous = store.sessions[id];
   if (!previous || previous.applied) return store;
-  const task = mockWritingTasks.find((t) => t.id === previous.taskId);
+  const task = writingTaskById(previous.taskId);
   if (!task) return store;
   const session = reduceWritingSession(previous, action, task);
   if (session === previous) return store;

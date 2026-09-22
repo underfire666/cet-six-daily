@@ -1,4 +1,7 @@
-import { mockReadingArticles } from "@/data/mockReading";
+import { readingArticleById } from "@/content/learning";
+import { selectContent } from "@/content/selector";
+import { getReadingArticles } from "@/content/learning";
+
 import { todayInShanghai } from "@/lib/dates";
 import type {
   ReadingDailyProgress,
@@ -16,14 +19,7 @@ export function pickDailyArticles(
   date: string,
   count = DAILY_ARTICLE_COUNT,
 ): string[] {
-  const total = mockReadingArticles.length;
-  if (!total) return [];
-  const dayNumber = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
-  const seed = ((dayNumber % total) + total) % total;
-  const ids: string[] = [];
-  for (let i = 0; i < count; i++)
-    ids.push(mockReadingArticles[(seed + i) % total].id);
-  return ids;
+  return selectContent({pool:getReadingArticles(),limit:count,seed:date+":reading",idOf:item=>item.id}).items.map(item=>item.id);
 }
 
 export function planFor(
@@ -56,11 +52,11 @@ function pickExtraArticle(
       )
       .map((s) => s.articleId),
   );
-  const fresh = mockReadingArticles
+  const fresh = getReadingArticles()
     .map((a) => a.id)
     .find((id) => !planned.has(id) && !completedToday.has(id));
   if (fresh) return fresh;
-  return mockReadingArticles.map((a) => a.id).find((id) => !planned.has(id));
+  return selectContent({pool:getReadingArticles(),limit:1,seed:date+":extra:"+Object.keys(store.sessions).length,excludeIds:new Set([...planned,...completedToday]),idOf:item=>item.id,allowRepeat:true}).items[0]?.id;
 }
 
 export function startReading(
@@ -90,7 +86,7 @@ export function startReading(
     articleId = pickExtraArticle(store, date, progress.articleIds);
   }
   if (!articleId) return { store, id: undefined };
-  const article = mockReadingArticles.find((a) => a.id === articleId);
+  const article = readingArticleById(articleId);
   if (!article) return { store, id: undefined };
   const session = createReadingSession(id, mode, date, article, now);
   return {

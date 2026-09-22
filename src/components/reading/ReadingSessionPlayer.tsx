@@ -1,10 +1,12 @@
 "use client";
+import { readingArticleById, readingWordByKey } from "@/content/learning";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Sparkles } from "lucide-react";
-import { readingArticleById } from "@/data/mockReading";
-import { readingWordByKey } from "@/data/readingVocabulary";
+
+
 import { currentQuestion, sessionProgress } from "@/lib/lesson/session";
 import { readingLesson } from "@/lib/reading/questions";
 import { playFeedback } from "@/lib/lesson/feedback";

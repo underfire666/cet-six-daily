@@ -108,7 +108,7 @@ function useListeningState() {
     store,
     plan,
     progress: plan,
-    dailyComplete: plan.completedMaterialIds.length === plan.materialIds.length,
+    dailyComplete: plan.materialIds.length > 0 && plan.completedMaterialIds.length === plan.materialIds.length,
     ...listeningResumeSessions(store, today),
     dayStats: listeningDayStats(store, today),
     start,

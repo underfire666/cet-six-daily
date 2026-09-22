@@ -1,8 +1,10 @@
 "use client";
+import { readingArticleById } from "@/content/learning";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, Check, Zap } from "lucide-react";
-import { readingArticleById } from "@/data/mockReading";
+
 import { readingLesson } from "@/lib/reading/questions";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useReading } from "./ReadingProvider";

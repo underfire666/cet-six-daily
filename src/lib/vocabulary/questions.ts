@@ -11,9 +11,13 @@ function choices(
   words: Word[],
   field: "word" | "meaning",
 ): Option[] {
-  const distractors = vocabularyExercises[answer.word].distractors.map(
-    (name) => words.find((w) => w.word === name)!,
-  );
+  const curated = vocabularyExercises[answer.word]?.distractors ?? [];
+  const candidates = [...curated.map(name => words.find(w=>w.word===name)), ...words];
+  const seen = new Set([answer[field]]);
+  const distractors = candidates.filter((word): word is Word => {
+    if (!word || seen.has(word[field])) return false;
+    seen.add(word[field]); return true;
+  }).slice(0,3);
   return [answer, ...distractors]
     .map((item) => ({ id: item.id, text: item[field] }))
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -51,7 +55,7 @@ export function vocabularyQuestion(
       ...common,
       type: "fill_blank",
       prompt: "选择合适的词，补全句子",
-      sentence: vocabularyExercises[word.word].sentence,
+      sentence: vocabularyExercises[word.word]?.sentence ?? word.example.replace(new RegExp(word.word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), "_____"),
       options: choices(word, words, "word"),
     };
   return {

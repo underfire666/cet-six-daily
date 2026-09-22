@@ -1,5 +1,6 @@
+import { wordById, getHistoricalVocabulary } from "@/content/learning";
 import { validDate } from "@/lib/dates";
-import { wordById, mockVocabulary } from "@/data/mockVocabulary";
+
 import { validSession, type KeyStorage } from "@/lib/lesson/storage";
 import { vocabularyQuestion } from "./questions";
 import type {
@@ -94,7 +95,7 @@ function validVocabularySession(v: unknown): v is VocabularySession {
   const questions = v.wordIds.map((id) =>
     vocabularyQuestion(
       wordById(id)!,
-      mockVocabulary,
+      getHistoricalVocabulary(),
       (v.questionTypes as Record<string, VocabularyQuestionType>)[id],
     ),
   );

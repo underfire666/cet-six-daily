@@ -34,6 +34,7 @@ export function TranslationHome() {
         <h1>翻译</h1>
       </header>
       {t.notice && <p className="subjective-notice">{t.notice}</p>}
+      {t.ready && !total && <p className="subjective-notice">暂无可用翻译内容，请稍后再试。</p>}
       <section className="subjective-today">
         <div className="subjective-section-title">
           <span>
@@ -63,7 +64,7 @@ export function TranslationHome() {
           <button
             className="subjective-button"
             onClick={main}
-            disabled={!t.ready}
+            disabled={!t.ready || !total}
           >
             <Languages size={18} />
             {mainLabel}

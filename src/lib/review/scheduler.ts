@@ -29,6 +29,7 @@ export function recordWrong(
   questionId: string,
   now: string,
   result: "wrong" | "unmastered" | "second_try_correct",
+  wrongOptionId?: string,
 ): Record<string, ReviewItem> {
   const id = reviewItemId(sourceModule, sourceActivityId, questionId);
   const existing = items[id];
@@ -75,6 +76,9 @@ export function recordWrong(
     priority,
     favorite: existing?.favorite ?? false,
     removed: false, // 再次答错重新激活
+    ...(wrongOptionId || existing?.lastWrongOptionId
+      ? { lastWrongOptionId: wrongOptionId ?? existing?.lastWrongOptionId }
+      : {}),
     history,
     schemaVersion: 1,
   };

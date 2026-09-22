@@ -33,6 +33,11 @@ export interface ListeningQuestion {
   shortExplanation: string;
   detailedExplanation: string;
   hint: string;
+  /** V10 证据定位（可选）：Transcript 段落 / 句子定位，不强制 Mock 内容伪造 */
+  evidence?: {
+    paragraphId?: string;
+    sentenceId?: string;
+  };
 }
 
 export interface ListeningMaterial {

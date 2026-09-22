@@ -3,13 +3,14 @@ import { mockReadingArticles } from "@/data/mockReading";
 import { mockListeningMaterials } from "@/data/mockListening";
 import { mockTranslationTasks } from "@/data/mockTranslation";
 import { mockWritingTasks } from "@/data/mockWriting";
-import { registerContentPack } from "./registry";
+import { registerContentPack, getContentPack } from "./registry";
 import { MOCK_SOURCE } from "./sources";
 import type { ContentPack } from "./types";
 
 /** 把现有 Mock 数据注册为 ContentPack。source.type=mock, license=unknown。 */
 export function registerBuiltinPacks(): void {
-  const now = new Date().toISOString();
+  if (["vocabulary","reading","listening","translation","writing"].every(type => getContentPack(`pack-${type}-mock`))) return;
+  const now = "2026-09-21T00:00:00.000Z";
 
   const vocab: ContentPack = {
     id: "pack-vocabulary-mock",
@@ -67,6 +68,17 @@ export function registerBuiltinPacks(): void {
   };
 
   for (const pack of [vocab, reading, listening, translation, writing]) {
+    if (getContentPack(pack.id)) continue;
+    pack.items = pack.items.map(raw => ({
+      status: "active", version: pack.version, sourceId: pack.sourceId,
+      type: pack.contentType, authenticity: "practice", tags: [],
+      createdAt: now, updatedAt: now,
+      // translation/writing 内容数据无难度字段：注册时补统一难度 normal（不伪造内容）
+      ...(pack.contentType === "translation" || pack.contentType === "writing"
+        ? { difficulty: "normal" as const }
+        : {}),
+      ...raw as object,
+    }));
     registerContentPack(pack);
   }
 }

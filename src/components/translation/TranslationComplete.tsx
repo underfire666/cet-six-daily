@@ -1,8 +1,10 @@
 "use client";
+import { translationTaskById } from "@/content/learning";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Languages, Zap } from "lucide-react";
-import { translationTaskById } from "@/data/mockTranslation";
+
 import { useTranslation } from "./TranslationProvider";
 
 export function TranslationComplete({ id }: { id: string }) {

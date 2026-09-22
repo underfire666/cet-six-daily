@@ -1,10 +1,11 @@
+import { listeningMaterialById } from "@/content/learning";
 import type { SessionAction } from "@/types/session";
 import type {
   ListeningMaterial,
   ListeningRate,
   ListeningSession,
 } from "@/types/listening";
-import { listeningMaterialById } from "@/data/mockListening";
+
 import { createSession, reduceSession } from "@/lib/lesson/session";
 import { listeningLesson } from "./questions";
 

@@ -1,5 +1,6 @@
-import { listeningMaterialById } from "@/data/mockListening";
-import { listeningWordById } from "@/data/listeningVocabulary";
+import { listeningMaterialById, listeningWordById } from "@/content/learning";
+
+
 import { validDate } from "@/lib/dates";
 import { validSession, type KeyStorage } from "@/lib/lesson/storage";
 import { listeningLesson } from "./questions";

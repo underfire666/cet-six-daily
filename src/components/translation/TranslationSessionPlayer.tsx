@@ -1,9 +1,11 @@
 "use client";
+import { translationTaskById } from "@/content/learning";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronDown, Languages } from "lucide-react";
-import { translationTaskById } from "@/data/mockTranslation";
+
 import { useTranslation } from "./TranslationProvider";
 
 export function TranslationSessionPlayer({ id }: { id: string }) {

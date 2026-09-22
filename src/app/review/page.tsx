@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, CheckCircle2, Clock3, RotateCcw, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, Bookmark, CheckCircle2, RotateCcw, Star, Trash2 } from "lucide-react";
 import { useReview } from "@/components/review/ReviewProvider";
 import { useState } from "react";
 import { shortDate } from "@/lib/dates";
@@ -22,7 +22,7 @@ const MASTERY_COLOR: Record<ReviewMastery, string> = {
 
 export default function ReviewHomePage() {
   const router = useRouter();
-  const { store, dueToday, stats, startSession, toggleFavorite, remove, restore, ready } = useReview();
+  const { store, dueToday, stats, startSession, toggleFavorite, remove, ready } = useReview();
   const [filter, setFilter] = useState<"all" | "due" | "unmastered" | "favorite" | "mastered">("all");
 
   const items = Object.values(store.items)

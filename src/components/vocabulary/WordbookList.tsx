@@ -1,8 +1,10 @@
 "use client";
+import { wordById } from "@/content/learning";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, BookMarked } from "lucide-react";
-import { wordById } from "@/data/mockVocabulary";
+
 import { useVocabulary } from "./VocabularyProvider";
 import { WordCard, WordAudioButton } from "./WordCard";
 import { VocabularyHeading } from "./VocabularyDashboard";

@@ -11,7 +11,6 @@ import {
 import { useToday } from "@/components/StudyProvider";
 import { useReading } from "@/components/reading/ReadingProvider";
 import { useListening } from "@/components/listening/ListeningProvider";
-import { useVocabulary } from "@/components/vocabulary/VocabularyProvider";
 import { useLearning } from "@/components/LearningProvider";
 import type {
   ReviewItem,
@@ -31,15 +30,31 @@ import {
   selectDailyReviews,
   selectManualReviews,
 } from "@/lib/review/scheduler";
-import { reviewDate } from "@/lib/review/config";
 
 const Context = createContext<ReturnType<typeof useReviewState> | null>(null);
+
+interface ScannableRecord {
+  initial?: { optionId?: string; correct?: boolean }[];
+  retest?: { optionId?: string; correct?: boolean }[];
+  initialResult?: string;
+}
+interface ScannableSession {
+  lesson?: { records?: Record<string, ScannableRecord> };
+  articleId?: string;
+  materialId?: string;
+}
+
+/** 用户在该题上答错过的选项 id（minimal snapshot，用于复习回放标注"你的作答"）。 */
+function wrongOptionOf(record: ScannableRecord | undefined): string | undefined {
+  const miss = (attempts: { optionId?: string; correct?: boolean }[] | undefined) =>
+    attempts?.find((a) => a.correct === false)?.optionId;
+  return miss(record?.initial) ?? miss(record?.retest);
+}
 
 function useReviewState() {
   const today = useToday();
   const reading = useReading();
   const listening = useListening();
-  const vocab = useVocabulary();
   const learning = useLearning();
 
   const [store, setStore] = useState<ReviewStore>(emptyReviewStore);
@@ -81,8 +96,8 @@ function useReviewState() {
     let changed = false;
     const now = new Date().toISOString();
     const scan = (
-      sessions: Record<string, { lesson?: { records?: Record<string, { initialResult?: string; retest?: { correct?: boolean }[]; initial?: { correct?: boolean }[] }> }; articleId?: string; materialId?: string; wordIds?: string[]; date?: string }>,
-      module: "reading" | "listening" | "vocabulary",
+      sessions: Record<string, ScannableSession>,
+      module: "reading" | "listening",
     ) => {
       for (const s of Object.values(sessions)) {
         const records = s.lesson?.records;
@@ -91,14 +106,14 @@ function useReviewState() {
         for (const [qid, r] of Object.entries(records)) {
           if (qid.startsWith("vq:")) continue;
           const initialWrong = r.initialResult === "wrong";
-          const retestWrong = (r.initial ?? []).some((a) => !a.correct);
           const secondWrong = (r.retest ?? []).some((a) => !a.correct);
           const secondCorrect = (r.retest ?? []).some((a) => a.correct);
+          const wrongOptionId = wrongOptionOf(r);
           if (initialWrong && secondWrong) {
-            next = { ...next, items: recordWrong(next.items, module, activityId, qid, now, "wrong") };
+            next = { ...next, items: recordWrong(next.items, module, activityId, qid, now, "wrong", wrongOptionId) };
             changed = true;
           } else if (initialWrong && secondCorrect) {
-            next = { ...next, items: recordWrong(next.items, module, activityId, qid, now, "second_try_correct") };
+            next = { ...next, items: recordWrong(next.items, module, activityId, qid, now, "second_try_correct", wrongOptionId) };
             changed = true;
           }
         }

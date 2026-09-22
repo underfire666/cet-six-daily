@@ -1,9 +1,11 @@
 "use client";
+import { wordById } from "@/content/learning";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, Sprout } from "lucide-react";
-import { wordById } from "@/data/mockVocabulary";
+
 import { currentQuestion, sessionProgress } from "@/lib/lesson/session";
 import { currentVocabularyWordId } from "@/lib/vocabulary/session";
 import { playFeedback } from "@/lib/lesson/feedback";

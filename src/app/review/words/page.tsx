@@ -6,7 +6,7 @@ import { useVocabulary } from "@/components/vocabulary/VocabularyProvider";
 
 export default function WordsPage() {
   const router = useRouter();
-  const { wordbook, store } = useVocabulary();
+  const { wordbook } = useVocabulary();
 
   const dueCount = wordbook.filter(
     (s) => s.needsReview && s.masteryStatus !== "mastered",

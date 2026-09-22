@@ -297,9 +297,12 @@ test("XP：同一天重复同一篇得 0，不刷分", () => {
   assert.ok(before > 0);
   const repeat = startReading(store, "extra", DAY, NOW, "x4");
   assert.ok(repeat.id);
-  assert.equal(repeat.store.sessions.x4.articleId, firstArticle);
+  const repeatedId = repeat.store.sessions.x4.articleId;
+  const repeatedBefore = store.xpLedger[`reading:day:${DAY}:${repeatedId}`];
+  assert.ok(repeatedBefore > 0);
   store = finish(repeat.store, "x4", "all-correct");
   assert.equal(store.sessions.x4.rewardXp, 0);
+  assert.equal(store.xpLedger[`reading:day:${DAY}:${repeatedId}`], repeatedBefore);
   assert.equal(
     store.xpLedger[`reading:day:${DAY}:${firstArticle}`],
     before,

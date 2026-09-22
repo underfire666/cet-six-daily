@@ -28,7 +28,7 @@ export interface SelectOptions<T> {
 
 export interface SelectResult<T> {
   items: T[];
-  fallbackReason?: "pool_small" | "all_excluded";
+  fallbackReason?: "pool_small" | "all_excluded" | "recent_repeated";
 }
 
 /**
@@ -37,23 +37,28 @@ export interface SelectResult<T> {
  */
 export function selectContent<T>(opts: SelectOptions<T>): SelectResult<T> {
   const { pool, limit, seed, excludeIds, idOf, allowRepeat = false } = opts;
+  if (!Number.isSafeInteger(limit) || limit < 0) throw new RangeError("limit must be a non-negative integer");
+  if (limit === 0) return { items: [] };
   const rng = mulberry32(hashString(seed));
 
   // 复制后用确定性 RNG 洗牌
-  const shuffled = [...pool].sort(() => rng() - 0.5);
+  const shuffled = [...new Map(pool.map(item => [idOf(item), item])).values()].sort((a,b) => idOf(a).localeCompare(idOf(b)));
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
 
   const fresh = excludeIds ? shuffled.filter((x) => !excludeIds.has(idOf(x))) : shuffled;
   const out = fresh.slice(0, limit);
 
   let fallbackReason: SelectResult<T>["fallbackReason"];
   if (out.length < limit) {
-    if (fresh.length === 0 && excludeIds && pool.length > 0) {
-      if (allowRepeat) {
-        out.push(...shuffled.filter((x) => !out.includes(x)).slice(0, limit - out.length));
-        fallbackReason = "all_excluded";
-      }
-    } else {
-      fallbackReason = "pool_small";
+    fallbackReason = fresh.length === 0 && shuffled.length > 0 ? "all_excluded" : "pool_small";
+    if (allowRepeat) {
+      const ids = new Set(out.map(idOf));
+      const fill = shuffled.filter(x => !ids.has(idOf(x))).slice(0,limit-out.length);
+      out.push(...fill);
+      if (fill.length && fresh.length) fallbackReason = "recent_repeated";
     }
   }
   return { items: out, fallbackReason };

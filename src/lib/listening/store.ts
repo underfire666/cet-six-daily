@@ -1,4 +1,7 @@
-import { mockListeningMaterials } from "@/data/mockListening";
+import { listeningMaterialById } from "@/content/learning";
+import { selectContent } from "@/content/selector";
+import { getListeningMaterials } from "@/content/learning";
+
 import { todayInShanghai } from "@/lib/dates";
 import type {
   ListeningDailyProgress,
@@ -29,14 +32,7 @@ export function pickDailyListening(
   date: string,
   count = DAILY_LISTENING_COUNT,
 ): string[] {
-  const total = mockListeningMaterials.length;
-  if (!total) return [];
-  const dayNumber = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
-  const seed = ((dayNumber % total) + total) % total;
-  const ids: string[] = [];
-  for (let i = 0; i < count; i++)
-    ids.push(mockListeningMaterials[(seed + i) % total].id);
-  return ids;
+  return selectContent({pool:getListeningMaterials(),limit:count,seed:date+":listening",idOf:item=>item.id}).items.map(item=>item.id);
 }
 
 export function planFor(
@@ -69,11 +65,11 @@ function pickExtraMaterial(
       )
       .map((s) => s.materialId),
   );
-  const fresh = mockListeningMaterials
+  const fresh = getListeningMaterials()
     .map((m) => m.id)
     .find((id) => !planned.has(id) && !completedToday.has(id));
   if (fresh) return fresh;
-  return mockListeningMaterials.map((m) => m.id).find((id) => !planned.has(id));
+  return selectContent({pool:getListeningMaterials(),limit:1,seed:date+":extra:"+Object.keys(store.sessions).length,excludeIds:new Set([...planned,...completedToday]),idOf:item=>item.id,allowRepeat:true}).items[0]?.id;
 }
 
 export function startListening(
@@ -103,7 +99,7 @@ export function startListening(
     materialId = pickExtraMaterial(store, date, progress.materialIds);
   }
   if (!materialId) return { store, id: undefined };
-  const material = mockListeningMaterials.find((m) => m.id === materialId);
+  const material = listeningMaterialById(materialId);
   if (!material) return { store, id: undefined };
   const session = createListeningSession(id, mode, date, material, now);
   return {

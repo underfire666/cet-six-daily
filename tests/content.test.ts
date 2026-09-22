@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { registerBuiltinPacks } from "../src/content/packs";
 import {
-  getActiveItems,
   getContentPack,
   listContentPacks,
   registerContentPack,
@@ -129,7 +128,7 @@ test("selector: deterministic by seed", () => {
 
 test("selector: excludeIds filters", () => {
   const pool = [{ id: "a" }, { id: "b" }, { id: "c" }];
-  const r = selectContent({ pool, limit: 5, seed: "x", excludeIds: new Set(["a", "b"]), idOf: (x) => x.id, allowRepeat: true });
+  const r = selectContent({ pool, limit: 5, seed: "x", excludeIds: new Set(["a", "b"]), idOf: (x) => x.id, allowRepeat: false });
   assert.ok(r.items.every((i) => i.id !== "a" && i.id !== "b"));
 });
 

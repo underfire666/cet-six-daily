@@ -1,4 +1,5 @@
-﻿import { translationTaskById } from "@/data/mockTranslation";
+import { translationTaskById } from "@/content/learning";
+﻿
 import { validDate } from "@/lib/dates";
 import type { KeyStorage } from "@/lib/lesson/storage";
 import type {

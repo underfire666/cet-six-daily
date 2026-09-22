@@ -24,11 +24,14 @@ export interface ExamPaper {
   authenticity: "original" | "practice" | "past_exam";
 }
 
-export function validatePaper(paper: ExamPaper): string[] {
+export function validatePaper(value: unknown): string[] {
   const errors: string[] = [];
+  if (!value || typeof value !== "object") return ["invalid paper"];
+  const paper = value as ExamPaper;
   if (!paper.id) errors.push("paper missing id");
   if (!paper.year || paper.year < 2000) errors.push(`paper ${paper.id} bad year`);
   if (![6, 12].includes(paper.month)) errors.push(`paper ${paper.id} bad month`);
-  if (!paper.sections || paper.sections.length === 0) errors.push(`paper ${paper.id} no sections`);
+  if (!Array.isArray(paper.sections) || paper.sections.length === 0) errors.push(`paper ${paper.id} no sections`);
+  else if (paper.sections.some(s => !s || !["writing","listening","reading","translation"].includes(s.kind) || !Array.isArray(s.itemIds) || !s.itemIds.length || s.itemIds.some(id=>typeof id !== "string" || !id))) errors.push("invalid paper section references");
   return errors;
 }

@@ -1,9 +1,11 @@
 "use client";
+import { writingTaskById } from "@/content/learning";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronDown, NotebookPen } from "lucide-react";
-import { writingTaskById } from "@/data/mockWriting";
+
 import { countWords } from "@/lib/writing/scoring";
 import { useWriting } from "./WritingProvider";
 

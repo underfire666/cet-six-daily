@@ -1,8 +1,5 @@
-import {
-  mockVocabulary,
-  vocabularySettings,
-  wordById,
-} from "@/data/mockVocabulary";
+import { getVocabulary, getHistoricalVocabulary, vocabularySettings, wordById } from "@/content/learning";
+
 import type {
   VocabularyStore,
   VocabularySessionMode,
@@ -75,7 +72,7 @@ export function addWordToWordbook(
   };
 }
 function rankedWords(store: VocabularyStore) {
-  return [...mockVocabulary].sort((a, b) =>
+  return [...getVocabulary()].sort((a, b) =>
     (store.states[a.id]?.lastReviewedAt ?? "").localeCompare(
       store.states[b.id]?.lastReviewedAt ?? "",
     ),
@@ -174,7 +171,7 @@ export function startVocabulary(
     ),
   );
   if (!ids.length) return { store, id: undefined };
-  const definition = vocabularyLesson(ids, mockVocabulary, store.states);
+  const definition = vocabularyLesson(ids, getHistoricalVocabulary(), store.states);
   const questionTypes = Object.fromEntries(
     ids.map((wordId, index) => [
       wordId,

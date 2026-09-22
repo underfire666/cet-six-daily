@@ -1,10 +1,12 @@
 "use client";
+import { listeningMaterialById, listeningWordByKey } from "@/content/learning";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Headphones, RotateCcw, Sparkles } from "lucide-react";
-import { listeningMaterialById } from "@/data/mockListening";
-import { listeningWordByKey } from "@/data/listeningVocabulary";
+
+
 import { currentQuestion, sessionProgress } from "@/lib/lesson/session";
 import { listeningLesson } from "@/lib/listening/questions";
 import { playFeedback } from "@/lib/lesson/feedback";

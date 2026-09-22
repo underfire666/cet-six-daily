@@ -54,7 +54,7 @@ export function ListeningHome() {
         <p className="listening-sub">
           {completed
             ? "今日任务完成，再听一组也不多。"
-            : "每天听一点，让耳朵习惯六级。"}
+            : total === 0 ? "暂无可用听力内容，请稍后再试。" : total < 3 ? `当前可用 ${total} 组，先完成这些内容。` : "每天听一点，让耳朵习惯六级。"}
         </p>
         <div
           className="listening-bar"
@@ -69,7 +69,7 @@ export function ListeningHome() {
           <button
             className="listening-button"
             onClick={main}
-            disabled={!listening.ready}
+            disabled={!listening.ready || !total}
           >
             <Headphones size={18} />
             {mainLabel}

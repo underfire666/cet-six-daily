@@ -1,4 +1,5 @@
-﻿import { writingTaskById } from "@/data/mockWriting";
+import { writingTaskById } from "@/content/learning";
+﻿
 import { validDate } from "@/lib/dates";
 import type { KeyStorage } from "@/lib/lesson/storage";
 import type {

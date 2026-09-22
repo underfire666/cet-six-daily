@@ -1,4 +1,6 @@
 "use client";
+import { wordById, vocabularySettings } from "@/content/learning";
+
 import {
   createContext,
   useCallback,
@@ -7,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { wordById, vocabularySettings } from "@/data/mockVocabulary";
+
 import { todayInShanghai } from "@/lib/dates";
 import { newVocabularyState } from "@/lib/vocabulary/mastery";
 import { getWordsDueForReview } from "@/lib/vocabulary/reviewScheduler";
@@ -169,7 +171,7 @@ function useVocabularyState() {
       (b) => batchProgress(store, b.id).completed < b.target,
     ),
     dayStats: vocabularyDayStats(store, today),
-    dailyComplete: plan.completedWordIds.length === plan.wordIds.length,
+    dailyComplete: plan.wordIds.length > 0 && plan.completedWordIds.length === plan.wordIds.length,
     settings: vocabularySettings,
     due: getWordsDueForReview(store.states, now),
     wordbook: Object.values(store.states).filter((s) => s.addedToWordbook),

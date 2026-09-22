@@ -52,6 +52,8 @@ export interface ReviewItem {
   removed: boolean;
   /** word 类型：来源合并 */
   sources?: ReviewSourceModule[];
+  /** minimal snapshot：用户上次答错的选项 id，用于复习回放时标注"你的作答"；旧数据可缺省 */
+  lastWrongOptionId?: string;
   history: ReviewHistoryEntry[];
   schemaVersion: 1;
 }

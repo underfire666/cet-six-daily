@@ -1,8 +1,10 @@
 "use client";
+import { listeningMaterialById } from "@/content/learning";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Headphones, Repeat, Zap } from "lucide-react";
-import { listeningMaterialById } from "@/data/mockListening";
+
 import { listeningLesson } from "@/lib/listening/questions";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useListening } from "./ListeningProvider";

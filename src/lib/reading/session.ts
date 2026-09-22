@@ -1,6 +1,7 @@
+import { readingArticleById } from "@/content/learning";
 import type { SessionAction } from "@/types/session";
 import type { ReadingArticle, ReadingSession } from "@/types/reading";
-import { readingArticleById } from "@/data/mockReading";
+
 import { createSession, reduceSession } from "@/lib/lesson/session";
 import { readingLesson } from "./questions";
 

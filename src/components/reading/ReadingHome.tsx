@@ -48,13 +48,13 @@ export function ReadingHome() {
         <p className="reading-sub">
           {completed
             ? "今日任务完成，再读一篇也不多。"
-            : "读完 3 篇短文，顺便收获生词。"}
+            : total === 0 ? "暂无可用阅读内容，请稍后再试。" : total < 3 ? `当前可用 ${total} 篇，先完成这些内容。` : "读完 3 篇短文，顺便收获生词。"}
         </p>
         <div className="reading-bar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
           <span style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
         </div>
         <div className="reading-actions">
-          <button className="reading-button" onClick={main}>
+          <button className="reading-button" onClick={main} disabled={!reading.ready || !total}>
             <BookOpen size={18} />
             {mainLabel}
           </button>

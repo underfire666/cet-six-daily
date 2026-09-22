@@ -1,5 +1,6 @@
-import { readingArticleById } from "@/data/mockReading";
-import { readingWordById } from "@/data/readingVocabulary";
+import { readingArticleById, readingWordById } from "@/content/learning";
+
+
 import { validDate } from "@/lib/dates";
 import { validSession, type KeyStorage } from "@/lib/lesson/storage";
 import { readingLesson } from "./questions";

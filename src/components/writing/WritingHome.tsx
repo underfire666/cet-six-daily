@@ -34,6 +34,7 @@ export function WritingHome() {
         <h1>写作</h1>
       </header>
       {w.notice && <p className="subjective-notice">{w.notice}</p>}
+      {w.ready && !total && <p className="subjective-notice">暂无可用写作内容，请稍后再试。</p>}
       <section className="subjective-today">
         <div className="subjective-section-title">
           <span>
@@ -63,7 +64,7 @@ export function WritingHome() {
           <button
             className="subjective-button"
             onClick={main}
-            disabled={!w.ready}
+            disabled={!w.ready || !total}
           >
             <NotebookPen size={18} />
             {mainLabel}
