@@ -1,4 +1,4 @@
-// Domain-level sync adapters: call these from stores/services after a successful
+﻿// Domain-level sync adapters: call these from stores/services after a successful
 // local mutation. They no-op when the user is a guest (no session).
 //
 // Local-first: call the local write first, then enqueue. The queue is keyed by
@@ -126,7 +126,7 @@ export function enqueueDailyPlan(opts: {
     entityType: "dailyPlan",
     entityId: opts.planDate,
     operation: "upsert",
-    payload: { payload: { completedTaskIds: opts.completedTaskIds } },
+    payload: { completedTaskIds: opts.completedTaskIds },
   });
 }
 
@@ -195,3 +195,4 @@ export function useSyncUserIdSync() {
   if (currentUserId !== userId) setId(userId);
   return userId;
 }
+

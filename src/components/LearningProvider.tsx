@@ -20,6 +20,8 @@ import {
   type SavedStudy,
 } from "@/lib/lesson/storage";
 import { createSession, reduceSession } from "@/lib/lesson/session";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueXpEvent, enqueueSession, enqueueSettings } from "@/lib/sync/adapters";
 import type {
   FeedbackSettings,
   SessionAction,
@@ -48,7 +50,7 @@ function useLearningState() {
       if (!active) return;
       let local: Storage | undefined;
       try {
-        local = window.localStorage;
+        local = getScopedStorage() as Storage | undefined;
       } catch {
         /* Storage can be denied in private browsing. */
       }
@@ -98,6 +100,15 @@ function useLearningState() {
         profile: result.profile,
         sessions: { ...latest.current.sessions, [key]: result.session },
       });
+      enqueueSession({
+        sessionId: result.session.id,
+        module: "daily",
+        activityId: key,
+        planDate: result.session.date,
+        startedAt: result.session.startedAt,
+        completedAt: result.session.phase === "complete" ? new Date().toISOString() : undefined,
+        status: result.session.phase === "complete" ? "completed" : "in_progress",
+      });
     },
     [commit],
   );
@@ -118,6 +129,7 @@ function useLearningState() {
     (settings: FeedbackSettings) => {
       storage.current?.saveSettings(settings);
       commit({ ...latest.current, settings });
+      enqueueSettings({ feedback: settings });
     },
     [commit],
   );
@@ -133,6 +145,16 @@ function useLearningState() {
       };
       storage.current?.saveProfile(profile);
       commit({ ...latest.current, profile });
+      // eventId looks like "vocabulary:<id>", "reading:<id>", etc.
+      const source = eventId.split(":")[0] ?? "bonus";
+      enqueueXpEvent({
+        eventId,
+        source: ["vocabulary", "reading", "listening", "review", "translation", "writing", "daily_lesson", "achievement", "bonus"].includes(source)
+          ? source
+          : "bonus",
+        sourceId: eventId,
+        amount: xp,
+      });
     },
     [commit],
   );

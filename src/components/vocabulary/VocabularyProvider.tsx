@@ -26,6 +26,8 @@ import {
   loadVocabularyStore,
   saveVocabularyStore,
 } from "@/lib/vocabulary/storage";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueWordbook } from "@/lib/sync/adapters";
 import type { VocabularyAction } from "@/lib/vocabulary/session";
 import type {
   VocabularySessionMode,
@@ -57,7 +59,7 @@ function useVocabularyState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadVocabularyStore(storage.current);
       latest.current = loaded.store;
@@ -125,6 +127,11 @@ function useVocabularyState() {
           ...latest.current.states,
           [wordId]: { ...previous, addedToWordbook: !previous.addedToWordbook },
         },
+      });
+      enqueueWordbook({
+        wordId,
+        addedAt: new Date().toISOString(),
+        removed: previous.addedToWordbook, // if it was in book, toggling off = remove
       });
     },
     [commit],
