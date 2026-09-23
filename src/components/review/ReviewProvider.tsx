@@ -26,30 +26,14 @@ import {
 } from "@/lib/review/store";
 import {
   createReviewSession,
-  recordWrong,
+  getDueReviews,
   selectDailyReviews,
   selectManualReviews,
 } from "@/lib/review/scheduler";
 
+import { importReviewEvents } from "@/lib/review/import";
+
 const Context = createContext<ReturnType<typeof useReviewState> | null>(null);
-
-interface ScannableRecord {
-  initial?: { optionId?: string; correct?: boolean }[];
-  retest?: { optionId?: string; correct?: boolean }[];
-  initialResult?: string;
-}
-interface ScannableSession {
-  lesson?: { records?: Record<string, ScannableRecord> };
-  articleId?: string;
-  materialId?: string;
-}
-
-/** 用户在该题上答错过的选项 id（minimal snapshot，用于复习回放标注"你的作答"）。 */
-function wrongOptionOf(record: ScannableRecord | undefined): string | undefined {
-  const miss = (attempts: { optionId?: string; correct?: boolean }[] | undefined) =>
-    attempts?.find((a) => a.correct === false)?.optionId;
-  return miss(record?.initial) ?? miss(record?.retest);
-}
 
 function useReviewState() {
   const today = useToday();
@@ -89,42 +73,23 @@ function useReviewState() {
     };
   }, []);
 
-  // 自动收录：扫 reading/listening/vocabulary sessions 的 records
+  // 等来源存档全部加载后，按持久化事件账本幂等收录。
   useEffect(() => {
-    if (!ready) return;
-    let next = latest.current;
-    let changed = false;
-    const now = new Date().toISOString();
-    const scan = (
-      sessions: Record<string, ScannableSession>,
-      module: "reading" | "listening",
-    ) => {
-      for (const s of Object.values(sessions)) {
-        const records = s.lesson?.records;
-        if (!records) continue;
-        const activityId = s.articleId ?? s.materialId ?? "daily";
-        for (const [qid, r] of Object.entries(records)) {
-          if (qid.startsWith("vq:")) continue;
-          const initialWrong = r.initialResult === "wrong";
-          const secondWrong = (r.retest ?? []).some((a) => !a.correct);
-          const secondCorrect = (r.retest ?? []).some((a) => a.correct);
-          const wrongOptionId = wrongOptionOf(r);
-          if (initialWrong && secondWrong) {
-            next = { ...next, items: recordWrong(next.items, module, activityId, qid, now, "wrong", wrongOptionId) };
-            changed = true;
-          } else if (initialWrong && secondCorrect) {
-            next = { ...next, items: recordWrong(next.items, module, activityId, qid, now, "second_try_correct", wrongOptionId) };
-            changed = true;
-          }
-        }
-      }
-    };
-    // reading/listening store.sessions
-    scan((reading.store.sessions ?? {}) as never, "reading");
-    scan((listening.store.sessions ?? {}) as never, "listening");
-    // vocabulary 由 V4 自己管，不重复收录
-    if (changed) commit(next);
-  }, [ready, reading.store.sessions, listening.store.sessions, commit]);
+    if (!ready || !reading.ready || !listening.ready) return;
+    const next = importReviewEvents(latest.current, [
+      { module: "reading", sessions: reading.store.sessions },
+      { module: "listening", sessions: listening.store.sessions },
+    ], new Date().toISOString());
+    if (next !== latest.current) commit(next);
+  }, [ready, reading.ready, listening.ready, reading.store.sessions, listening.store.sessions, commit]);
+
+  const awardXp = learning.awardXp;
+  useEffect(() => {
+    if (!ready || !learning.ready) return;
+    for (const session of Object.values(store.sessions)) {
+      if (session.applied && session.rewardXp > 0) awardXp(`review-session:${session.id}`, session.rewardXp);
+    }
+  }, [ready, learning.ready, store.sessions, awardXp]);
 
   const dueToday = useMemo(
     () => selectDailyReviews(store.items, today, "standard"),
@@ -144,7 +109,7 @@ function useReviewState() {
   const answer = useCallback(
     (sessionId: string, itemId: string, correct: boolean) => {
       const s = latest.current.sessions[sessionId];
-      if (!s || s.applied) return;
+      if (!s || s.applied || s.itemIds[s.currentIndex] !== itemId || s.answers[itemId]) return;
       const answers: Record<string, { correct: boolean; result: ReviewResult }> = {
         ...s.answers,
         [itemId]: { correct, result: correct ? "review_correct" : "wrong" },
@@ -163,15 +128,10 @@ function useReviewState() {
     (sessionId: string) => {
       const done = completeReview(latest.current, sessionId, new Date().toISOString());
       if (done !== latest.current) {
-        // 发 XP
-        const session = done.sessions[sessionId];
-        if (session?.applied && session.rewardXp > 0) {
-          learning.awardXp(`review-session:${sessionId}`, session.rewardXp);
-        }
         commit(done);
       }
     },
-    [commit, learning],
+    [commit],
   );
 
   const toggleFavorite = useCallback(
@@ -214,12 +174,12 @@ function useReviewState() {
     const all = Object.values(store.items).filter((i) => !i.removed);
     return {
       total: all.length,
-      due: dueToday.length,
+      due: getDueReviews(store.items, today).length,
       unmastered: all.filter((i) => i.masteryStatus === "weak").length,
       mastered: all.filter((i) => i.masteryStatus === "mastered").length,
       favorite: all.filter((i) => i.favorite).length,
     };
-  }, [store.items, dueToday]);
+  }, [store.items, today]);
 
   return {
     ready,

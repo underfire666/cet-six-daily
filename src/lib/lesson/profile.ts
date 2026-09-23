@@ -37,11 +37,14 @@ export function levelFor(totalXp: number): { level: number; xp: number; title: s
 }
 
 /**
- * Streak：只按真实完成日（rewardsByDay）计算。
+ * Streak：按真实完成日（rewardsByDay + 新版每日计划完成奖励）计算。
  * 完成"今日总关卡"才增加；漏 1 天保留（从昨天起算）；连续漏 2 天清零。
  */
 export function streakFor(profile: StudyProfile, today: string) {
   const days = new Set(Object.keys(profile.rewardsByDay));
+  for (const key of Object.keys(profile.bonusXpEvents ?? {})) {
+    if (/^daily-plan-complete:\d{4}-\d{2}-\d{2}$/.test(key)) days.add(key.slice("daily-plan-complete:".length));
+  }
   let cursor = days.has(today) ? today : addDays(today, -1);
   let count = 0;
   while (days.has(cursor)) {
@@ -56,11 +59,15 @@ export function streakFor(profile: StudyProfile, today: string) {
  * 基线为 0（不再叠加 mockUser 的演示 XP/Level/Streak），
  * 只累计真实获得的奖励 XP 与 bonus XP。
  */
-export function userFor(profile: StudyProfile, today: string): User {
-  const total =
+export function totalXpFor(profile: StudyProfile): number {
+  return (
     Object.values(profile.rewardsByDay).reduce((n, reward) => n + reward.xp, 0) +
-    Object.values(profile.bonusXpEvents ?? {}).reduce((n, xp) => n + xp, 0);
-  const { level, xp, title } = levelFor(total);
+    Object.values(profile.bonusXpEvents ?? {}).reduce((n, xp) => n + xp, 0)
+  );
+}
+
+export function userFor(profile: StudyProfile, today: string): User {
+  const { level, xp, title } = levelFor(totalXpFor(profile));
   return {
     nickname: "",
     streak: streakFor(profile, today),

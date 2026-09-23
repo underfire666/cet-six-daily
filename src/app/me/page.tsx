@@ -4,7 +4,7 @@ import { ArrowRight, BookMarked, RotateCcw, Settings, Bell, Volume2, Info, Targe
 import { useProfile } from "@/components/profile/ProfileProvider";
 
 export default function MePage() {
-  const { profile, stats, examDate, examText, ready } = useProfile();
+  const { notice, profile, stats, examDate, examText, ready } = useProfile();
 
   if (!ready || !profile || !stats) {
     return <main className="me-page"><p className="me-loading">加载中…</p></main>;
@@ -15,6 +15,7 @@ export default function MePage() {
       <header className="me-header">
         <h1>我的</h1>
       </header>
+      {notice && <p role="status" className="me-note">{notice}</p>}
 
       <section className="me-hero">
         <div className="me-hero-top">

@@ -5,7 +5,7 @@ import { useProfile } from "@/components/profile/ProfileProvider";
 
 export default function RemindersPage() {
   const router = useRouter();
-  const { profile, setReminders, ready } = useProfile();
+  const { notice, profile, setReminders, ready } = useProfile();
   if (!ready || !profile) return <main className="me-page"><p className="me-loading">加载中…</p></main>;
 
   const rows = [
@@ -20,6 +20,7 @@ export default function RemindersPage() {
         <button className="exercise-icon-button" onClick={() => router.push("/me")}><ArrowLeft size={22} /></button>
         <h1>学习提醒</h1>
       </header>
+      {notice && <p role="status" className="me-note">{notice}</p>}
       <section className="me-section">
         <div className="me-toggle-list">
           {rows.map((r) => (

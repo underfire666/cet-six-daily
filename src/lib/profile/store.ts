@@ -52,7 +52,7 @@ export function loadProfile(storage: Storage | undefined): { profile: UserProfil
     const profile: UserProfile = {
       schemaVersion: 1,
       targetScore: [425, 500, 550, 600].includes(v.targetScore as number) ? (v.targetScore as TargetScore) : d.targetScore,
-      reminders: { ...d.reminders, ...(isObj(v.reminders) ? v.reminders : {}) },
+      reminders: Object.fromEntries(Object.entries(d.reminders).map(([key, fallback]) => [key, isObj(v.reminders) && typeof v.reminders[key] === "boolean" ? v.reminders[key] : fallback])) as unknown as ReminderPrefs,
       createdAt: typeof v.createdAt === "string" ? v.createdAt : d.createdAt,
       updatedAt: typeof v.updatedAt === "string" ? v.updatedAt : d.updatedAt,
     };

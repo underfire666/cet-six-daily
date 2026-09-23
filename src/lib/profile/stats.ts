@@ -104,8 +104,8 @@ export function summarizeDurations(
 
 /** 周一为一周起点。 */
 export function weekStart(today: string): string {
-  const d = new Date(today + "T00:00:00+08:00");
-  const dow = d.getDay() === 0 ? 7 : d.getDay(); // 周日=7
+  const d = new Date(today + "T00:00:00Z");
+  const dow = d.getUTCDay() === 0 ? 7 : d.getUTCDay(); // 日历日期不受设备时区影响
   return addDays(today, -(dow - 1));
 }
 
@@ -118,10 +118,11 @@ export interface CompletedSession {
   startedAt?: string;
   completedAt?: string;
   day?: string;
+  rewardXp?: number;
 }
 
 interface Inputs {
-  /** V2 daily 完成的日期集合（profile.completedLessons keys） */
+  /** 历史每日关卡完成日；专项完成日从 completedSessions 合并。 */
   completedDays: Set<string>;
   totalXp: number;
   streak: number;
@@ -140,20 +141,21 @@ interface Inputs {
 }
 
 export function computeStudyStats(i: Inputs): StudyStats {
-  const studyDays = i.completedDays.size;
+  const completedDays = new Set([...i.completedDays, ...i.completedSessions.flatMap(s => s.day ? [s.day] : [])]);
+  const studyDays = completedDays.size;
   const week = weekStart(i.today);
   const inWeek = (d: string) => {
     const fromWeek = dayDifference(week, d);
     return fromWeek >= 0 && dayDifference(d, i.today) >= 0 && fromWeek <= 6;
   };
-  const weeklyDays = [...i.completedDays].filter(inWeek);
+  const weeklyDays = [...completedDays].filter(inWeek);
   const weeklyXp = Object.entries(i.xpByDay)
     .filter(([d]) => inWeek(d))
-    .reduce((n, [, xp]) => n + xp, 0);
+    .reduce((n, [, xp]) => n + xp, 0) + i.completedSessions.reduce((n, s) => n + (s.day && inWeek(s.day) ? s.rewardXp ?? 0 : 0), 0);
   const weeklyDuration = summarizeDurations(
     i.completedSessions.filter((s) => s.day && inWeek(s.day)),
   );
-  const last7 = last7Days(i.today).map((date) => ({ date, studied: i.completedDays.has(date) }));
+  const last7 = last7Days(i.today).map((date) => ({ date, studied: completedDays.has(date) }));
 
   return {
     studyDays,

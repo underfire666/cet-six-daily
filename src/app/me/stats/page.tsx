@@ -42,7 +42,7 @@ export default function MeStatsPage() {
           {stats.last7.map((d) => (
             <div key={d.date} className={`me-week-day ${d.studied ? "done" : ""}`}>
               <span className="me-week-mark">{d.studied ? "✓" : "·"}</span>
-              <span className="me-week-dow">{new Date(d.date + "T00:00:00+08:00").toLocaleDateString("zh-CN", { weekday: "narrow" })}</span>
+              <span className="me-week-dow">{new Date(d.date + "T00:00:00+08:00").toLocaleDateString("zh-CN", { weekday: "narrow", timeZone: "Asia/Shanghai" })}</span>
             </div>
           ))}
         </div>
