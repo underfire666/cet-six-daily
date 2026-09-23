@@ -69,6 +69,14 @@ export default function MePage() {
       </section>
 
       <section className="me-section">
+        <h3>账号</h3>
+        <Link href="/me/account" className="me-row">
+          <span className="me-row-label"><Info size={18} /> 账号与同步</span>
+          <span className="me-row-value">登录后可跨设备保存 <ArrowRight size={14} /></span>
+        </Link>
+      </section>
+
+      <section className="me-section">
         <h3>设置</h3>
         <Link href="/me/settings/plan" className="me-row">
           <span className="me-row-label"><Settings size={18} /> 学习计划设置</span>
