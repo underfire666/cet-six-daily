@@ -1,6 +1,13 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V11 Profile & Study Center（修复完成，待人工验收，feature/v11-profile-center）
+## 当前工作版本：V11 Profile & Study Center（2026-09-23 已验收并发布 v11.0）
+
+### v11.0 发布（2026-09-23）
+
+- main = `f8c9f40`（Merge feature/v11-profile-center into main，含 73658db 修复 + 68980b9 文档 + 67e2e4f 程序体检）。
+- 已在 main 复跑：npm test 300/300、typecheck、lint 0/0、build 通过。
+- 已 push main 与 v11.0 tag；GitHub Release v11.0（Latest）已创建：https://github.com/underfire666/cet-six-daily/releases/tag/v11.0
+- feature/v11-profile-center 分支保留未删。V12 未开始。
 
 ### 程序体检与修复（2026-09-23）
 
