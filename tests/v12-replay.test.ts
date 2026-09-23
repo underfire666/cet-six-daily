@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { streakFor, totalXpFor, userFor } from "../src/lib/lesson/profile";
-import { addDays } from "../src/lib/dates";
 import type { StudyProfile } from "../src/types/session";
 
 // Build a StudyProfile with rewards on the given days.
@@ -29,7 +28,6 @@ test("replay: today complete -> streak +1", () => {
 test("replay: skip 1 day -> streak preserved", () => {
   // Today is 2026-09-23, last studied 2026-09-21 (yesterday = 09-22 skipped)
   const today = "2026-09-23";
-  const p = makeProfile(["2026-09-19", "2026-09-20", "2026-09-21"]);
   // streakFor starts at yesterday (09-22) which is not in days, so cursor = 09-22, loop stops immediately -> 0
   // Wait: days.has(today)? no. cursor = 09-22. days.has(09-22)? no. count=0.
   // But rule says "miss 1 day preserves streak from yesterday". Let's verify the actual semantics.
