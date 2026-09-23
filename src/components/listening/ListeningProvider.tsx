@@ -24,6 +24,7 @@ import type { ListeningAction } from "@/lib/listening/session";
 import type { ListeningSessionMode, ListeningStore } from "@/types/listening";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
+import { getScopedStorage } from "@/lib/storage/scoped";
 
 const Context = createContext<ReturnType<typeof useListeningState> | null>(
   null,
@@ -49,7 +50,7 @@ function useListeningState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadListeningStore(storage.current);
       latest.current = loaded.store;

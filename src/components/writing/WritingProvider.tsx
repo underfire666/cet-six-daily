@@ -26,6 +26,7 @@ import type { WritingStore } from "@/types/writing";
 import type { SubjectiveSessionMode } from "@/types/subjective";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
+import { getScopedStorage } from "@/lib/storage/scoped";
 
 const Context = createContext<ReturnType<typeof useWritingState> | null>(null);
 
@@ -56,7 +57,7 @@ function useWritingState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadWritingStore(storage.current);
       latest.current = loaded.store;

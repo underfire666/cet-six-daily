@@ -32,6 +32,8 @@ import {
 } from "@/lib/review/scheduler";
 
 import { importReviewEvents } from "@/lib/review/import";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueReviewItem } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useReviewState> | null>(null);
 
@@ -60,7 +62,7 @@ function useReviewState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadReviewStore(storage.current);
       latest.current = loaded.store;
@@ -129,6 +131,22 @@ function useReviewState() {
       const done = completeReview(latest.current, sessionId, new Date().toISOString());
       if (done !== latest.current) {
         commit(done);
+        // Enqueue changed review items for sync
+        for (const [id, item] of Object.entries(done.items)) {
+          const prev = latest.current.items[id];
+          if (!prev || prev.masteryStatus !== item.masteryStatus || prev.nextReviewAt !== item.nextReviewAt) {
+            enqueueReviewItem({
+              reviewItemId: id,
+              sourceModule: item.sourceModule,
+              activityId: item.sourceActivityId,
+              questionId: item.questionId,
+              status: item.removed ? "removed" : item.masteryStatus === "mastered" ? "mastered" : "active",
+              mastery: item.masteryStatus,
+              dueDate: item.nextReviewAt,
+              version: (item as { version?: number }).version ?? 1,
+            });
+          }
+        }
       }
     },
     [commit],
@@ -154,6 +172,14 @@ function useReviewState() {
         ...latest.current,
         items: { ...latest.current.items, [itemId]: { ...it, removed: true } },
       });
+      enqueueReviewItem({
+        reviewItemId: itemId,
+        sourceModule: it.sourceModule,
+        activityId: it.sourceActivityId,
+        questionId: it.questionId,
+        removed: true,
+        version: (it as { version?: number }).version ?? 1,
+      });
     },
     [commit],
   );
@@ -165,6 +191,14 @@ function useReviewState() {
       commit({
         ...latest.current,
         items: { ...latest.current.items, [itemId]: { ...it, removed: false } },
+      });
+      enqueueReviewItem({
+        reviewItemId: itemId,
+        sourceModule: it.sourceModule,
+        activityId: it.sourceActivityId,
+        questionId: it.questionId,
+        status: "active",
+        version: (it as { version?: number }).version ?? 1,
       });
     },
     [commit],

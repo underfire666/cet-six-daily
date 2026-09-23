@@ -14,6 +14,8 @@ import { useTranslation } from "@/components/translation/TranslationProvider";
 import { useWriting } from "@/components/writing/WritingProvider";
 import { useLearning } from "@/components/LearningProvider";
 import { useToday } from "@/components/StudyProvider";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueDailyPlan, enqueuePreferences } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useDailyPlanState> | null>(null);
 function useDailyPlanState() {
@@ -42,7 +44,7 @@ function useDailyPlanState() {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      try { storage.current = window.localStorage; } catch {}
+      try { storage.current = getScopedStorage() as Storage | undefined; } catch {}
       const result = loadDailyPlanStore(storage.current);
       latest.current = result.store;
       setStore(result.store);
@@ -78,7 +80,15 @@ function useDailyPlanState() {
       if (status !== plan.status && !(plan.status === "adjusted" && status !== "completed")) plans[date] = { ...plan, status };
     }
     next = { ...next, plans: rescheduleMissedTasks({ plans, today, examDate: next.preferences.examDate, pref: next.preferences, isPlanCompleted: (_, plan) => plan.status === "completed" }) };
-    if (JSON.stringify(next) !== JSON.stringify(latest.current)) commit(next);
+    if (JSON.stringify(next) !== JSON.stringify(latest.current)) {
+      commit(next);
+      // Enqueue dailyPlan state for sync
+      for (const [date, plan] of Object.entries(next.plans)) {
+        if (plan.status === "completed") {
+          enqueueDailyPlan({ planDate: date, completedTaskIds: plan.tasks.filter(t => !t.removed).map(t => t.id) });
+        }
+      }
+    }
   }, [ready, today, getCompletion, commit]);
 
   const awardXp = learning.awardXp;
@@ -89,7 +99,12 @@ function useDailyPlanState() {
     if (latest.current.completionLedger[key] === undefined) commit({ ...latest.current, completionLedger: { ...latest.current.completionLedger, [key]: 10 } });
   }, [ready, today, store.plans, awardXp, commit]);
 
-  const updatePreferences = useCallback((pref: StudyPreferences, syncFuture: boolean) => commit(applyPreferences(latest.current, today, pref, syncFuture, getCompletion(today))), [commit, today, getCompletion]);
+  const updatePreferences = useCallback((pref: StudyPreferences, syncFuture: boolean) => {
+    const next = applyPreferences(latest.current, today, pref, syncFuture, getCompletion(today));
+    const saved = commit(next);
+    enqueuePreferences(pref as unknown as Record<string, unknown>);
+    return saved;
+  }, [commit, today, getCompletion]);
   const getPlan = useCallback((date: string) => store.plans[date] ?? (date >= today ? generatePlan(date, store.preferences.examDate, store.preferences) : undefined), [store.plans, store.preferences, today]);
   const getLesson = (date: string): Lesson => {
     const plan = getPlan(date);

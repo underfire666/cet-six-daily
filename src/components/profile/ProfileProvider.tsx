@@ -13,6 +13,8 @@ import { loadProfile, saveProfile, type UserProfile, type TargetScore, type Remi
 import { computeStudyStats, summarizeObjective, summarizeReviewAnswers, type CompletedSession, type ObjectiveRecord, type StudyStats } from "@/lib/profile/stats";
 import { countdownText, todayInShanghai } from "@/lib/dates";
 import { totalXpFor } from "@/lib/lesson/profile";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueProfile } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useProfileState> | null>(null);
 
@@ -36,7 +38,7 @@ function useProfileState() {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      try { storage.current = window.localStorage; } catch {}
+      try { storage.current = getScopedStorage() as Storage | undefined; } catch {}
       const loaded = loadProfile(storage.current);
       latestProfile.current = loaded.profile;
       setProfile(loaded.profile);
@@ -51,6 +53,7 @@ function useProfileState() {
     latestProfile.current = next;
     setProfile(next);
     setNotice(saveProfile(storage.current, next) ? "" : "偏好保存失败，刷新后可能丢失，请检查浏览器存储空间或权限。");
+    enqueueProfile(next as unknown as Record<string, unknown>);
   }, []);
 
   // examDate 修改：复用 V8 updatePreferences，同步未来计划

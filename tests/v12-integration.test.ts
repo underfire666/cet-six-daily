@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { enqueueXpEvent, enqueueWordbook, enqueueReviewItem, enqueueDailyPlan, setSyncUserId, getSyncUserId } from "../src/lib/sync/adapters";
+import { enqueueXpEvent, enqueueWordbook, enqueueReviewItem, enqueueDailyPlan, setSyncUserId } from "../src/lib/sync/adapters";
 import { loadQueue } from "../src/lib/sync/client";
 
 // Minimal localStorage shim for tests.
@@ -39,7 +39,7 @@ test("adapters: logged-in enqueue queues XP event", () => {
 });
 
 test("adapters: queue is user-scoped (A vs B)", () => {
-  const s = installStorage();
+  installStorage();
   setSyncUserId("uA");
   enqueueXpEvent({ eventId: "x1", source: "vocabulary", sourceId: "w1", amount: 10 });
   assert.equal(loadQueue().length, 1);
@@ -93,7 +93,7 @@ test("adapters: dailyPlan merges completedTaskIds across queue entries", () => {
 });
 
 test("scoped storage: guest uses legacy keys, user prefixes", async () => {
-  const s = installStorage();
+  installStorage();
   const { nsKey } = await import("../src/lib/storage/namespace");
   assert.equal(nsKey("guest", "cet-daily:v1:study"), "cet-daily:v1:study");
   assert.equal(nsKey({ type: "user", id: "u1" }, "cet-daily:v1:study"), "user:u1:cet-daily:v1:study");

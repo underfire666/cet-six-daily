@@ -26,6 +26,7 @@ import type { TranslationStore } from "@/types/translation";
 import type { SubjectiveSessionMode } from "@/types/subjective";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
+import { getScopedStorage } from "@/lib/storage/scoped";
 
 const Context = createContext<ReturnType<typeof useTranslationState> | null>(
   null,
@@ -58,7 +59,7 @@ function useTranslationState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadTranslationStore(storage.current);
       latest.current = loaded.store;

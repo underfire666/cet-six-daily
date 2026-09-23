@@ -23,6 +23,7 @@ import type { ReadingAction } from "@/lib/reading/session";
 import type { ReadingSessionMode, ReadingStore } from "@/types/reading";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
+import { getScopedStorage } from "@/lib/storage/scoped";
 
 const Context = createContext<ReturnType<typeof useReadingState> | null>(null);
 
@@ -46,7 +47,7 @@ function useReadingState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadReadingStore(storage.current);
       latest.current = loaded.store;
