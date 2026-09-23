@@ -2,6 +2,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
+import { checkRateLimit } from "@/lib/auth/rateLimit";
 
 declare module "next-auth" {
   interface Session {
@@ -19,10 +20,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         const email = String(credentials?.email ?? "").trim().toLowerCase();
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
+        const ip = req.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+        const rl = checkRateLimit(`login:${ip}:${email}`, 10, 60);
+        if (!rl.allowed) return null;
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);

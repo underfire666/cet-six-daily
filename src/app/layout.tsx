@@ -11,6 +11,7 @@ import { WritingProvider } from "@/components/writing/WritingProvider";
 import { DailyPlanProvider } from "@/components/dailyPlan/DailyPlanProvider";
 import { ReviewProvider } from "@/components/review/ReviewProvider";
 import { ProfileProvider } from "@/components/profile/ProfileProvider";
+import { AppProviders } from "@/components/providers";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "六级日常 · 每天向前一点",
@@ -28,27 +29,29 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <StudyProvider initialToday={todayInShanghai()}>
-          <LearningProvider>
-            <VocabularyProvider>
-              <ReadingProvider>
-                <ListeningProvider>
-                  <TranslationProvider>
-                    <WritingProvider>
-                      <DailyPlanProvider>
-                        <ReviewProvider>
-                          <ProfileProvider>
-                            <AppShell>{children}</AppShell>
-                          </ProfileProvider>
-                        </ReviewProvider>
-                      </DailyPlanProvider>
-                    </WritingProvider>
-                  </TranslationProvider>
-                </ListeningProvider>
-              </ReadingProvider>
-            </VocabularyProvider>
-          </LearningProvider>
-        </StudyProvider>
+        <AppProviders>
+          <StudyProvider initialToday={todayInShanghai()}>
+            <LearningProvider>
+              <VocabularyProvider>
+                <ReadingProvider>
+                  <ListeningProvider>
+                    <TranslationProvider>
+                      <WritingProvider>
+                        <DailyPlanProvider>
+                          <ReviewProvider>
+                            <ProfileProvider>
+                              <AppShell>{children}</AppShell>
+                            </ProfileProvider>
+                          </ReviewProvider>
+                        </DailyPlanProvider>
+                      </WritingProvider>
+                    </TranslationProvider>
+                  </ListeningProvider>
+                </ReadingProvider>
+              </VocabularyProvider>
+            </LearningProvider>
+          </StudyProvider>
+        </AppProviders>
       </body>
     </html>
   );

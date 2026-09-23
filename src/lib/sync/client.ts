@@ -1,6 +1,5 @@
 // Client-side sync engine: mutation queue, push, pull, retry with backoff.
-// Local-first: every mutation is queued to IndexedDB/LocalStorage namespace first,
-// then pushed in background. Offline-safe.
+// Local-first: every mutation is queued to localStorage first, then pushed in background.
 
 export type SyncStatus =
   | "guest"
@@ -23,6 +22,27 @@ export interface QueuedMutation {
 }
 
 const QUEUE_KEY = "cet-daily:v12:sync-queue";
+
+// Per-entity queue merge policy.
+// - snapshot: keep latest (profile/settings/preferences)
+// - event: never collapse (xp events, sessions, translation/writing histories)
+// - accumulative: merge payloads for same entityId (dailyPlan completedTaskIds)
+// - state: latest wins but keep tombstone (wordbook/review)
+type MergePolicy = "snapshot" | "event" | "accumulative" | "state";
+
+const MERGE_POLICY: Record<string, MergePolicy> = {
+  profile: "snapshot",
+  settings: "snapshot",
+  preferences: "snapshot",
+  xpEvent: "event",
+  session: "event",
+  translationHistory: "event",
+  writingHistory: "event",
+  migrationRecord: "event",
+  dailyPlan: "accumulative",
+  wordbook: "state",
+  reviewItem: "state",
+};
 
 export function loadQueue(): QueuedMutation[] {
   if (typeof window === "undefined") return [];
@@ -50,18 +70,49 @@ export function enqueueMutation(m: Omit<QueuedMutation, "mutationId" | "createdA
     attempts: 0,
     status: "pending",
   };
-  const queue = loadQueue();
+  let queue = loadQueue();
+  queue = applyQueueMerge(queue, record);
   queue.push(record);
   saveQueue(queue);
   return record;
 }
 
+// Per-entity queue merge. Returns the queue *after* collapsing prior records
+// that this new record supersedes (does not include the new record itself).
+function applyQueueMerge(queue: QueuedMutation[], incoming: QueuedMutation): QueuedMutation[] {
+  const policy = MERGE_POLICY[incoming.entityType] ?? "snapshot";
+  if (policy === "event") return queue; // never collapse different events
+  if (policy === "accumulative") {
+    // For dailyPlan: merge completedTaskIds across queued mutations for the same planDate.
+    const prior = queue.find((q) => q.entityType === incoming.entityType && q.entityId === incoming.entityId);
+    if (prior) {
+      const merged = mergeAccumulative(pairPayload(prior), pairPayload(incoming));
+      incoming.payload = merged;
+      return queue.filter((q) => q !== prior);
+    }
+    return queue;
+  }
+  // snapshot / state: drop prior mutations for same (entityType, entityId)
+  return queue.filter((q) => !(q.entityType === incoming.entityType && q.entityId === incoming.entityId));
+}
+
+function pairPayload(m: QueuedMutation): Record<string, unknown> {
+  return (m.payload as Record<string, unknown>) ?? {};
+}
+
+function mergeAccumulative(a: Record<string, unknown>, b: Record<string, unknown>): Record<string, unknown> {
+  const aCompleted = new Set(Array.isArray(a.completedTaskIds) ? (a.completedTaskIds as string[]) : []);
+  const bCompleted = new Set(Array.isArray(b.completedTaskIds) ? (b.completedTaskIds as string[]) : []);
+  for (const id of bCompleted) aCompleted.add(id);
+  return { ...a, ...b, completedTaskIds: Array.from(aCompleted) };
+}
+
+// Legacy helper kept for tests.
 export function dedupeSameEntity(
   queue: QueuedMutation[],
   entityType: string,
   entityId: string,
 ): QueuedMutation[] {
-  // If two queued mutations target the same (entityType, entityId), keep the latest.
   const seen = new Map<string, QueuedMutation>();
   for (const m of queue) {
     if (m.entityType === entityType && m.entityId === entityId) {
@@ -125,6 +176,5 @@ export async function pullRemote(options?: { fetchImpl?: typeof fetch }): Promis
 }
 
 export function backoffDelay(attempts: number): number {
-  // Exponential backoff capped at 5 minutes.
   return Math.min(300_000, 1000 * Math.pow(2, Math.min(attempts, 8)));
 }

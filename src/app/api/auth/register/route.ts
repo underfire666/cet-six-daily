@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
+import { checkRateLimit } from "@/lib/auth/rateLimit";
 
 export async function POST(req: Request) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+  const rl = checkRateLimit(`register:${ip}`, 10, 60);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+  }
+
   try {
     const body = await req.json().catch(() => null);
     const email = String(body?.email ?? "").trim().toLowerCase();

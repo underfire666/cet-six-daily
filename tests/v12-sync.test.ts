@@ -12,7 +12,7 @@ test("validateMutation rejects bad entity / missing fields", () => {
       entityType: "xpEvent",
       entityId: "e1",
       operation: "upsert",
-      payload: { amount: 10 },
+      payload: { source: "vocabulary", sourceId: "w1", amount: 10, eventId: "e1", earnedAt: new Date().toISOString() },
     }),
     null,
   );
@@ -60,4 +60,53 @@ test("dedupeSameEntity keeps latest only", () => {
 test("nsKey: guest keeps legacy key, user namespaces it", () => {
   assert.equal(nsKey("guest", "cet-daily:v1:study"), "cet-daily:v1:study");
   assert.equal(nsKey({ type: "user", id: "u1" }, "cet-daily:v1:study"), "user:u1:cet-daily:v1:study");
+});
+
+test("validateMutation: XP source whitelist rejects unknown source", () => {
+  assert.notEqual(
+    validateMutation({
+      mutationId: "m",
+      entityType: "xpEvent",
+      entityId: "e",
+      operation: "upsert",
+      payload: { source: "hacker", sourceId: "x", amount: 10, eventId: "e", earnedAt: new Date().toISOString() },
+    }),
+    null,
+  );
+});
+
+test("validateMutation: XP amount capped at 200", () => {
+  assert.notEqual(
+    validateMutation({
+      mutationId: "m",
+      entityType: "xpEvent",
+      entityId: "e",
+      operation: "upsert",
+      payload: { source: "vocabulary", sourceId: "x", amount: 999, eventId: "e", earnedAt: new Date().toISOString() },
+    }),
+    null,
+  );
+  assert.equal(
+    validateMutation({
+      mutationId: "m",
+      entityType: "xpEvent",
+      entityId: "e",
+      operation: "upsert",
+      payload: { source: "vocabulary", sourceId: "x", amount: 200, eventId: "e", earnedAt: new Date().toISOString() },
+    }),
+    null,
+  );
+});
+
+test("validateMutation: review status/mastery enum enforced", () => {
+  assert.notEqual(
+    validateMutation({
+      mutationId: "m",
+      entityType: "reviewItem",
+      entityId: "r",
+      operation: "upsert",
+      payload: { status: "hacked" },
+    }),
+    null,
+  );
 });
