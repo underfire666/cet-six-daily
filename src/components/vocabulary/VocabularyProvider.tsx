@@ -27,7 +27,7 @@ import {
   saveVocabularyStore,
 } from "@/lib/vocabulary/storage";
 import { getScopedStorage } from "@/lib/storage/scoped";
-import { enqueueWordbook } from "@/lib/sync/adapters";
+import { enqueueSession, enqueueWordbook } from "@/lib/sync/adapters";
 import type { VocabularyAction } from "@/lib/vocabulary/session";
 import type {
   VocabularySessionMode,
@@ -104,13 +104,22 @@ function useVocabularyState() {
   );
   const dispatch = useCallback(
     (id: string, action: VocabularyAction) => {
+      const previous = latest.current.sessions[id];
       const next = updateVocabulary(
         latest.current,
         id,
         action,
         new Date().toISOString(),
       );
-      if (next !== latest.current) commit(next);
+      if (next !== latest.current) {
+        commit(next);
+        const completed = next.sessions[id];
+        if (!previous?.applied && completed?.applied && completed.completedAt) {
+          enqueueSession({ sessionId: id, module: "vocabulary", activityId: completed.wordIds.join(","),
+            planDate: completed.date, startedAt: completed.lesson.startedAt, completedAt: completed.completedAt,
+            status: "completed", payload: completed as unknown as Record<string, unknown> });
+        }
+      }
     },
     [commit],
   );

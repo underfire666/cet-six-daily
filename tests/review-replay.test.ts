@@ -57,6 +57,16 @@ test("replay: listening ReviewItem resolves via Repository with transcript", () 
   assert.ok(r!.transcript && r!.transcript.length > 0);
 });
 
+test("replay: real reading and listening session question IDs retain their prefixes in saved review items", () => {
+  setup();
+  const reading = replayReviewItem(baseItem({ questionId: "rq:q2" }));
+  const listening = replayReviewItem(baseItem({ sourceModule: "listening", sourceActivityId: "l-campus-meeting", questionId: "lq:q1" }));
+  assert.equal(reading?.questionId, "q2");
+  assert.ok(reading?.articlePassage);
+  assert.equal(listening?.questionId, "q1");
+  assert.ok(listening?.transcript);
+});
+
 test("replay: vocabulary ReviewItem generates a 4-option question", () => {
   setup();
   const item = baseItem({ sourceModule: "vocabulary", sourceActivityId: "word_sustain", questionId: "vq:word_sustain" });

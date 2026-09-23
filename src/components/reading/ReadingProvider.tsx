@@ -24,6 +24,7 @@ import type { ReadingSessionMode, ReadingStore } from "@/types/reading";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueSession } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useReadingState> | null>(null);
 
@@ -89,13 +90,22 @@ function useReadingState() {
   );
   const dispatch = useCallback(
     (id: string, action: ReadingAction) => {
+      const previous = latest.current.sessions[id];
       const next = updateReading(
         latest.current,
         id,
         action,
         new Date().toISOString(),
       );
-      if (next !== latest.current) commit(next);
+      if (next !== latest.current) {
+        commit(next);
+        const completed = next.sessions[id];
+        if (!previous?.applied && completed?.applied && completed.completedAt) {
+          enqueueSession({ sessionId: id, module: "reading", activityId: completed.articleId,
+            planDate: completed.planDate, startedAt: completed.startedAt, completedAt: completed.completedAt,
+            status: "completed", payload: completed as unknown as Record<string, unknown> });
+        }
+      }
     },
     [commit],
   );

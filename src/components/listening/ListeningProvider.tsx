@@ -25,6 +25,7 @@ import type { ListeningSessionMode, ListeningStore } from "@/types/listening";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueSession } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useListeningState> | null>(
   null,
@@ -92,13 +93,22 @@ function useListeningState() {
   );
   const dispatch = useCallback(
     (id: string, action: ListeningAction) => {
+      const previous = latest.current.sessions[id];
       const next = updateListening(
         latest.current,
         id,
         action,
         new Date().toISOString(),
       );
-      if (next !== latest.current) commit(next);
+      if (next !== latest.current) {
+        commit(next);
+        const completed = next.sessions[id];
+        if (!previous?.applied && completed?.applied && completed.completedAt) {
+          enqueueSession({ sessionId: id, module: "listening", activityId: completed.materialId,
+            planDate: completed.planDate, startedAt: completed.startedAt, completedAt: completed.completedAt,
+            status: "completed", payload: completed as unknown as Record<string, unknown> });
+        }
+      }
     },
     [commit],
   );

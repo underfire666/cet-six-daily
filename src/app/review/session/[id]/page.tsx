@@ -3,7 +3,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check, FileText, X } from "lucide-react";
 import { useReview } from "@/components/review/ReviewProvider";
 import { replayReviewItem } from "@/lib/review/replay";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { shortDate } from "@/lib/dates";
 import { reviewDate } from "@/lib/review/config";
 import type { ReviewMastery } from "@/types/review";
@@ -38,11 +38,16 @@ export default function ReviewSessionPage() {
     [currentItem],
   );
 
+  useEffect(() => {
+    if (!ready || !session) return;
+    if (session.applied) router.replace(`/review/session/${sid}/complete`);
+    else if (session.currentIndex >= session.itemIds.length) finish(sid);
+  }, [ready, session, sid, finish, router]);
+
   if (!ready) return <main className="review-page"><p>加载中…</p></main>;
   if (!session) return <main className="review-page"><p>会话不存在。<button onClick={() => router.push("/review")}>返回</button></p></main>;
   if (session.applied || session.currentIndex >= session.itemIds.length) {
-    router.replace(`/review/session/${sid}/complete`);
-    return null;
+    return <main className="review-page"><p>正在整理复习结果…</p></main>;
   }
   if (!currentItem) return <main className="review-page"><p>题目缺失。</p></main>;
 
@@ -51,10 +56,6 @@ export default function ReviewSessionPage() {
 
   const choose = (correct: boolean) => {
     answer(sid, currentItem.id, correct);
-    if (progress >= total) {
-      // 等 commit 后 finish
-      setTimeout(() => finish(sid), 50);
-    }
   };
 
   return (
