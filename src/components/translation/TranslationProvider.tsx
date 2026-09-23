@@ -27,6 +27,7 @@ import type { SubjectiveSessionMode } from "@/types/subjective";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueTranslationHistory } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useTranslationState> | null>(
   null,
@@ -105,13 +106,25 @@ function useTranslationState() {
 
   const dispatch = useCallback(
     (id: string, action: TranslationAction) => {
+      const prevLen = latest.current.history.length;
       const next = updateTranslation(
         latest.current,
         id,
         action,
         new Date().toISOString(),
       );
-      if (next !== latest.current) commit(next);
+      if (next !== latest.current) {
+        commit(next);
+        if (next.history.length > prevLen) {
+          const h = next.history[next.history.length - 1];
+          enqueueTranslationHistory({
+            itemId: h.sessionId ?? h.taskId,
+            promptId: h.taskId,
+            answer: h.submittedText ?? "",
+            feedback: h.feedback as unknown as Record<string, unknown>,
+          });
+        }
+      }
     },
     [commit],
   );

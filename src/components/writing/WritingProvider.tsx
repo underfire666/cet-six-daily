@@ -27,6 +27,7 @@ import type { SubjectiveSessionMode } from "@/types/subjective";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { enqueueWritingHistory } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useWritingState> | null>(null);
 
@@ -103,13 +104,25 @@ function useWritingState() {
 
   const dispatch = useCallback(
     (id: string, action: WritingAction) => {
+      const prevLen = latest.current.history.length;
       const next = updateWriting(
         latest.current,
         id,
         action,
         new Date().toISOString(),
       );
-      if (next !== latest.current) commit(next);
+      if (next !== latest.current) {
+        commit(next);
+        if (next.history.length > prevLen) {
+          const h = next.history[next.history.length - 1];
+          enqueueWritingHistory({
+            itemId: h.sessionId ?? h.taskId,
+            promptId: h.taskId,
+            answer: h.submittedText ?? "",
+            feedback: h.feedback as unknown as Record<string, unknown>,
+          });
+        }
+      }
     },
     [commit],
   );
