@@ -1,8 +1,35 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V10 Content System 1.0（修复完成，待人工验收，feature/v10-content-system）
+## 当前工作版本：V11 Profile & Study Center（修复完成，待人工验收，feature/v11-profile-center）
 
-### V10 修复（2026-09-22）
+### 程序体检与修复（2026-09-23）
+
+- 基于 V11 当前版本，未新增学习模块、未提交或上传 GitHub。
+- 学习统计：合并专项和复习实际完成日；补全专项、本周复习及每日计划奖励 XP；修复总 XP 升级后回落为级内 XP；补计新版每日计划 Streak；历史每日关卡客观题纳入正确率。
+- 日期：周起点与最近 7 天星期标签固定按上海日历，不再依赖设备时区。
+- 复习：专项错题收录新增持久化事件去重；旧存档首次迁移保留已有掌握/移除状态，缺失错题仍补入。新会话再次答错可重新激活。增加作答顺序保护与已结算 XP 幂等补发；到期总数不再被每日批量上限截断。
+- 偏好：逐项验证提醒开关类型，避免字符串等异常值变成开启；保存移出 React 状态更新函数，连续更新使用最新值；存储失败显示提示。统计等待所有相关存档加载完毕。
+- 自动检查：300/300 测试通过；TypeScript、ESLint、内容校验（0 错误/0 警告）、生产构建通过。
+- 浏览器检查：隔离资料，在 375/390/430/1440px 下访问首页、我的、学习数据、错题本和听力入口，共 20 组检查；无横向溢出，导航固定视口底部，无 pageerror。提醒关闭后刷新保留；模拟存储配额失败显示提示。
+- 截图：`output/playwright/health23-mobile.png`、`output/playwright/health23-desktop.png`；本地地址 http://127.0.0.1:3000。
+- 范围限制：本次没有逐题重跑五个专项全流程或实测所有设备音频；旧版无法还原每次作答时刻，迁移已有错题采用保留用户复习成果的策略。
+
+### V11 修复（2026-09-22）
+
+- V11 = 「我的」+「设置」+「学习数据中心」1.0：`/me`（目标分/考试倒计时/核心指标）、`/me/stats`（总学习天数/真实学习时长/总 XP/整体正确率/本周/近 7 天）、`/me/settings/sound`（声音/震动/庆祝动画）、`/me/settings/reminders`（每日提醒）。
+- 按《V11 独立验收审计报告》8 个核心问题完成修复：
+  1. 移除生产环境 mock 学习基线：`mockUser` 已删，`userFor` 基线为 0，`streakFor` 只按真实完成日计算，等级由真实 XP 推导（阈值 1500，6 档称号）。新用户显示 XP 0 / Streak 0 / Lv.1「新手」。
+  2. Sound/Haptic/Celebration 收敛单一 Source of Truth：删除 `profile.sound`，设置页直接操作 `FeedbackSettings`（`cet-daily:v2:settings`），学习组件 `playFeedback`/庆祝动画共用同一对象，设置立即生效。
+  3. 正确率修复：按 attempt 数组逐次计数（不再对首轮双错重复计 3 次），覆盖词汇/阅读/听力/复习，翻译/写作主观题排除；新增 `summarizeReviewAnswers`。
+  4. 真实学习时长：`summarizeDurations` 聚合 V2 daily + 五专项 + 复习的真实 `startedAt→completedAt`；历史无记录不伪造；完成日按 Asia/Shanghai。
+  5. 移除 weekly.completedTasks（实为天数且无时间戳），改为「本周学习天数 / 学习时长 / XP」。
+  6. 过去考试日期显示「本次目标日期已结束，请更新考试日期」（countdownText）。
+  7. 新增 profile 三件套测试（stats/store/integration），更新 lesson 断言，总计 294/294 通过。
+  8. lint 0 error 0 warning。
+- 验证：npm test 294/294、typecheck、lint（0/0）、build、content:validate（0/0）、content:stats 全绿。
+- 文档：`V11交付说明.md`。未 merge main、未打 v11.0、未建 Release（等人工验收）。
+
+### V10 Content System 1.0（2026-09-22，已 merge main + v10.0 tag + GitHub Release）
 
 - V10 = 统一 Content Layer：页面（词汇/阅读/听力/翻译/写作）不再直读 Mock 数组，全部经 `@/content/learning`（application adapters）→ Content Repository → Registry → ContentPack。Mock 数据注册为 5 个内置 Pack（`pack-*-mock`），来源 `src-mock-original`（type=mock, license=unknown）。
 - Review Repository Replay：`/review/session/[id]` 经 Content Repository 回放原题（题干/选项/正确答案/用户作答/短解析），Reading 关联原文、Listening 关联材料与 Transcript；ReviewItem 只存稳定 ID + 可选最小快照 `lastWrongOptionId`；旧数据/缺失内容优雅降级不白屏。

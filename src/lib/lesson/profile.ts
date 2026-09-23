@@ -1,8 +1,8 @@
 import { addDays } from "@/lib/dates";
-import { getLesson, mockUser } from "@/data/mock";
+import { getLesson } from "@/data/mock";
 import { mockLesson } from "@/data/mockLesson";
 import type { LessonSession, StudyProfile } from "@/types/session";
-import type { Lesson } from "@/types/study";
+import type { Lesson, User } from "@/types/study";
 import { firstSubmissionAccuracy } from "./session";
 
 export const createProfile = (today: string): StudyProfile => ({
@@ -12,11 +12,39 @@ export const createProfile = (today: string): StudyProfile => ({
   rewardsByDay: {},
   bonusXpEvents: {},
 });
+
+/** 等级阈值：真实 XP 累计达到该值升一级。新用户从 Lv.1 开始。 */
+export const NEXT_LEVEL_XP = 1500;
+
+/** 等级称号，按 level 索引（level 1 → 下标 0）。 */
+export const LEVEL_TITLES = [
+  "新手",
+  "学习者",
+  "进阶者",
+  "勤奋者",
+  "高阶学员",
+  "六级达人",
+];
+
+/** 由真实累计 XP 推导 level / 当前级内 XP / 称号。 */
+export function levelFor(totalXp: number): { level: number; xp: number; title: string } {
+  const level = 1 + Math.floor(totalXp / NEXT_LEVEL_XP);
+  return {
+    level,
+    xp: totalXp % NEXT_LEVEL_XP,
+    title: LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)],
+  };
+}
+
+/**
+ * Streak：按真实完成日（rewardsByDay + 新版每日计划完成奖励）计算。
+ * 完成"今日总关卡"才增加；漏 1 天保留（从昨天起算）；连续漏 2 天清零。
+ */
 export function streakFor(profile: StudyProfile, today: string) {
-  const days = new Set([
-    ...Array.from({ length: 7 }, (_, i) => addDays(profile.anchorDate, -i - 1)),
-    ...Object.keys(profile.rewardsByDay),
-  ]);
+  const days = new Set(Object.keys(profile.rewardsByDay));
+  for (const key of Object.keys(profile.bonusXpEvents ?? {})) {
+    if (/^daily-plan-complete:\d{4}-\d{2}-\d{2}$/.test(key)) days.add(key.slice("daily-plan-complete:".length));
+  }
   let cursor = days.has(today) ? today : addDays(today, -1);
   let count = 0;
   while (days.has(cursor)) {
@@ -25,16 +53,28 @@ export function streakFor(profile: StudyProfile, today: string) {
   }
   return count;
 }
-export function userFor(profile: StudyProfile, today: string) {
-  const total =
-    mockUser.xp +
+
+/**
+ * 全局用户状态：XP / Level / Streak 的唯一 Source of Truth。
+ * 基线为 0（不再叠加 mockUser 的演示 XP/Level/Streak），
+ * 只累计真实获得的奖励 XP 与 bonus XP。
+ */
+export function totalXpFor(profile: StudyProfile): number {
+  return (
     Object.values(profile.rewardsByDay).reduce((n, reward) => n + reward.xp, 0) +
-    Object.values(profile.bonusXpEvents ?? {}).reduce((n, xp) => n + xp, 0);
+    Object.values(profile.bonusXpEvents ?? {}).reduce((n, xp) => n + xp, 0)
+  );
+}
+
+export function userFor(profile: StudyProfile, today: string): User {
+  const { level, xp, title } = levelFor(totalXpFor(profile));
   return {
-    ...mockUser,
+    nickname: "",
     streak: streakFor(profile, today),
-    xp: total % mockUser.nextLevelXp,
-    level: mockUser.level + Math.floor(total / mockUser.nextLevelXp),
+    xp,
+    level,
+    title,
+    nextLevelXp: NEXT_LEVEL_XP,
   };
 }
 export function finishSession(

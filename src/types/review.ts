@@ -78,4 +78,6 @@ export interface ReviewStore {
   sessions: Record<string, ReviewSession>;
   /** review:<date>:<itemId> -> xp 防重复 */
   xpLedger: Record<string, number>;
+  /** 已收录的专项作答事件，旧存档缺省时按已有错题时间迁移。 */
+  importedEvents?: Record<string, true>;
 }

@@ -155,8 +155,11 @@ test("every reachable session phase round-trips through storage", () => {
 test("reward is granted once, same-day further practice and reviews grant none", () => {
   const first = finishSession(createProfile(day), complete());
   assert.equal(first.session.reward?.xp, 45);
-  assert.equal(first.session.reward?.streak, 8);
-  assert.equal(userFor(first.profile, day).xp, 1285);
+  // 新用户完成首日：streak 从 0 → 1（无 mock 基线）
+  assert.equal(first.session.reward?.streak, 1);
+  // XP 基线为 0，仅累计真实奖励 45（mockUser 1240 基线已移除）
+  assert.equal(userFor(first.profile, day).xp, 45);
+  assert.equal(userFor(first.profile, day).level, 1);
   assert.deepEqual(finishSession(first.profile, first.session), first);
   const again = finishSession(first.profile, complete(fresh("again")));
   assert.equal(again.session.reward?.xp, 0);
@@ -177,6 +180,7 @@ test("cross-midnight completion rewards actual date; seeded history stays frozen
   const result = finishSession(profile, session);
   assert.ok(result.profile.rewardsByDay["2026-09-17"]);
   assert.equal(result.session.reward?.streak, 1);
+  // 该 profile（无今日奖励）在 9-18 视角下 streak 为 0
   assert.equal(streakFor(profile, "2026-09-18"), 0);
   assert.equal(
     calendarLesson(day, "2026-09-17", profile, {}).status,

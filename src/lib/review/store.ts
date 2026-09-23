@@ -14,6 +14,7 @@ export const emptyReviewStore = (): ReviewStore => ({
   items: {},
   sessions: {},
   xpLedger: {},
+  importedEvents: {},
 });
 
 const obj = (v: unknown): v is Record<string, unknown> =>
@@ -109,6 +110,8 @@ export function loadReviewStore(
     return { store: emptyReviewStore(), issue: "复习版本不兼容，已重置" };
   }
   const store = emptyReviewStore();
+  if (obj(value.importedEvents)) store.importedEvents = Object.fromEntries(Object.entries(value.importedEvents).filter(([, v]) => v === true)) as Record<string, true>;
+  else delete store.importedEvents; // 保留旧存档标记，供自动收录迁移
   let issue: string | undefined;
   if (obj(value.items))
     for (const [id, item] of Object.entries(value.items)) {
