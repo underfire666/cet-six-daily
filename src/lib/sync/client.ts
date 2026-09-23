@@ -21,7 +21,15 @@ export interface QueuedMutation {
   status: "pending" | "syncing" | "failed";
 }
 
-const QUEUE_KEY = "cet-daily:v12:sync-queue";
+const GUEST_QUEUE_KEY = "cet-daily:v12:sync-queue";
+
+function queueKey(): string {
+  if (typeof window === "undefined") return GUEST_QUEUE_KEY;
+  // User-scoped queue: User A's pending mutations never get pushed as User B's.
+  const w = window as unknown as { __CET_SYNC_USER_ID?: string };
+  const m = w.__CET_SYNC_USER_ID;
+  return m ? `cet-daily:v12:sync-queue:${m}` : GUEST_QUEUE_KEY;
+}
 
 // Per-entity queue merge policy.
 // - snapshot: keep latest (profile/settings/preferences)
@@ -47,7 +55,7 @@ const MERGE_POLICY: Record<string, MergePolicy> = {
 export function loadQueue(): QueuedMutation[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
+    const raw = localStorage.getItem(queueKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -58,7 +66,7 @@ export function loadQueue(): QueuedMutation[] {
 
 export function saveQueue(queue: QueuedMutation[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  localStorage.setItem(queueKey(), JSON.stringify(queue));
 }
 
 export function enqueueMutation(m: Omit<QueuedMutation, "mutationId" | "createdAt" | "attempts" | "status">): QueuedMutation {
