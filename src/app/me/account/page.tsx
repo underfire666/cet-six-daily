@@ -4,6 +4,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { loadQueue, pushQueue, pullRemote, type SyncStatus } from "@/lib/sync/client";
+import { isManualSyncBusy, runManualSync } from "@/lib/sync/manual";
 import { hydrateFromPull } from "@/lib/sync/hydrate";
 import { buildGuestMigrationPlan, type GuestMigrationPlan } from "@/lib/sync/migration";
 
@@ -21,6 +22,7 @@ export default function AccountPage() {
   const [migrationPlan, setMigrationPlan] = useState<GuestMigrationPlan | null>(null);
   const [alreadyMigrated, setAlreadyMigrated] = useState(false);
   const [migrationError, setMigrationError] = useState("");
+  const [syncError, setSyncError] = useState("");
 
   const derivedStatus: SyncStatus =
     status === "unauthenticated" ? "guest" : syncStatus === "guest" ? "pending" : syncStatus;
@@ -37,19 +39,28 @@ export default function AccountPage() {
   const stats = migrationPlan?.preview;
   const hasLocalData = Boolean(stats?.hasData);
 
-  function refreshPending() {
-    setPendingCount(loadQueue().length);
+  function refreshPending(): number {
+    const count = loadQueue().length;
+    setPendingCount(count);
+    return count;
   }
 
   async function onSync() {
-    setSyncStatus("syncing");
-    await pushQueue({ onStatus: setSyncStatus });
-    const remote = await pullRemote();
-    if (remote && session?.user?.id) {
-      hydrateFromPull(session.user.id, remote as Parameters<typeof hydrateFromPull>[1]);
-      setLastSync(new Date().toLocaleString());
+    if (!userId) return;
+    setSyncError("");
+    try {
+      await runManualSync({
+        onStatus: setSyncStatus,
+        push: () => pushQueue(),
+        pull: () => pullRemote(),
+        hydrate: (remote) => hydrateFromPull(userId, remote as Parameters<typeof hydrateFromPull>[1]),
+        refreshPending,
+        onSynced: () => setLastSync(new Date().toLocaleString()),
+      });
+    } catch (error) {
+      refreshPending();
+      setSyncError(error instanceof Error ? error.message : "同步失败，请重试");
     }
-    refreshPending();
   }
 
   async function onConfirmMigrate() {
@@ -128,11 +139,12 @@ export default function AccountPage() {
       </div>
       <button
         onClick={onSync}
-        disabled={derivedStatus === "syncing"}
+        disabled={isManualSyncBusy(derivedStatus)}
         className="w-full rounded-xl bg-emerald-600 py-3 text-white font-medium disabled:opacity-50"
       >
         {derivedStatus === "syncing" ? "同步中…" : "立即同步"}
       </button>
+      {syncError && <p role="alert" className="text-sm text-red-700">{syncError}</p>}
       {migrationError && <p role="alert" className="text-sm text-red-700">{migrationError}</p>}
 
       {hasLocalData && !alreadyMigrated && !showPreview && (
