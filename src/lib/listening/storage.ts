@@ -52,7 +52,7 @@ function validRate(v: unknown): v is ListeningRate {
   return v === 0.8 || v === 1.0;
 }
 
-function validListeningSession(v: unknown): v is ListeningSession {
+export function validListeningSession(v: unknown): v is ListeningSession {
   if (
     !obj(v) ||
     v.schemaVersion !== 1 ||

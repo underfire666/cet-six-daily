@@ -45,6 +45,10 @@ function validState(v: unknown): v is UserVocabularyState {
     ["lastReviewedAt", "nextReviewAt", "lastIndependentAt"].every(
       (k) => v[k] === undefined || timestamp(v[k]),
     ) &&
+    ["wordbookAddedAt", "wordbookRemovedAt", "wordbookUpdatedAt"].every(
+      (k) => v[k] === undefined || timestamp(v[k]),
+    ) &&
+    (v.wordbookVersion === undefined || count(v.wordbookVersion)) &&
     ["reviewCount", "correctCount", "wrongCount", "consecutiveCorrect"].every(
       (k) => count(v[k]),
     ) &&
@@ -52,7 +56,7 @@ function validState(v: unknown): v is UserVocabularyState {
     v.independentTypes.every((t) => questionTypes.includes(String(t)))
   );
 }
-function validVocabularySession(v: unknown): v is VocabularySession {
+export function validVocabularySession(v: unknown): v is VocabularySession {
   if (
     !obj(v) ||
     v.schemaVersion !== 1 ||

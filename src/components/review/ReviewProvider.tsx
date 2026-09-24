@@ -33,9 +33,26 @@ import {
 
 import { importReviewEvents } from "@/lib/review/import";
 import { getScopedStorage } from "@/lib/storage/scoped";
-import { enqueueReviewItem } from "@/lib/sync/adapters";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
+import { enqueueReviewItem, enqueueSession } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useReviewState> | null>(null);
+
+function syncReviewItem(item: ReviewItem) {
+  enqueueReviewItem({
+    reviewItemId: item.id,
+    sourceModule: item.sourceModule,
+    activityId: item.sourceActivityId,
+    questionId: item.questionId,
+    status: item.removed ? "removed" : item.masteryStatus === "mastered" ? "mastered" : "active",
+    mastery: item.masteryStatus,
+    dueDate: item.nextReviewAt,
+    priority: item.priority,
+    removed: item.removed,
+    version: item.version ?? 1,
+    item,
+  });
+}
 
 function useReviewState() {
   const today = useToday();
@@ -55,6 +72,12 @@ function useReviewState() {
     if (!saveReviewStore(storage.current, next))
       setNotice("复习进度保存失败，刷新后可能丢失。");
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["review"], () => {
+    const loaded = loadReviewStore(storage.current);
+    latest.current = loaded.store;
+    setStore(loaded.store);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), []);
 
   // 加载
   useEffect(() => {
@@ -78,11 +101,17 @@ function useReviewState() {
   // 等来源存档全部加载后，按持久化事件账本幂等收录。
   useEffect(() => {
     if (!ready || !reading.ready || !listening.ready) return;
-    const next = importReviewEvents(latest.current, [
+    const before = latest.current;
+    const next = importReviewEvents(before, [
       { module: "reading", sessions: reading.store.sessions },
       { module: "listening", sessions: listening.store.sessions },
     ], new Date().toISOString());
-    if (next !== latest.current) commit(next);
+    if (next !== before) {
+      commit(next);
+      for (const [id, item] of Object.entries(next.items)) {
+        if (before.items[id] !== item) syncReviewItem(item);
+      }
+    }
   }, [ready, reading.ready, listening.ready, reading.store.sessions, listening.store.sessions, commit]);
 
   const awardXp = learning.awardXp;
@@ -128,24 +157,18 @@ function useReviewState() {
 
   const finish = useCallback(
     (sessionId: string) => {
-      const done = completeReview(latest.current, sessionId, new Date().toISOString());
-      if (done !== latest.current) {
+      const before = latest.current;
+      const done = completeReview(before, sessionId, new Date().toISOString());
+      if (done !== before) {
         commit(done);
-        // Enqueue changed review items for sync
         for (const [id, item] of Object.entries(done.items)) {
-          const prev = latest.current.items[id];
-          if (!prev || prev.masteryStatus !== item.masteryStatus || prev.nextReviewAt !== item.nextReviewAt) {
-            enqueueReviewItem({
-              reviewItemId: id,
-              sourceModule: item.sourceModule,
-              activityId: item.sourceActivityId,
-              questionId: item.questionId,
-              status: item.removed ? "removed" : item.masteryStatus === "mastered" ? "mastered" : "active",
-              mastery: item.masteryStatus,
-              dueDate: item.nextReviewAt,
-              version: (item as { version?: number }).version ?? 1,
-            });
-          }
+          if (before.items[id] !== item) syncReviewItem(item);
+        }
+        const completed = done.sessions[sessionId];
+        if (!before.sessions[sessionId]?.applied && completed?.applied && completed.completedAt) {
+          enqueueSession({ sessionId, module: "review", activityId: sessionId,
+            planDate: completed.date, startedAt: completed.startedAt, completedAt: completed.completedAt,
+            status: "completed", payload: completed as unknown as Record<string, unknown> });
         }
       }
     },
@@ -156,10 +179,12 @@ function useReviewState() {
     (itemId: string) => {
       const it = latest.current.items[itemId];
       if (!it) return;
+      const updated: ReviewItem = { ...it, favorite: !it.favorite, updatedAt: new Date().toISOString(), version: (it.version ?? 1) + 1 };
       commit({
         ...latest.current,
-        items: { ...latest.current.items, [itemId]: { ...it, favorite: !it.favorite } },
+        items: { ...latest.current.items, [itemId]: updated },
       });
+      syncReviewItem(updated);
     },
     [commit],
   );
@@ -168,18 +193,12 @@ function useReviewState() {
     (itemId: string) => {
       const it = latest.current.items[itemId];
       if (!it) return;
+      const updated: ReviewItem = { ...it, removed: true, updatedAt: new Date().toISOString(), version: (it.version ?? 1) + 1 };
       commit({
         ...latest.current,
-        items: { ...latest.current.items, [itemId]: { ...it, removed: true } },
+        items: { ...latest.current.items, [itemId]: updated },
       });
-      enqueueReviewItem({
-        reviewItemId: itemId,
-        sourceModule: it.sourceModule,
-        activityId: it.sourceActivityId,
-        questionId: it.questionId,
-        removed: true,
-        version: (it as { version?: number }).version ?? 1,
-      });
+      syncReviewItem(updated);
     },
     [commit],
   );
@@ -188,18 +207,12 @@ function useReviewState() {
     (itemId: string) => {
       const it = latest.current.items[itemId];
       if (!it) return;
+      const updated: ReviewItem = { ...it, removed: false, updatedAt: new Date().toISOString(), version: (it.version ?? 1) + 1 };
       commit({
         ...latest.current,
-        items: { ...latest.current.items, [itemId]: { ...it, removed: false } },
+        items: { ...latest.current.items, [itemId]: updated },
       });
-      enqueueReviewItem({
-        reviewItemId: itemId,
-        sourceModule: it.sourceModule,
-        activityId: it.sourceActivityId,
-        questionId: it.questionId,
-        status: "active",
-        version: (it as { version?: number }).version ?? 1,
-      });
+      syncReviewItem(updated);
     },
     [commit],
   );

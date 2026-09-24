@@ -21,6 +21,7 @@ import {
 } from "@/lib/lesson/storage";
 import { createSession, reduceSession } from "@/lib/lesson/session";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
 import { enqueueXpEvent, enqueueSession, enqueueSettings } from "@/lib/sync/adapters";
 import type {
   FeedbackSettings,
@@ -64,6 +65,11 @@ function useLearningState() {
     // The profile anchor must remain the first use date across midnight.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commit]);
+  useEffect(() => subscribeRemoteHydrate(["study"], () => {
+    // Recreate the repository: createStudyStorage has an in-memory read cache.
+    storage.current = createStudyStorage(getScopedStorage(), setNotice);
+    commit(storage.current.load(today));
+  }), [commit, today]);
   const start = useCallback(
     (date: string, mode: SessionMode) => {
       if (!storage.current) return;
@@ -108,6 +114,7 @@ function useLearningState() {
         startedAt: result.session.startedAt,
         completedAt: result.session.phase === "complete" ? new Date().toISOString() : undefined,
         status: result.session.phase === "complete" ? "completed" : "in_progress",
+        payload: result.session as unknown as Record<string, unknown>,
       });
     },
     [commit],

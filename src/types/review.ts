@@ -54,6 +54,8 @@ export interface ReviewItem {
   sources?: ReviewSourceModule[];
   /** minimal snapshot：用户上次答错的选项 id，用于复习回放时标注"你的作答"；旧数据可缺省 */
   lastWrongOptionId?: string;
+  /** Monotonic cloud entity version used when merging remote review state. */
+  version?: number;
   history: ReviewHistoryEntry[];
   schemaVersion: 1;
 }

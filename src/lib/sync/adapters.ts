@@ -9,6 +9,8 @@
 import { enqueueMutation } from "@/lib/sync/client";
 import { useSession } from "next-auth/react";
 import { useCallback } from "react";
+import type { ReviewItem, ReviewMastery } from "@/types/review";
+import type { DailyPlan } from "@/types/dailyPlan";
 
 // Track current user id at module level so non-React callers (e.g. stores)
 // can enqueue without threading a hook through every function.
@@ -80,6 +82,9 @@ export function enqueueWordbook(opts: {
   wordId: string;
   source?: string;
   addedAt?: string;
+  removedAt?: string;
+  updatedAt?: string;
+  version?: number;
   removed?: boolean;
 }) {
   return withUserScope({
@@ -90,6 +95,9 @@ export function enqueueWordbook(opts: {
       wordId: opts.wordId,
       source: opts.source ?? null,
       addedAt: opts.addedAt ?? new Date().toISOString(),
+      removedAt: opts.removed ? (opts.removedAt ?? new Date().toISOString()) : null,
+      updatedAt: opts.updatedAt ?? new Date().toISOString(),
+      version: opts.version ?? 1,
     },
   });
 }
@@ -105,15 +113,26 @@ export function enqueueReviewItem(opts: {
   priority?: number;
   version?: number;
   removed?: boolean;
+  item?: ReviewItem;
 }) {
+  const remoteMastery = (mastery: ReviewMastery | string | undefined) =>
+    mastery === "weak" ? "learning" : mastery === "reviewing" ? "familiar" : mastery;
   return withUserScope({
     entityType: "reviewItem",
     entityId: opts.reviewItemId,
     operation: opts.removed ? "remove" : "upsert",
     payload: {
-      ...opts,
+      reviewItemId: opts.reviewItemId,
+      sourceModule: opts.sourceModule,
+      activityId: opts.activityId,
+      questionId: opts.questionId,
+      status: opts.status ?? (opts.removed ? "removed" : "active"),
+      mastery: remoteMastery(opts.mastery ?? opts.item?.masteryStatus),
+      dueDate: opts.dueDate ?? opts.item?.nextReviewAt,
+      priority: opts.priority ?? opts.item?.priority,
+      payload: opts.item ?? null,
       removedAt: opts.removed ? new Date().toISOString() : null,
-      version: opts.version ?? 1,
+      version: opts.version ?? opts.item?.version ?? 1,
     },
   });
 }
@@ -121,12 +140,13 @@ export function enqueueReviewItem(opts: {
 export function enqueueDailyPlan(opts: {
   planDate: string;
   completedTaskIds: string[];
+  plan?: DailyPlan;
 }) {
   return withUserScope({
     entityType: "dailyPlan",
     entityId: opts.planDate,
     operation: "upsert",
-    payload: { completedTaskIds: opts.completedTaskIds },
+    payload: { completedTaskIds: opts.completedTaskIds, ...(opts.plan ? { plan: opts.plan } : {}) },
   });
 }
 
@@ -162,6 +182,7 @@ export function enqueueTranslationHistory(opts: {
   promptId: string;
   answer: string;
   feedback?: Record<string, unknown>;
+  createdAt?: string;
 }) {
   return withUserScope({
     entityType: "translationHistory",
@@ -176,6 +197,7 @@ export function enqueueWritingHistory(opts: {
   promptId: string;
   answer: string;
   feedback?: Record<string, unknown>;
+  createdAt?: string;
 }) {
   return withUserScope({
     entityType: "writingHistory",

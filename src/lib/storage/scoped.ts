@@ -18,7 +18,12 @@ function resolveNamespace(): Namespace {
 
 export function getScopedStorage(): KeyStorage | undefined {
   if (typeof window === "undefined") return undefined;
-  const ns = resolveNamespace();
+  return getStorageForNamespace(resolveNamespace());
+}
+
+/** Resolve a repository storage adapter for an explicit namespace. */
+export function getStorageForNamespace(ns: Namespace): KeyStorage | undefined {
+  if (typeof window === "undefined") return undefined;
   const legacy = window.localStorage;
 
   return {

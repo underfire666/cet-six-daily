@@ -59,7 +59,7 @@ function validFeedback(v: unknown): v is TranslationSession["feedback"] {
   );
 }
 
-function validSession(v: unknown): v is TranslationSession {
+export function validTranslationSession(v: unknown): v is TranslationSession {
   if (
     !obj(v) ||
     v.schemaVersion !== 1 ||
@@ -151,7 +151,7 @@ export function loadTranslationStore(storage: KeyStorage | undefined): {
     }
   if (obj(value.sessions))
     for (const [id, session] of Object.entries(value.sessions)) {
-      if (validSession(session)) store.sessions[id] = session;
+      if (validTranslationSession(session)) store.sessions[id] = session;
       else issue = issue ?? "部分翻译记录无法读取，已保留其他有效记录。";
     }
   if (Array.isArray(value.history))

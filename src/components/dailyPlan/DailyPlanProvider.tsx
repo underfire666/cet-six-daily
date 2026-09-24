@@ -15,6 +15,7 @@ import { useWriting } from "@/components/writing/WritingProvider";
 import { useLearning } from "@/components/LearningProvider";
 import { useToday } from "@/components/StudyProvider";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
 import { enqueueDailyPlan, enqueuePreferences } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useDailyPlanState> | null>(null);
@@ -29,6 +30,8 @@ function useDailyPlanState() {
   const [store, setStore] = useState<DailyPlanStore>(emptyDailyPlanStore);
   const latest = useRef(store);
   const storage = useRef<Storage | undefined>(undefined);
+  const skipDerivedEnqueue = useRef(false);
+  const remoteCompletionDates = useRef(new Set<string>());
   const [loaded, setLoaded] = useState(false);
   const [notice, setNotice] = useState("");
   const ready = loaded && learning.ready && vocab.ready && reading.ready && listening.ready && translation.ready && writing.ready;
@@ -40,6 +43,14 @@ function useDailyPlanState() {
     setNotice(saved ? "" : "浏览器暂时无法保存学习计划，刷新后可能丢失。");
     return saved;
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["dailyPlan", "study", "vocabulary", "reading", "listening", "translation", "writing"], () => {
+    skipDerivedEnqueue.current = true;
+    remoteCompletionDates.current.add(today);
+    const loaded = loadDailyPlanStore(storage.current);
+    latest.current = loaded.store;
+    setStore(loaded.store);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), [today]);
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
@@ -71,6 +82,8 @@ function useDailyPlanState() {
 
   useEffect(() => {
     if (!ready) return;
+    const fromRemote = skipDerivedEnqueue.current;
+    skipDerivedEnqueue.current = false;
     let next = latest.current;
     const plans = { ...next.plans };
     if (!plans[today]) plans[today] = generatePlan(today, next.preferences.examDate, next.preferences);
@@ -81,11 +94,14 @@ function useDailyPlanState() {
     }
     next = { ...next, plans: rescheduleMissedTasks({ plans, today, examDate: next.preferences.examDate, pref: next.preferences, isPlanCompleted: (_, plan) => plan.status === "completed" }) };
     if (JSON.stringify(next) !== JSON.stringify(latest.current)) {
+      if (!fromRemote && next.plans[today]?.status === "completed") remoteCompletionDates.current.delete(today);
       commit(next);
       // Enqueue dailyPlan state for sync
-      for (const [date, plan] of Object.entries(next.plans)) {
-        if (plan.status === "completed") {
-          enqueueDailyPlan({ planDate: date, completedTaskIds: plan.tasks.filter(t => !t.removed).map(t => t.id) });
+      if (!fromRemote) {
+        for (const [date, plan] of Object.entries(next.plans)) {
+          if (plan.status === "completed") {
+            enqueueDailyPlan({ planDate: date, completedTaskIds: plan.tasks.filter(t => !t.removed).map(t => t.id), plan });
+          }
         }
       }
     }
@@ -93,7 +109,7 @@ function useDailyPlanState() {
 
   const awardXp = learning.awardXp;
   useEffect(() => {
-    if (!ready || store.plans[today]?.status !== "completed") return;
+    if (!ready || store.plans[today]?.status !== "completed" || remoteCompletionDates.current.has(today)) return;
     const key = `daily-plan-complete:${today}`;
     awardXp(key, 10);
     if (latest.current.completionLedger[key] === undefined) commit({ ...latest.current, completionLedger: { ...latest.current.completionLedger, [key]: 10 } });

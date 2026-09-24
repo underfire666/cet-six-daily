@@ -142,7 +142,7 @@ export async function applyPushBatch(userId: string, mutations: SyncMutationInpu
   return { applied, skipped };
 }
 
-async function applyMutationInTx(
+export async function applyMutationInTx(
   tx: Prisma.TransactionClient,
   userId: string,
   m: SyncMutationInput,
@@ -188,7 +188,13 @@ async function applyMutationInTx(
       });
       return;
     case "wordbook": {
-      const removedAt = m.operation === "remove" ? new Date() : (p.removedAt ? new Date(String(p.removedAt)) : null);
+      const removedAt = m.operation === "remove" ? new Date(String(p.removedAt ?? new Date().toISOString())) : (p.removedAt ? new Date(String(p.removedAt)) : null);
+      const existing = await tx.wordbookEntry.findUnique({
+        where: { userId_wordId: { userId, wordId: m.entityId } },
+        select: { version: true },
+      });
+      const incomingVersion = Number(p.version ?? 1);
+      if (existing && incomingVersion < existing.version) return;
       await tx.wordbookEntry.upsert({
         where: { userId_wordId: { userId, wordId: m.entityId } },
         create: {
@@ -197,11 +203,13 @@ async function applyMutationInTx(
           source: (p.source as string) ?? null,
           removedAt,
           addedAt: new Date(String(p.addedAt ?? new Date().toISOString())),
+          version: incomingVersion,
         },
         update: {
           removedAt,
           source: (p.source as string) ?? undefined,
-          version: { increment: 1 },
+          addedAt: p.addedAt ? new Date(String(p.addedAt)) : undefined,
+          version: Math.max((existing?.version ?? 0) + 1, incomingVersion),
         },
       });
       return;
@@ -226,6 +234,7 @@ async function applyMutationInTx(
           mastery: (p.mastery as string) ?? null,
           dueDate: (p.dueDate as string) ?? null,
           priority: p.priority != null ? Number(p.priority) : null,
+          payload: (p.payload as object) ?? undefined,
           removedAt,
           version: incomingVersion,
         },
@@ -234,6 +243,7 @@ async function applyMutationInTx(
           mastery: (p.mastery as string) ?? null,
           dueDate: (p.dueDate as string) ?? undefined,
           priority: p.priority != null ? Number(p.priority) : undefined,
+          payload: (p.payload as object) ?? undefined,
           removedAt,
           version: incomingVersion,
         },
@@ -297,6 +307,7 @@ async function applyMutationInTx(
           promptId: String(p.promptId ?? ""),
           answer: String(p.answer ?? ""),
           feedback: (p.feedback as object) ?? undefined,
+          createdAt: p.createdAt ? new Date(String(p.createdAt)) : undefined,
         },
         update: {},
       });
@@ -310,6 +321,7 @@ async function applyMutationInTx(
           promptId: String(p.promptId ?? ""),
           answer: String(p.answer ?? ""),
           feedback: (p.feedback as object) ?? undefined,
+          createdAt: p.createdAt ? new Date(String(p.createdAt)) : undefined,
         },
         update: {},
       });

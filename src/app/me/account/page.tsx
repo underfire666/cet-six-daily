@@ -2,46 +2,13 @@
 
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { loadQueue, pushQueue, pullRemote, type SyncStatus } from "@/lib/sync/client";
 import { hydrateFromPull } from "@/lib/sync/hydrate";
-
-interface LocalStats {
-  studyDays: number;
-  xp: number;
-  wordCount: number;
-  wrongCount: number;
-  sessionCount: number;
-}
-
-function detectLocalStats(): LocalStats {
-  if (typeof window === "undefined") {
-    return { studyDays: 0, xp: 0, wordCount: 0, wrongCount: 0, sessionCount: 0 };
-  }
-  let xp = 0;
-  try {
-    const study = JSON.parse(localStorage.getItem("cet-daily:v1:study") ?? "{}");
-    xp = Number(study?.profile?.totalXp ?? 0) || 0;
-  } catch {}
-  let wordCount = 0;
-  try {
-    const vocab = JSON.parse(localStorage.getItem("cet-daily:v3:vocabulary") ?? "{}");
-    wordCount = Array.isArray(vocab?.states) ? vocab.states.length : 0;
-  } catch {}
-  let wrongCount = 0;
-  try {
-    const review = JSON.parse(localStorage.getItem("cet-daily:v1:review") ?? "{}");
-    wrongCount = Array.isArray(review?.items) ? review.items.length : 0;
-  } catch {}
-  let sessionCount = 0;
-  try {
-    const daily = JSON.parse(localStorage.getItem("cet-daily:v1:daily-plan") ?? "{}");
-    sessionCount = Array.isArray(daily?.completedDates) ? daily.completedDates.length : 0;
-  } catch {}
-  return { studyDays: sessionCount, xp, wordCount, wrongCount, sessionCount };
-}
+import { buildGuestMigrationPlan, type GuestMigrationPlan } from "@/lib/sync/migration";
 
 const MIGRATED_FLAG = "cet-daily:v12:guest-migrated-to";
+const MIGRATION_ID_KEY = "cet-daily:v12:guest-migration-id:";
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
@@ -51,17 +18,24 @@ export default function AccountPage() {
   const [lastSync, setLastSync] = useState<string>("");
   const [migrating, setMigrating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [migrationPlan, setMigrationPlan] = useState<GuestMigrationPlan | null>(null);
+  const [alreadyMigrated, setAlreadyMigrated] = useState(false);
+  const [migrationError, setMigrationError] = useState("");
 
   const derivedStatus: SyncStatus =
     status === "unauthenticated" ? "guest" : syncStatus === "guest" ? "pending" : syncStatus;
 
-  const stats = useMemo(() => detectLocalStats(), []);
-  const alreadyMigrated =
-    typeof window !== "undefined" &&
-    Boolean(session?.user?.id) &&
-    localStorage.getItem(MIGRATED_FLAG) === (session?.user?.id ?? "");
-
-  const hasLocalData = stats.xp > 0 || stats.wordCount > 0 || stats.wrongCount > 0 || stats.sessionCount > 0;
+  const userId = session?.user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    queueMicrotask(() => {
+      const migrationId = localStorage.getItem(`${MIGRATION_ID_KEY}${userId}`) ?? crypto.randomUUID();
+      setMigrationPlan(buildGuestMigrationPlan(localStorage, migrationId));
+      setAlreadyMigrated(localStorage.getItem(MIGRATED_FLAG) === userId);
+    });
+  }, [userId]);
+  const stats = migrationPlan?.preview;
+  const hasLocalData = Boolean(stats?.hasData);
 
   function refreshPending() {
     setPendingCount(loadQueue().length);
@@ -79,18 +53,34 @@ export default function AccountPage() {
   }
 
   async function onConfirmMigrate() {
-    if (!session?.user?.id) return;
+    if (!userId) return;
     setMigrating(true);
+    setMigrationError("");
     try {
-      // Real migration: push existing local data as a batch of mutations.
-      // In V12 the local stores already hold the canonical records; we enqueue
-      // them here. (Deeper per-record extraction is wired in the adapters layer.)
-      await pushQueue({ onStatus: setSyncStatus });
+      const key = `${MIGRATION_ID_KEY}${userId}`;
+      const migrationId = localStorage.getItem(key) ?? crypto.randomUUID();
+      localStorage.setItem(key, migrationId); // stable across retry after a lost response
+      const currentPlan = buildGuestMigrationPlan(localStorage, migrationId);
+      if (!currentPlan.preview.hasData) throw new Error("没有可合并的本机记录");
+      const response = await fetch("/api/sync/migrate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ migrationId, mutations: currentPlan.mutations }),
+      });
+      if (!response.ok) throw new Error("合并未完成，请稍后重试");
+      const result = await response.json() as { verified?: boolean };
+      if (result.verified !== true) throw new Error("合并结果未验证，请稍后重试");
       const remote = await pullRemote();
-      if (remote) hydrateFromPull(session.user.id, remote as Parameters<typeof hydrateFromPull>[1]);
-      localStorage.setItem(MIGRATED_FLAG, session.user.id);
+      if (!remote) throw new Error("云端读取失败，请稍后重试");
+      hydrateFromPull(userId, remote as Parameters<typeof hydrateFromPull>[1]);
+      localStorage.setItem(MIGRATED_FLAG, userId);
+      setAlreadyMigrated(true);
       setShowPreview(false);
       setLastSync(new Date().toLocaleString());
+      setSyncStatus("synced");
+    } catch (error) {
+      setMigrationError((error as Error).message || "合并失败，请稍后重试");
+      setSyncStatus("failed");
     } finally {
       setMigrating(false);
       refreshPending();
@@ -143,10 +133,15 @@ export default function AccountPage() {
       >
         {derivedStatus === "syncing" ? "同步中…" : "立即同步"}
       </button>
+      {migrationError && <p role="alert" className="text-sm text-red-700">{migrationError}</p>}
 
       {hasLocalData && !alreadyMigrated && !showPreview && (
         <button
-          onClick={() => setShowPreview(true)}
+          onClick={() => {
+            const migrationId = localStorage.getItem(`${MIGRATION_ID_KEY}${userId}`) ?? crypto.randomUUID();
+            setMigrationPlan(buildGuestMigrationPlan(localStorage, migrationId));
+            setShowPreview(true);
+          }}
           disabled={migrating}
           className="w-full rounded-xl border border-emerald-600 py-3 text-emerald-700 font-medium disabled:opacity-50"
         >
@@ -154,14 +149,17 @@ export default function AccountPage() {
         </button>
       )}
 
-      {showPreview && hasLocalData && (
+      {showPreview && hasLocalData && stats && (
         <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 space-y-3">
           <div className="font-medium">检测到本机学习记录</div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>学习天数 <strong>{stats.studyDays}</strong></div>
             <div>XP <strong>{stats.xp}</strong></div>
+            <div>已完成会话 <strong>{stats.sessionCount}</strong></div>
             <div>生词 <strong>{stats.wordCount}</strong></div>
             <div>错题 <strong>{stats.wrongCount}</strong></div>
+            {stats.translationCount > 0 && <div>翻译历史 <strong>{stats.translationCount}</strong></div>}
+            {stats.writingCount > 0 && <div>写作历史 <strong>{stats.writingCount}</strong></div>}
           </div>
           <div className="text-xs text-stone-500">合并后，本机数据仍保留；可在新设备登录同一账号恢复。</div>
           <button

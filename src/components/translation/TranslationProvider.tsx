@@ -27,6 +27,7 @@ import type { SubjectiveSessionMode } from "@/types/subjective";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
 import { enqueueSession, enqueueTranslationHistory } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useTranslationState> | null>(
@@ -78,6 +79,12 @@ function useTranslationState() {
       window.removeEventListener("focus", tick);
     };
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["translation"], () => {
+    const loaded = loadTranslationStore(storage.current);
+    latest.current = loaded.store;
+    setStore(loaded.store);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), []);
 
   const award = learning.awardXp;
   useEffect(() => {
@@ -129,6 +136,7 @@ function useTranslationState() {
             promptId: h.taskId,
             answer: h.submittedText ?? "",
             feedback: h.feedback as unknown as Record<string, unknown>,
+            createdAt: h.createdAt,
           });
         }
       }

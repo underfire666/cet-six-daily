@@ -47,7 +47,7 @@ function validDaily(v: unknown): v is ReadingDailyProgress {
   );
 }
 
-function validReadingSession(v: unknown): v is ReadingSession {
+export function validReadingSession(v: unknown): v is ReadingSession {
   if (
     !obj(v) ||
     v.schemaVersion !== 1 ||

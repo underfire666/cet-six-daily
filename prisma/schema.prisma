@@ -116,6 +116,7 @@ model ReviewItem {
   mastery     String?
   dueDate     String?   // Asia/Shanghai YYYY-MM-DD
   priority    Int?
+  payload     Json?     // complete V9 ReviewItem for lossless domain restore
   removedAt   DateTime? @db.Timestamptz(6)
   version     Int       @default(1)
   createdAt   DateTime  @default(now()) @db.Timestamptz(6)

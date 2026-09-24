@@ -80,6 +80,7 @@ export function recordWrong(
       ? { lastWrongOptionId: wrongOptionId ?? existing?.lastWrongOptionId }
       : {}),
     history,
+    version: (existing?.version ?? 0) + 1,
     schemaVersion: 1,
   };
   return { ...items, [id]: item };
@@ -124,6 +125,7 @@ export function applyReviewResult(
   ];
   const updated: ReviewItem = {
     ...existing,
+    version: (existing.version ?? 1) + 1,
     updatedAt: now,
     lastReviewedAt: now,
     nextReviewAt,

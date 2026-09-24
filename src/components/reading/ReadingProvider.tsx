@@ -24,6 +24,7 @@ import type { ReadingSessionMode, ReadingStore } from "@/types/reading";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
 import { enqueueSession } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useReadingState> | null>(null);
@@ -65,6 +66,12 @@ function useReadingState() {
       window.removeEventListener("focus", tick);
     };
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["reading"], () => {
+    const loaded = loadReadingStore(storage.current);
+    latest.current = loaded.store;
+    setStore(loaded.store);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), []);
   const award = learning.awardXp;
   useEffect(() => {
     if (ready && learning.ready)

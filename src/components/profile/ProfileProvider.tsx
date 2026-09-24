@@ -14,6 +14,7 @@ import { computeStudyStats, summarizeObjective, summarizeReviewAnswers, type Com
 import { countdownText, todayInShanghai } from "@/lib/dates";
 import { totalXpFor } from "@/lib/lesson/profile";
 import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
 import { enqueueProfile } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useProfileState> | null>(null);
@@ -46,6 +47,12 @@ function useProfileState() {
     });
     return () => { active = false; };
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["profile"], () => {
+    const loaded = loadProfile(storage.current);
+    latestProfile.current = loaded.profile;
+    setProfile(loaded.profile);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), []);
 
   const update = useCallback((patch: Partial<UserProfile>) => {
     if (!latestProfile.current) return;

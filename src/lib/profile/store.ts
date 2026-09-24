@@ -65,7 +65,7 @@ export function loadProfile(storage: Storage | undefined): { profile: UserProfil
 export function saveProfile(storage: Storage | undefined, profile: UserProfile): boolean {
   try {
     if (!storage) return false;
-    storage.setItem(PROFILE_KEY, JSON.stringify({ ...profile, updatedAt: new Date().toISOString() }));
+    storage.setItem(PROFILE_KEY, JSON.stringify(profile));
     return true;
   } catch {
     return false;
