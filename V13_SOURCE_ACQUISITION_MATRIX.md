@@ -15,7 +15,7 @@ This document investigates, verifies, and classifies real CET-6 (College English
 ### Headline findings
 
 - **OFFICIAL SOURCES FOUND:** 4 — cet.neea.edu.cn (info portal), cet-bm/cet-kw.neea.edu.cn (registration), NEEA User Service Agreement, 2016 revised syllabus PDF with embedded CET-6 sample paper.
-- **OFFICIAL FULL PAST PAPERS FOUND:** Zero for 2022–2026. NEEA does not publish administered past papers.
+- **OFFICIAL FULL PAST PAPERS FOUND:** Zero for 2022–2026. No official full administered CET6 papers for 2022–2026 were found in the official sources surveyed during this research.
 - **OFFICIAL AUDIO FOUND:** Zero English CET-6 listening audio currently available from official sources. Legacy host www.cet.edu.cn no longer serves CET content.
 - **PRODUCTION CANDIDATES:** None for real CET-6 content. Only self-authored mock content, self-produced audio, and re-authored exam-structure facts are production-safe.
 - **STAGING CANDIDATES:** 2016 syllabus PDF (specification/sample reference), official exam-structure tables (re-authored facts).
@@ -115,7 +115,11 @@ No source surveyed provides explicit redistribution, commercial-use, or derivati
 
 **Section 六.5(3):** users may not "对本网站拥有知识产权的内容进行使用、出租、出借、复制、修改、链接、转载、汇编、发表、出版、建立镜像站点等".
 
-**Scope note (INFERENCE, MEDIUM confidence):** This agreement formally governs the registration website (cet-bm / cet-kw .neea.edu.cn). However, identical boilerplate is reused across NEEA resource subdomains (e.g., https://resource.neea.edu.cn/project/Agreement/TOEFL/ServiceAgreement.html), and the operator/rights holder is the same entity. Application to cet.neea.edu.cn static pages is MEDIUM confidence; application to registration-site resources is HIGH.
+**Scope note (corrected 2026-09-26, Phase 2A.1):**
+- **FACT:** This agreement formally governs the CET/NCRE/PETS **registration website** (cet-bm / cet-kw .neea.edu.cn). Its object is the registration site, not every NEEA property.
+- **FACT:** The official CET info pages (cet.neea.edu.cn) and the 2016 syllabus/sample material carry no explicit open license, redistribution permission, or commercial-use permission found during this research.
+- **INFERENCE (MEDIUM):** Identical IP boilerplate is reused across NEEA resource subdomains (e.g., https://resource.neea.edu.cn/project/Agreement/TOEFL/ServiceAgreement.html) and the operator/rights holder is the same entity, so the all-rights-reserved posture is consistent across NEEA properties — but this is inference, not a direct contractual finding.
+- **OPERATIONAL DECISION (fail closed):** Do NOT claim this agreement directly governs all CET-6 exam assets (all cet.neea.edu.cn content, the 2016 syllabus book, all administered papers). Absent independent reuse evidence for those assets, the V13 production rights model fails closed (UNKNOWN / STAGING_ONLY / BLOCKED), consistent with the Phase 1.1 rights model.
 
 **Rights Verdict:** All content = BLOCKED for redistribution/commercial/derivative use without written permission. Evidence quality: HIGH.
 
@@ -336,7 +340,7 @@ Real CET-6 papers circulate in a recognizable pipeline:
 
 ### 7.3 Transcript rights deep-dive
 
-- **FACT:** NEEA does not publish official listening transcripts for past exams. The only official listening script text is the 样卷 script inside the 2016 syllabus PDF.
+- **FACT:** No official listening transcripts for administered past exams were found in the official sources surveyed during this research. The only official listening script text found is the 样卷 script inside the 2016 syllabus PDF.
 - **FACT (law):** A transcript is both a reproduction of the underlying script text (which NEEA claims) and a transcription/derivative of the sound recording. Transcribing an audio recording creates no new right that clears the underlying rights — it infringes the script copyright and the recording producer's right simultaneously. (Framework: 著作权法 Art.10 reproduction/derivative rights; https://www.ncac.gov.cn/xxfb/flfg/flfg_532/202103/t20210309_50530.html.)
 - **INFERENCE (MEDIUM):** Third-party "听力原文" sites either OCR/copy publisher book transcripts or transcribe leaked audio themselves — neither chain has a NEEA license.
 - **Fair-use check (FACT):** Art.24(6) classroom-teaching exception explicitly says "供教学或者科研人员使用，但不得出版发行" — it does NOT cover a commercial consumer app (https://www.gov.cn/guoqing/2021-10/29/content_5647633.htm). This is not a safe harbor.
@@ -351,7 +355,7 @@ Real CET-6 papers circulate in a recognizable pipeline:
 ### 7.5 Alternative approach: "Real metadata + self-made/licensed audio"
 
 #### What "real metadata" can safely include
-- **PUBLISHABLE as facts (FACT, HIGH):** exam year, session (June/Dec), form number (第1/2/3套), section structure (Section A/B/C, 25 questions, 30 min, 140–160 wpm per official syllabus), topic domain tags (campus / lecture / science). Factual data itself is not copyrighted.
+- **PUBLISHABLE as facts (FACT, HIGH):** exam year, session (June/Dec), form number (第1/2/3套), section structure (Section A 长对话 8 题 / Section B 听力篇章 7 题 / Section C 讲话·报道·讲座 10 题 = 25 questions, 30 min, per current official CET-6 structure — https://cet.neea.edu.cn/xhtml1/report/16123/201-1.htm), topic domain tags (campus / lecture / science). Factual data itself is not copyrighted.
 - **NOT safe (INFERENCE, MEDIUM):** real question stems, options, and answer keys — these are copyrighted expression. "Metadata" must not smuggle in question text.
 
 #### Can we re-read an official transcript with our own voices?
@@ -359,13 +363,13 @@ Real CET-6 papers circulate in a recognizable pipeline:
 
 #### TTS commercial licensing (for self-written scripts)
 
-| Provider | Commercial redistribution of output | Source URL |
-|---|---|---|
-| **Azure Speech TTS** | Paid tier (S0) with prebuilt neural voices: output may be used commercially; **you must own rights to input text**. Free tier not for production output. | https://learn.microsoft.com/en-in/answers/questions/5987029/can-audio-generated-with-azure-text-to-speech-be-p ; https://azure.microsoft.com/da-dk/pricing/details/speech/ |
-| **AWS Polly** | Explicitly: store output as MP3/OGG "for redistribution, analysis, archiving, or any other use case at no extra cost"; pay-as-you-go. | https://aws.amazon.com/polly/ ; https://aws.amazon.com/polly/faqs/ |
-| **Google Cloud TTS** | Generated audio usable in apps/media in compliance with GCP ToS; **no attribution required**; may not be used to build competing TTS. | https://discuss.google.dev/t/commercial-use/128101/2 ; https://discuss.google.dev/t/text-to-speech-api-license/187973/2 |
+| Provider | Commercial redistribution of output | Evidence Basis (source nature) | Source URL |
+|---|---|---|---|
+| **Azure Speech TTS** | Paid tier (S0) with prebuilt neural voices: output may be used commercially; **you must own rights to input text**. Free tier not for production output. | Community Q&A (Microsoft Learn answers) + pricing page — NOT binding service terms | https://learn.microsoft.com/en-in/answers/questions/5987029/can-audio-generated-with-azure-text-to-speech-be-p ; https://azure.microsoft.com/da-dk/pricing/details/speech/ |
+| **AWS Polly** | Explicitly: store output as MP3/OGG "for redistribution, analysis, archiving, or any other use case at no extra cost"; pay-as-you-go. | Official product page + official FAQ (FAQ-level, not the binding AWS Service Terms) | https://aws.amazon.com/polly/ ; https://aws.amazon.com/polly/faqs/ |
+| **Google Cloud TTS** | Generated audio usable in apps/media in compliance with GCP ToS; **no attribution required**; may not be used to build competing TTS. | Community forum discussions (discuss.google.dev) — NOT binding service terms | https://discuss.google.dev/t/commercial-use/128101/2 ; https://discuss.google.dev/t/text-to-speech-api-license/187973/2 |
 
-**FACT:** All three major providers permit commercial use of output — but every provider's condition is that you must have rights to the input text. TTS licenses clear the voice, not the script.
+**FACT (evidence quality downgraded, Phase 2A.1):** The above sources indicate all three major providers permit commercial use of output conditioned on the user owning input-text rights — but the evidence is drawn from FAQs, pricing pages, and community Q&A/forum answers, **not from the providers' binding, current service terms**. Evidence quality for provider TTS licensing = **MEDIUM / NEEDS FINAL TERMS CHECK** (not HIGH). When Phase 2B actually selects a TTS provider, the following must be re-verified against official current terms: commercial use, output redistribution, attribution, voice-specific restrictions, synthetic-voice restrictions, input-text rights, and the terms' effective date. No provider is selected and no audio is generated in this phase.
 
 #### Professional voice-over licensing models
 - **FACT:** Standard models: (i) buyout/flat buyout — one-time fee, perpetual, all-territory/all-media; common in e-learning; (ii) term-limited license — channel/territory/duration specified; (iii) residuals/royalties — per-broadcast fees, typical of unionized TV/radio. Key dimensions: medium, territory, term, exclusivity. (Sources: https://flyvoiceovers.com/blog/voice-over-rights-usage-licences-explained-guide-for-brands ; https://audioscene.org/article/best-practices-for-licensing-voiceover-content-for-marketing-use/ ; https://www.votrainer.com/blog/voiceover-buyouts-and-usage-rights-explained-simply)
@@ -389,7 +393,7 @@ Real CET-6 papers circulate in a recognizable pipeline:
 | Listening TRANSCRIPT (real) | Any third-party | BLOCKED (derivative of script + recording; no license) | MEDIUM |
 | Listening TRANSCRIPT (official) | Not published | UNKNOWN / n/a | HIGH |
 | Question metadata (year, set, section, difficulty tags) | Self-curated facts | PUBLISHABLE (facts not copyrightable; do not embed stems) | MEDIUM |
-| Audio for self-written mock scripts via paid Azure/Polly/Google TTS | Self-produced | PUBLISHABLE (vendor terms permit; input text owned by us) | HIGH |
+| Audio for self-written mock scripts via paid Azure/Polly/Google TTS | Self-produced | PUBLISHABLE (vendor commercial-use posture per FAQ/pricing/community sources; input text owned by us) | MEDIUM / NEEDS FINAL TERMS CHECK |
 | Audio for self-written scripts via contracted voice-over buyout | Self-produced | PUBLISHABLE (with written buyout contract) | MEDIUM |
 | Deep-linking to third-party-hosted real audio | Third-party | BLOCKED (knowing link to likely-infringing source; contributory risk) | MEDIUM |
 
@@ -404,7 +408,7 @@ The only production-safe content paths are self-authored:
 | Candidate | Content Type | Rights Basis | Evidence Quality | Notes |
 |---|---|---|---|---|
 | **Self-authored high-fidelity mock questions** | Reading, Writing, Translation, Listening (question text) | We own the content; original creation | HIGH | Must be genuinely original, not derived from real papers. High-fidelity = matches structure, difficulty, topic distribution per official spec. |
-| **Self-produced listening audio (TTS)** | Listening audio | Azure/AWS/Google commercial TTS terms; input text owned by us | HIGH | Pay-as-you-go; ~$4–16/1M chars depending on provider/voice tier. Must use self-written scripts. |
+| **Self-produced listening audio (TTS)** | Listening audio | Azure/AWS/Google commercial-use posture (FAQ/pricing/community sources; final terms TBD in Phase 2B); input text owned by us | MEDIUM / NEEDS FINAL TERMS CHECK | Pay-as-you-go; ~$4–16/1M chars depending on provider/voice tier. Must use self-written scripts. Provider final terms must be re-checked in Phase 2B before selection. |
 | **Self-produced listening audio (voice-over buyout)** | Listening audio | Written buyout contract; input text owned by us | MEDIUM | Non-union buyout covering commercial mobile app, worldwide, perpetual. Contract must be written before recording. |
 | **Re-authored exam structure / specification** | Exam Structure | Factual conventions re-stated in our own words | MEDIUM | Do not copy official tables verbatim; re-describe timing, weightings, item counts from scratch. |
 | **Self-authored editorial explanations** | Answer explanations | We own the content | HIGH | Original analysis written by our editorial team; not copied from 新东方/有道/外研社. |
@@ -514,7 +518,7 @@ Sources or assets where rights status cannot be determined from available eviden
 | Content Type | Recommended Source | Rights Basis | Action |
 |---|---|---|---|
 | **Writing** | **Self-authored original high-fidelity mock prompts** | We own the content | Do NOT import real writing prompts. Create original prompts matching CET-6 writing structure (argumentative essay, graph/picture description, practical writing) per official spec. |
-| **Listening** | **Self-written scripts + self-produced audio (paid TTS or voice-over buyout)** | TTS vendor commercial terms + we own input text | Do NOT import real listening questions, audio, or transcripts. Create original scripts matching CET-6 listening structure (Section A: 8 short conversations + 2 long conversations; Section B: 3 passages; Section C: lectures/talks). Generate audio via Azure/AWS/Google TTS or contracted voice-over. |
+| **Listening** | **Self-written scripts + self-produced audio (paid TTS or voice-over buyout)** | TTS vendor commercial terms (final terms TBD in Phase 2B) + we own input text | Do NOT import real listening questions, audio, or transcripts. Create original scripts matching the **current official CET-6 listening structure (25 questions / 30 min): Section A 长对话 8 题 (8%), Section B 听力篇章 7 题 (7%), Section C 讲话/报道/讲座 10 题 (20%)**. Official references: https://cet.neea.edu.cn/xhtml1/report/16123/201-1.htm ; https://cet.neea.edu.cn/xhtml1/folder/16113/1586-1.htm . Generate audio via paid TTS (provider final terms TBD in Phase 2B) or contracted voice-over buyout. |
 | **Reading** | **Self-authored original high-fidelity mock passages + questions** | We own the content | Do NOT import real reading passages or questions. Create original passages sourced from public-domain or originally-written material, with question types matching CET-6 (词汇理解, 长篇阅读, 仔细阅读). |
 | **Translation** | **Self-authored original high-fidelity mock translation prompts** | We own the content | Do NOT import real translation prompts. Create original Chinese-to-English translation prompts matching CET-6 topic distribution (culture, history, economy, society, development). |
 
@@ -673,7 +677,7 @@ When Phase 2B is explicitly authorized, recommended priorities:
 
 2. **First mock set:** Produce one complete original high-fidelity mock CET-6 paper (all sections: Writing, Listening, Reading, Translation) with self-authored content, self-produced listening audio (TTS or voice-over), and self-authored explanations. Validate structure against official spec.
 
-3. **Listening audio pipeline:** Establish the TTS or voice-over production pipeline. If using TTS, select provider (Azure/AWS/Google) and voice tier. If using voice-over, draft buyout contract template. Generate audio for the first mock set's listening section.
+3. **Listening audio pipeline:** Establish the TTS or voice-over production pipeline. If using TTS, select provider and voice tier — **must re-check each provider's official, current service terms first** (commercial use, output redistribution, attribution, voice-specific restrictions, synthetic-voice restrictions, input-text rights, terms effective date; per the Phase 2A.1 evidence downgrade, FAQ/pricing/community sources are NOT sufficient). If using voice-over, draft buyout contract template. Generate audio only for the first mock set's listening section and only on self-written scripts.
 
 4. **Editorial quality control:** Define review process for mock content fidelity (structure, difficulty, topic distribution) and explanation quality.
 
@@ -702,7 +706,7 @@ When Phase 2B is explicitly authorized, recommended priorities:
 | 4 | No third-party source surveyed displays an explicit audio/transcript redistribution license | FACT | MEDIUM |
 | 5 | YinsinSirius/CET6-Resources (535 stars) has no LICENSE file | FACT | HIGH |
 | 6 | 123xzw999/cet6-exam-quiz explicitly attributes copyright to the committee and disclaims redistribution | FACT | HIGH |
-| 7 | All three major TTS providers permit commercial use of output, conditioned on user owning input-text rights | FACT | HIGH |
+| 7 | All three major TTS providers indicate commercial use of output is permitted, conditioned on user owning input-text rights (evidence: FAQs / pricing pages / community Q&A — not binding service terms) | FACT | MEDIUM / NEEDS FINAL TERMS CHECK |
 | 8 | Chinese law: deep links ≠ reproduction per server standard, but knowing links to infringing content carry contributory/criminal risk | FACT | HIGH |
 | 9 | "Publicly viewable on official website" does not grant redistribution rights; no open license exists anywhere on Tier A | INFERENCE | HIGH |
 | 10 | Audio economic rights rest with NEEA/its contractor chain (no public contract found) | INFERENCE | MEDIUM |
