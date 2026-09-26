@@ -153,15 +153,12 @@ getPublishableItems                 → production pool 最终 fail-closed（学
 
 ## 13. Git State
 
-- Before：`1bb6910313e17cb023682fff4be41e53964b2a94`（Local == Remote == origin/feature/v13-real-content）
-- Commit message：`fix: harden V13 content identity and rights`
-- Commit（After HEAD，本地）：最终 commit 已包含本报告（message `fix: harden V13 content identity and rights`）；
-  实际 SHA 以最终交付时 `git rev-parse HEAD` 输出为准（见最终回复）。
-- **push 状态（如实记录）**：commit 已完成；`git push origin feature/v13-real-content` 连续 7 次尝试因
-  `github.com:443 Failed to connect / Connection was reset`（约 10 分钟内）失败——github.com 域名/IP
-  间歇不可达（api.github.com:443 与普通网络正常），属网络层阻塞而非代码问题；本地 worktree clean、
-  HEAD=a59d6ca。已创建一次性定时任务（2026-09-26 15:29 Asia/Shanghai 触发）自动重试 push，
-  成功后同步更新本节与 8 问结论；在 push 成功前，本报告第 14–15 节视为"本地已验证、推送待网络恢复"。
+- Before（PHASE11_BEFORE_HEAD）：`1bb6910313e17cb023682fff4be41e53964b2a94`（Local == Remote == origin/feature/v13-real-content）
+- Product commit（PHASE11_PRODUCT_HEAD）：`9800c17ec09b14c302961395a02a43f1bfe8eec6`
+  （message `fix: harden V13 content identity and rights`；413/413 测试 + 10 项 gates + browser smoke 全绿的代码与报告）
+- **push 结果**：`git push origin feature/v13-real-content` 成功（`1bb6910..9800c17`）；
+  **Local HEAD == Remote HEAD == `9800c17`**；worktree clean。
+  说明：推送曾因 github.com:443 网络阻塞连续失败，已重试成功；无 force push。
 - v12.0 tag → `697772d9412d9d1a4253e099a001734a5230e264`（未改动）
 - 禁止项遵守：无 force push、未 merge main、未打 tag、未建 Release、未开始 V13 Phase 2。
 
