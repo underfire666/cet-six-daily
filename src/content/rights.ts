@@ -8,7 +8,8 @@
  * - Production publishable（可进入生产内容池）至少要求：
  *     A. owned；或
  *     B. licensed + 有效授权证据（licenseName/permissionEvidence/licenseUrl）且 redistributionAllowed=true；或
- *     C. official_public_material + 明确再利用依据（evidence）且 redistributionAllowed=true。
+ *     C. official_public_material + 明确再利用依据（evidence）且 redistributionAllowed=true；或
+ *     D. public_domain + redistributionAllowed=true + 明确公有领域证据（V13 Phase 2B.1 收紧）。
  * - Production 必须 fail closed：
  *     rights 缺失 / licenseStatus unknown / permission_required /
  *     official 无明确依据 / redistributionAllowed != true / licensed 缺 evidence
@@ -48,8 +49,10 @@ export function rightsVerdict(rights: ContentRights | undefined | null): RightsV
     return "allowed";
   }
   if (status === "public_domain") {
+    // V13 Phase 2B.1 收紧：production allowed 必须 redistributionAllowed=true 且存在明确 evidence
+    // （permissionEvidence / licenseUrl / licenseName 等现有 schema 字段）；无 evidence → UNKNOWN → NOT production。
     if (rights.redistributionAllowed === false) return "blocked";
-    if (rights.redistributionAllowed !== true) return "unknown"; // 公有领域身份未确认 → 不静默放行
+    if (rights.redistributionAllowed !== true || !hasEvidence(rights)) return "unknown";
     return "allowed";
   }
   if (status === "licensed") {

@@ -16,8 +16,8 @@
  * 兼容：validatePaper(value): string[] 签名保持不变（validator.ts 依赖）。
  */
 import type { ContentRights } from "./types";
-import { FIXTURE_PREFIX, isValidStableId, paperStableId, stableIdNamespace } from "./stable-id";
-import { CET6_EXAM_SPEC, isKnownExamSpecId } from "./exam-spec";
+import { FIXTURE_PREFIX, MOCK_PREFIX, isValidStableId, paperStableId, stableIdNamespace } from "./stable-id";
+import { CET6_EXAM_SPEC, KNOWN_EXAM_SPEC_IDS, isKnownExamSpecId } from "./exam-spec";
 
 export type PaperLevel = "CET6";
 export type PaperSession = 6 | 12;
@@ -159,8 +159,29 @@ const QUESTION_TYPES: PaperQuestion["type"][] = [
 ];
 /** 听力小节 group 类型（必须携带脚本/transcript；脚本与音频权利分离）。 */
 const LISTENING_GROUP_TYPES: PaperGroupType[] = ["long_conversation", "passage", "lecture"];
-/** 已知 examSpecId（错误提示用）。 */
-const KNOWN_SPEC_IDS_JOIN = CET6_EXAM_SPEC.examSpecId;
+/** 已知 examSpecId（错误提示用；KNOWN_EXAM_SPEC_IDS 保留全部历史版本，旧绑定不因 current 变化失效）。 */
+const KNOWN_SPEC_IDS_JOIN = KNOWN_EXAM_SPEC_IDS.join(", ");
+
+/**
+ * V13 Phase 2B.1：production-capable Paper 必须显式绑定 examSpecId。
+ * - fixture（合成仿真）→ 兼容 undefined（dev-only fixture content）
+ * - 其余 legacy 内容 → 兼容 undefined（V10 历史数据回放）
+ * - past_exam / licensed 卷 / active·published 卷 / 完整原创 mock（含 staging）→ 必填
+ * 防止 current spec 改变后旧 Paper 被新结构自动重新解释。
+ */
+function requiresExplicitExamSpecId(paper: CET6Paper): boolean {
+  if (paper.fixture === true) return false; // synthetic fixture 兼容 undefined
+  if (paper.authenticity === "past_exam") return true; // 真题必绑
+  if (paper.rights?.licenseStatus === "licensed") return true; // licensed 卷必绑
+  if (paper.status === "active" || paper.status === "published") return true; // 已发布必绑
+  if (
+    paper.isPartial !== true &&
+    (paper.authenticity === "original" || paper.authenticity === "practice")
+  ) {
+    return true; // 完整原创 mock（含 staging）production-capable → 必绑
+  }
+  return false; // legacy partial / raw 等可暂缺
+}
 
 const object = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
@@ -203,12 +224,25 @@ export function validatePaper(value: unknown): string[] {
   else if (!isValidStableId(paper.paperId, "paper")) err(`paper invalid paperId format: ${paper.paperId}`);
   else {
     const ns = stableIdNamespace(paper.paperId);
-    // V13 Phase 1.1 交叉校验：fixture flag 与 namespace 必须一致
+    // V13 Phase 2B.1 交叉校验：namespace ↔ fixture / authenticity 三向强制规则
+    // - fixture=true 必须 FIXTURE namespace；fixture=false/undefined 禁止 FIXTURE namespace
+    // - past_exam 必须 REAL namespace（真实 administered / 真题）
+    // - original/practice mock 必须 MOCK namespace（禁止 original mock + REAL date namespace）
+    // - fixture 与 past_exam 语义互斥
     if (paper.fixture === true && ns !== "fixture") {
       err(`paper ${paper.paperId} fixture=true must use fixture namespace (e.g. ${FIXTURE_PREFIX}:<fixtureId>)`);
     }
     if (paper.fixture !== true && ns === "fixture") {
       err(`paper ${paper.paperId} fixture=false/undefined must not use fixture namespace`);
+    }
+    if (paper.authenticity === "past_exam" && ns !== "real") {
+      err(`paper ${paper.paperId} past_exam must use REAL namespace (cet6:<year>-<session>:set<N>)`);
+    }
+    if ((paper.authenticity === "original" || paper.authenticity === "practice") && ns === "real") {
+      err(`paper ${paper.paperId} original/practice mock must use MOCK namespace (${MOCK_PREFIX}:<mockId>), not a real exam date namespace`);
+    }
+    if (paper.fixture === true && paper.authenticity === "past_exam") {
+      err(`paper ${paper.paperId} fixture=true and authenticity=past_exam are mutually exclusive`);
     }
     if (ns === "real") {
       // paperId 与 year/session/set 一致性（仅 REAL namespace 参与）
@@ -225,6 +259,11 @@ export function validatePaper(value: unknown): string[] {
   if (!text(paper.sourceId)) err(`paper ${paper.paperId ?? "?"} missing sourceId`);
   if (paper.examSpecId !== undefined && !isKnownExamSpecId(paper.examSpecId)) {
     err(`paper ${paper.paperId ?? "?"} unknown examSpecId: ${String(paper.examSpecId)} (known: ${KNOWN_SPEC_IDS_JOIN})`);
+  }
+  // V13 Phase 2B.1：production-capable Paper 必须显式绑定 examSpecId（缺省=current 只兼容 legacy/fixture）。
+  // 防止未来 current spec 改变时旧 Paper 被新结构自动重新解释 —— 旧 Paper 必须冻结绑定旧 spec。
+  if (requiresExplicitExamSpecId(paper) && paper.examSpecId === undefined) {
+    err(`paper ${paper.paperId} production-capable paper must explicitly bind examSpecId (e.g. ${CET6_EXAM_SPEC.examSpecId}); undefined only allowed for legacy content or synthetic fixture`);
   }
   if (!text(paper.schemaVersion)) err(`paper ${paper.paperId ?? "?"} missing schemaVersion`);
   if (!object(paper.rights) || !text((paper.rights as { licenseStatus?: unknown }).licenseStatus as string)) {

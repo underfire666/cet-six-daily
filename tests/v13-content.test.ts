@@ -20,12 +20,15 @@ import {
   questionStableId,
   assetStableId,
   fixturePaperStableId,
+  mockPaperStableId,
   extendStableId,
   isValidStableId,
   stableIdNamespace,
   isRealStableId,
   isFixtureStableId,
+  isMockStableId,
   FIXTURE_PREFIX,
+  MOCK_PREFIX,
   type PaperIdentity,
 } from "../src/content/stable-id";
 import { validatePaper, type CET6Paper, type PaperSection, type PaperQuestion } from "../src/content/papers";
@@ -44,7 +47,7 @@ import { registerBuiltinPacks } from "../src/content/packs";
 import { validateAll } from "../src/content/validator";
 import { registerSyntheticPaperFixture, syntheticCet6Paper, SYNTHETIC_PAPER_ID, SYNTHETIC_FIXTURE_ID } from "../src/content/fixture/cet6-2025-12-synthetic";
 import { registerAlias, resolveAlias } from "../src/content/aliases";
-import { CET6_EXAM_SPEC, allowedSubsections, isKnownExamSpecId } from "../src/content/exam-spec";
+import { CET6_EXAM_SPEC, KNOWN_EXAM_SPEC_IDS, allowedSubsections, isKnownExamSpecId } from "../src/content/exam-spec";
 import { vocabularyRepository } from "../src/content/repositories";
 import { MOCK_SOURCE, SYNTHETIC_PAPER_SOURCE } from "../src/content/sources";
 import type { ContentRights } from "../src/content/types";
@@ -77,6 +80,7 @@ function makeRealPaper(identity: PaperIdentity, rights: ContentRights, status: C
     paperId,
     type: "paper",
     tags: [],
+    examSpecId: CET6_EXAM_SPEC.examSpecId,
     exam: "CET6",
     level: "CET6",
     year: identity.year,
@@ -163,13 +167,14 @@ function makeQuestions(base: string, n: number, type: PaperQuestion["type"] = "c
 }
 
 /**
- * 构造符合当前官方 CET6 结构的完整卷（非 partial）：
+ * 构造符合当前官方 CET6 结构的完整卷（非 partial，authenticity=original）：
  * writing 1 / listening 25（长对话 8 + 篇章 7 + 讲话·报道·讲座 10）/ reading 30（10+10+10）/ translation 1。
+ * 使用 ORIGINAL MOCK namespace（cet6:mock:<mockId>）——original/practice mock 不得占用 REAL date namespace。
  * 用于 spec conformance / listening 结构测试（内容全部为 TEST FIXTURE 标记，不进入 production）。
  */
-function makeCompletePaper(identity: PaperIdentity, rights: ContentRights, status: CET6Paper["status"]): CET6Paper {
-  const paperId = paperStableId(identity);
-  const sec = (type: PaperSection["type"]) => sectionStableId({ ...identity, section: type });
+function makeCompletePaper(mockId: string, rights: ContentRights, status: CET6Paper["status"]): CET6Paper {
+  const paperId = mockPaperStableId(mockId);
+  const sec = (type: PaperSection["type"]) => extendStableId(paperId, type);
   const grp = (section: string, sub: string | undefined, g: string) =>
     sub ? extendStableId(extendStableId(sec(section as PaperSection["type"]), sub), g) : extendStableId(sec(section as PaperSection["type"]), g);
 
@@ -191,9 +196,9 @@ function makeCompletePaper(identity: PaperIdentity, rights: ContentRights, statu
     examSpecId: CET6_EXAM_SPEC.examSpecId,
     exam: "CET6",
     level: "CET6",
-    year: identity.year,
-    session: identity.session,
-    set: identity.set,
+    year: 2026,
+    session: 6,
+    set: 1,
     title: `Complete Paper ${paperId}`,
     sourceId: SYNTHETIC_PAPER_SOURCE.id,
     rights,
@@ -248,14 +253,14 @@ test("exam spec: current official CET6 structure is versioned (examSpecId)", () 
 
 test("paper spec: complete paper conforming to current official structure passes", () => {
   setup();
-  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
   const errors = validatePaper(complete);
   assert.deepEqual(errors, [], `complete paper must pass conformance: ${errors.join("; ")}`);
 });
 
 test("paper spec: unknown examSpecId rejected", () => {
   setup();
-  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
   const bad = structuredClone(complete) as CET6Paper;
   bad.examSpecId = "cet6-1999";
   const errors = validatePaper(bad);
@@ -264,7 +269,7 @@ test("paper spec: unknown examSpecId rejected", () => {
 
 test("paper spec: listening subsection counts must match current official structure (8/7/10)", () => {
   setup();
-  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
   // 长对话 8 → 9：违反当前官方结构
   const bad = structuredClone(complete) as CET6Paper;
   const lc = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "long_conversation")!;
@@ -285,7 +290,7 @@ test("paper spec: listening subsection counts must match current official struct
 
 test("paper spec: listening total must be 25 for complete paper", () => {
   setup();
-  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
   const bad = structuredClone(complete) as CET6Paper;
   const passage = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "passage")!;
   (passage.questions as PaperQuestion[]).pop(); // 7 → 6
@@ -307,7 +312,7 @@ test("paper spec: partial paper is exempt from full question-count conformance",
 
 test("paper spec: listening group must carry a transcript (script)", () => {
   setup();
-  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
   const bad = structuredClone(complete) as CET6Paper;
   const lc = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "long_conversation")!;
   delete (lc as Partial<typeof lc>).transcript;
@@ -317,7 +322,7 @@ test("paper spec: listening group must carry a transcript (script)", () => {
 
 test("paper spec: assetIds must cross-reference paper.assets (orphan rejected)", () => {
   setup();
-  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
   const bad = structuredClone(complete) as CET6Paper;
   const lecture = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "lecture")!;
   lecture.assetIds = ["cet6:2026-6:set1:listening:lecture:g3:audio1"]; // 不在 assets 中
@@ -327,9 +332,9 @@ test("paper spec: assetIds must cross-reference paper.assets (orphan rejected)",
 
 test("paper spec: audio asset must carry rights metadata", () => {
   setup();
-  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
   const bad = structuredClone(complete) as CET6Paper;
-  const audioId = assetStableId({ exam: "CET6", year: 2026, session: 6, set: 1, section: "listening", subsection: "lecture", group: "g3", asset: "audio1" });
+  const audioId = extendStableId("cet6:mock:complete-2026-6-set1", "listening", "lecture", "g3", "audio1");
   bad.assets = [
     { assetId: audioId, type: "audio", source: "mock://test/audio.mp3", mimeType: "audio/mpeg" },
   ];
@@ -339,13 +344,25 @@ test("paper spec: audio asset must carry rights metadata", () => {
   assert.ok(errors.some((e) => e.includes("audio asset") && e.includes("missing rights")), `expected audio rights error: ${errors.join("; ")}`);
 });
 
-// ---------------------------------------------------------------- V13 Phase 2B: public_domain rights
+// ---------------------------------------------------------------- V13 Phase 2B.1: public_domain rights（收紧：必须 evidence）
 
-test("rights: public_domain + redistribution=true → allowed", () => {
-  const pd: ContentRights = { licenseStatus: "public_domain", redistributionAllowed: true };
-  assert.equal(rightsVerdict(pd), "allowed");
-  assert.ok(isPublishable(pd));
-  const issues = rightsIssues(pd, { scope: "production" });
+const publicDomainNoEvidence: ContentRights = { licenseStatus: "public_domain", redistributionAllowed: true };
+const publicDomainOk: ContentRights = {
+  licenseStatus: "public_domain",
+  permissionEvidence: "CC0 dedication recorded in source provenance",
+  redistributionAllowed: true,
+};
+
+test("rights: public_domain + redistribution=true + no evidence → unknown (NOT production)", () => {
+  assert.equal(rightsVerdict(publicDomainNoEvidence), "unknown");
+  assert.ok(!isPublishable(publicDomainNoEvidence));
+  assert.ok(rightsIssues(publicDomainNoEvidence, { scope: "production" }).some((i) => i.level === "error" && i.message.includes("unknown")));
+});
+
+test("rights: public_domain + valid evidence + redistribution=true → allowed (with warning)", () => {
+  assert.equal(rightsVerdict(publicDomainOk), "allowed");
+  assert.ok(isPublishable(publicDomainOk));
+  const issues = rightsIssues(publicDomainOk, { scope: "production" });
   assert.ok(issues.some((i) => i.level === "warning" && i.message.includes("public_domain")), "public_domain should carry verify-before-publish warning");
 });
 
@@ -911,4 +928,175 @@ test("importer: rights-blocked published paper registers but is fail-closed from
   const result = importContentPackWithBatch(raw);
   assert.equal(result.imported, true, "structure-valid pack registers for audit");
   assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === bad.paperId), "unknown-rights published must be invisible to production pool");
+});
+
+// ---------------------------------------------------------------- V13 Phase 2B.1: MOCK namespace + identity cross-validation
+
+/** 构造最小合法 ORIGINAL MOCK paper（authenticity=original；fixture=false；MOCK namespace）。 */
+function makeMockPaper(mockId: string, rights: ContentRights, status: CET6Paper["status"]): CET6Paper {
+  const paperId = mockPaperStableId(mockId);
+  const secId = extendStableId(paperId, "writing");
+  const gId = extendStableId(secId, "g1");
+  const qId = extendStableId(gId, "q1");
+  return {
+    paperId,
+    type: "paper",
+    tags: [],
+    examSpecId: CET6_EXAM_SPEC.examSpecId,
+    exam: "CET6",
+    level: "CET6",
+    year: 2026,
+    session: 6,
+    set: 1,
+    title: `Mock Paper ${paperId}`,
+    sourceId: SYNTHETIC_PAPER_SOURCE.id,
+    rights,
+    sections: [
+      {
+        sectionId: secId,
+        type: "writing",
+        order: 1,
+        groups: [
+          {
+            groupId: gId,
+            type: "writing",
+            order: 1,
+            prompt: "Write a short essay.",
+            questions: [
+              {
+                questionId: qId,
+                order: 1,
+                prompt: "Write a short essay.",
+                type: "subjective_writing",
+                answerText: "Model answer.",
+                answerKey: { value: "Model answer.", source: "test" },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    schemaVersion: "1.0.0",
+    contentVersion: "1.0.0",
+    isPartial: true,
+    fixture: false,
+    status,
+    authenticity: "original",
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  };
+}
+
+test("identity: original mock must NOT use REAL date namespace (error)", () => {
+  setup();
+  const mock = makeMockPaper("paper-001", owned, "staging");
+  const bad = structuredClone(mock) as CET6Paper;
+  bad.paperId = paperStableId({ exam: "CET6", year: 2026, session: 6, set: 1 });
+  bad.year = 2026; bad.session = 6; bad.set = 1;
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("original/practice mock must use MOCK namespace")),
+    `expected original-mock-in-real-namespace error: ${errors.join("; ")}`,
+  );
+});
+
+test("identity: original mock in MOCK namespace passes", () => {
+  setup();
+  const mock = makeMockPaper("paper-001", owned, "staging");
+  const errors = validatePaper(mock);
+  assert.deepEqual(errors, [], `mock paper must pass: ${errors.join("; ")}`);
+});
+
+test("identity: real past_exam must NOT use MOCK namespace (error)", () => {
+  setup();
+  const real = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const bad = structuredClone(real) as CET6Paper;
+  bad.paperId = mockPaperStableId("paper-001");
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("past_exam must use REAL namespace")),
+    `expected past_exam-in-mock-namespace error: ${errors.join("; ")}`,
+  );
+});
+
+test("identity: real / mock / fixture namespaces are structurally distinct and never collide", () => {
+  const realId = paperStableId({ exam: "CET6", year: 2026, session: 6, set: 1 });
+  const mockId = mockPaperStableId("paper-001");
+  const fixId = fixturePaperStableId(SYNTHETIC_FIXTURE_ID);
+  assert.equal(mockId, `${MOCK_PREFIX}:paper-001`);
+  assert.equal(stableIdNamespace(realId), "real");
+  assert.equal(stableIdNamespace(mockId), "mock");
+  assert.equal(stableIdNamespace(fixId), "fixture");
+  assert.equal(stableIdNamespace("word_sustain"), "invalid");
+  assert.ok(isMockStableId(mockId));
+  assert.ok(!isMockStableId(realId));
+  assert.ok(!isMockStableId(fixId));
+  // 三个 namespace 永远生成不同 ID
+  assert.equal(new Set([realId, mockId, fixId]).size, 3);
+  // mock 树 ID 格式合法
+  assert.ok(isValidStableId(mockId, "paper"));
+  assert.ok(isValidStableId(extendStableId(mockId, "reading"), "section"));
+  assert.ok(isValidStableId(extendStableId(extendStableId(mockId, "reading"), "careful", "g1"), "group"));
+  assert.ok(isValidStableId(extendStableId(extendStableId(mockId, "listening"), "lecture", "g2", "audio1"), "asset"));
+  // mock 不能借用 real date 格式 / fixture 保留字
+  assert.ok(!isValidStableId("cet6:mock:2026-6:set1", "paper"), "mock id must be <mockId>, not year-session-set");
+  assert.ok(!isValidStableId("cet6:mock:fixture:x", "paper"), "mock must not embed fixture reserved word");
+});
+
+test("identity: Paper 001 mock ID and real 2026-6 set1 coexist without collision", () => {
+  setup();
+  const mock = makeMockPaper("paper-001", owned, "staging");
+  const real = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  registerPaperPack("pack-mock-001", mock);
+  registerPaperPack("pack-real-2026-6", real);
+  assert.equal(getPaperById<{ paperId?: string }>("cet6:mock:paper-001")?.paperId, "cet6:mock:paper-001");
+  assert.equal(getPaperById<{ paperId?: string }>("cet6:2026-6:set1")?.paperId, "cet6:2026-6:set1");
+  const report = validateAll([...registeredPacks(), getContentPack("pack-mock-001")!, getContentPack("pack-real-2026-6")!] as never);
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate paper identity")), "mock must not collide with real identity");
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate id")), "no stable-id collision between mock and real paper");
+});
+
+// ---------------------------------------------------------------- V13 Phase 2B.1: examSpecId 强绑定
+
+test("spec binding: production-capable complete original mock missing examSpecId → error", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set2", owned, "active");
+  const bad = structuredClone(complete) as CET6Paper;
+  delete bad.examSpecId;
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("must explicitly bind examSpecId")),
+    `expected missing examSpecId error: ${errors.join("; ")}`,
+  );
+});
+
+test("spec binding: published past_exam missing examSpecId → error", () => {
+  setup();
+  const real = makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 1 }, owned, "published");
+  const bad = structuredClone(real) as CET6Paper;
+  delete bad.examSpecId;
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("must explicitly bind examSpecId")), `expected missing examSpecId error: ${errors.join("; ")}`);
+});
+
+test("spec binding: synthetic fixture without examSpecId is compatible (fixture allowed)", () => {
+  setup();
+  const fix = structuredClone(syntheticCet6Paper) as CET6Paper;
+  delete fix.examSpecId;
+  const errors = validatePaper(fix);
+  assert.deepEqual(errors, [], `fixture must tolerate undefined examSpecId: ${errors.join("; ")}`);
+});
+
+test("spec binding: explicit old examSpecId stays valid when current spec changes (KNOWN list is stable)", () => {
+  // KNOWN_EXAM_SPEC_IDS 是显式历史列表：即使未来 CET6_EXAM_SPEC.examSpecId 变为新版本，
+  // 旧绑定 cet6-current-2026 仍是 known → 旧 Paper 不被新结构重新解释。
+  assert.ok(Array.isArray(KNOWN_EXAM_SPEC_IDS));
+  assert.ok(KNOWN_EXAM_SPEC_IDS.includes("cet6-current-2026"), "historical spec id must stay known");
+  assert.ok(isKnownExamSpecId("cet6-current-2026"));
+  // 显式绑定旧 spec 的 Paper 校验通过（不报 unknown examSpecId）
+  setup();
+  const real = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 2 }, owned, "staging");
+  real.examSpecId = "cet6-current-2026";
+  const errors = validatePaper(real);
+  assert.ok(!errors.some((e) => e.includes("unknown examSpecId")), `explicit old spec must remain valid: ${errors.join("; ")}`);
 });

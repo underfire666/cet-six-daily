@@ -78,10 +78,17 @@ export const CET6_EXAM_SPEC: Cet6ExamSpec = {
   ],
 };
 
-/** 已知 examSpecId 集合（校验 Paper 引用用）。 */
-export const KNOWN_EXAM_SPEC_IDS: readonly string[] = [CET6_EXAM_SPEC.examSpecId];
+/**
+ * 已知 examSpecId 显式历史列表（V13 Phase 2B.1：旧 Paper 必须冻结绑定旧 spec）。
+ * 未来官方改革新增版本时在此追加（如 "cet6-current-2027"），禁止删除历史条目 ——
+ * 这样即使 CET6_EXAM_SPEC.examSpecId（current）改变，旧绑定仍保持 known，不被新结构重新解释。
+ */
+export const KNOWN_EXAM_SPEC_IDS: readonly string[] = [
+  "cet6-current-2026",
+  // 未来新版本在此追加
+];
 
-/** 校验 examSpecId 是否已知（未知 → false）。 */
+/** 校验 examSpecId 是否已知（未知 → false；缺省 = 当前 spec）。 */
 export function isKnownExamSpecId(id: string | undefined): boolean {
   if (!id) return true; // 缺省 = 当前 spec（current）
   return KNOWN_EXAM_SPEC_IDS.includes(id);
