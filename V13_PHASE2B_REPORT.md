@@ -139,6 +139,7 @@ V13 Phase 2B 在 Phase 1/1.1 已建成的基础上，完成：
 - 未选择 TTS provider、未生成任何音频（Phase 2B 明确不做）。
 - 未修改 Prisma / db migrations / auth / sync / UI / V8 编排 / V9 调度。
 - Paper 001 试题正文尚未生产（属 Phase 2B 之后的生产流程；本阶段只定义规范与契约）。
+- **Phase 2B.1 修正**（详见 `V13_PHASE2B1_REPORT.md`）：Paper 001 正式 ID 改为 `cet6:mock:paper-001`（MOCK 命名空间）；早期预留 ID `cet6:2026-6:set1` 不再使用、不建 alias；real/fixture/mock 三命名空间结构隔离；production Paper 必须显式绑定 examSpecId；public_domain 收紧为必须有 evidence。Phase 2B 报告中凡与此冲突之处，以 Phase 2B.1 为准。
 - Phase 2C / V14：未开始。
 
 ---

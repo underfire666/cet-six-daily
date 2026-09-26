@@ -1,6 +1,6 @@
 # V13 Paper Content Contract — Paper / Rights / Provenance / Assets / Stable IDs / Validation / 兼容
 
-> 分支：`feature/v13-real-content` · 阶段：V13 Phase 2B
+> 分支：`feature/v13-real-content` · 阶段：V13 Phase 2B / 2B.1
 > 本契约定义 CET6 Paper 内容从生产到进入 production 的完整规则：领域模型、权利、来源、资产、稳定 ID、校验与 V8/V9/V10 兼容。
 > 代码依据：`src/content/papers.ts`、`types.ts`、`rights.ts`、`stable-id.ts`、`validator.ts`、`exam-spec.ts`、`difficulty.ts`。
 
@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | `paperId` | string | 稳定 ID（见 §5） |
 | `type` | `"paper"` | 内容系统公共字段（paper 也是 content item） |
-| `examSpecId?` | string | 遵守的考试结构版本（缺省 = 当前 spec） |
+| `examSpecId?` | string | 遵守的考试结构版本。**Phase 2B.1：production-capable Paper 必须显式绑定**（past_exam / licensed / active·published / 完整 original·practice mock）；仅 fixture 与 partial 样卷兼容缺省（缺省 = 当前 spec） |
 | `exam` / `level` | `"CET6"` | 固定 |
 | `year` / `session` / `set` | number / 6\|12 / number | 场次与套别（如 2026-6 set1） |
 | `title` | string | 卷名 |
@@ -36,7 +36,8 @@
 | `original_mock` | authenticity=`original` + licenseStatus=`owned` + status=`staging→active/published` | ✅ allowed |
 | `licensed_official` | licenseStatus=`licensed` + 有效 evidence + `redistributionAllowed=true` | ✅ allowed（带 warning，发布前复核） |
 | `official_sample` | licenseStatus=`official_public_material` + 明确再利用 evidence + `redistributionAllowed=true` | ✅ allowed（带 warning） |
-| `public_domain` | licenseStatus=`public_domain` + `redistributionAllowed=true`（CC0/已过保护期，需复核） | ✅ allowed（带 warning） |
+| `public_domain` | licenseStatus=`public_domain` + **有 evidence**（`permissionEvidence` / `licenseUrl` / `licenseName` 任一）+ `redistributionAllowed=true`（CC0/已过保护期，发布前复核） | ✅ allowed（带 warning） |
+| `public_domain`（无 evidence） | licenseStatus=`public_domain` + redistribution=true 但 **无 evidence** | ❌ unknown（Phase 2B.1 收紧：无证据不放行） |
 | `internal_reference` | authenticity=`past_exam` + licenseStatus=`permission_required`/`unknown` + status=`raw`/`staging` | ❌ 永不 production |
 | `restricted` | licenseStatus=`permission_required` | ❌ blocked |
 | 未知 | licenseStatus=`unknown` / 缺 rights | ❌ unknown → 不 production |
@@ -49,13 +50,14 @@
 
 `rightsVerdict(rights)` 判定规则：
 
-| licenseStatus | redistributionAllowed | 结果 |
-| --- | --- | --- |
-| `owned` | 任意（false 除外） | allowed |
-| `owned` | `false` | blocked |
-| `public_domain` | `true` | allowed（warning：发布前复核 CC0/过期证据） |
-| `public_domain` | 缺省 / ≠ true | unknown（不静默放行） |
-| `public_domain` | `false` | blocked |
+| licenseStatus | redistributionAllowed | evidence | 结果 |
+| --- | --- | --- | --- |
+| `owned` | 任意（false 除外） | — | allowed |
+| `owned` | `false` | — | blocked |
+| `public_domain` | `true` | **有 evidence** | allowed（warning：发布前复核 CC0/过期证据） |
+| `public_domain` | `true` | **无 evidence** | **unknown**（Phase 2B.1：不静默放行） |
+| `public_domain` | 缺省 / ≠ true | — | unknown（不静默放行） |
+| `public_domain` | `false` | — | blocked |
 | `licensed` | `true` + 有 evidence | allowed（warning） |
 | `licensed` | 无 evidence | blocked |
 | `licensed` | 有 evidence 但 redistribution ≠ true | unknown |
@@ -88,19 +90,21 @@
 
 ## 5. Stable ID 策略（`src/content/stable-id.ts`）
 
-### 5.1 命名
+### 5.1 命名（Phase 2B.1：三 namespace）
 
-| 实体 | REAL | FIXTURE |
-| --- | --- | --- |
-| Paper | `cet6:2026-6:set1` | `cet6:fixture:synthetic-001` |
-| Section | `cet6:2026-6:set1:writing` | 同前，追加小节段 |
-| Group | `...:listening:long_conversation:g1` | 同上 |
-| Question | `...:g1:q1` | 同上 |
-| Asset | `...:lecture:g3:audio1` | 同上 |
+| 实体 | REAL（真题） | FIXTURE（测试夹具） | MOCK（原创 mock） |
+| --- | --- | --- | --- |
+| Paper | `cet6:2026-6:set1` | `cet6:fixture:synthetic-001` | `cet6:mock:paper-001` |
+| Section | `cet6:2026-6:set1:writing` | 同前，追加小节段 | `cet6:mock:paper-001:writing` |
+| Group | `...:listening:long_conversation:g1` | 同上 | `cet6:mock:paper-001:listening:long_conversation:g1` |
+| Question | `...:g1:q1` | 同上 | `cet6:mock:paper-001:...:g1:q1` |
+| Asset | `...:lecture:g3:audio1` | 同上 | `cet6:mock:paper-001:...:g3:audio1` |
 
 规则：
-- `fixture=true` 必须用 FIXTURE namespace；real/past_exam 禁止 FIXTURE namespace。
-- REAL paperId 必须等于 `paperStableId({exam:"CET6",year,session,set})` 的确定性输出。
+- `fixture=true` 必须用 FIXTURE namespace；`fixture ≠ true` 禁止占用 FIXTURE。
+- REAL paperId 必须等于 `paperStableId({exam:"CET6",year,session,set})` 的确定性输出；**REAL 只为真实真题保留**（staging/审计，无授权不进 production）。
+- **original / practice mock 必须用 MOCK namespace**（`mockPaperStableId(mockId)` → `cet6:mock:<mockId>`）；禁止把原创 mock 塞入 REAL date namespace，反之 past_exam 禁止 MOCK。
+- `fixture=true` 与 `authenticity=past_exam` 互斥。
 - 命名空间一致性：paper 内所有 section/group/question/asset 的 namespace 必须与 paperId 一致（校验强制）。
 
 ### 5.2 何时保留 / bump / 新 ID / deprecated
@@ -149,8 +153,8 @@ V13 Phase 2B 强制规则（`validatePaper` 执行）：
 
 | 类别 | 规则 |
 | --- | --- |
-| Identity | paperId 必填、合法 stable ID、namespace 一致性、REAL/FIXTURE 约束 |
-| Spec | examSpecId 已知（缺省=current）；完整卷 section/子节题量符合 `CET6_EXAM_SPEC` |
+| Identity | paperId 必填、合法 stable ID、namespace 一致性、REAL/FIXTURE/MOCK 三向约束（Phase 2B.1：original/practice→MOCK；past_exam→REAL；fixture→FIXTURE 且与 past_exam 互斥） |
+| Spec | 完整卷 section/子节题量符合 `CET6_EXAM_SPEC`；**production-capable Paper 必须显式绑定 examSpecId**（缺失 → `must explicitly bind examSpecId` error）；绑定必须为 `KNOWN_EXAM_SPEC_IDS` 已知 ID |
 | Section/Group | kind/type/order 合法；section order 1..N 唯一；group 至少一个题或引用 |
 | Listening | 听力 group 必须有 transcript |
 | Question | prompt/order 合法；choice 有 options+answerId；非 choice 有 answerText/answerKey |

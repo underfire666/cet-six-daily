@@ -1,8 +1,8 @@
 # V13 Content Specification — CET6 官方考试结构规范 + 第一套原创高仿真卷生产规范
 
-> 分支：`feature/v13-real-content` · 阶段：V13 Phase 2B
+> 分支：`feature/v13-real-content` · 阶段：V13 Phase 2B / 2B.1
 > 范围：本文件描述 **CET6 官方公开考试结构**（结构信息，非真题内容）与 **Paper 001（第一套原创高仿真卷）的生产规范**。
-> 依据：`src/content/exam-spec.ts`、`src/content/papers.ts`、`V13_SOURCE_ACQUISITION_MATRIX.md`（Phase 2A/2A.1 结论）。
+> 依据：`src/content/exam-spec.ts`、`src/content/papers.ts`、`src/content/stable-id.ts`、`V13_SOURCE_ACQUISITION_MATRIX.md`（Phase 2A/2A.1 结论）。
 
 ---
 
@@ -61,12 +61,19 @@ CET6 当前官方考试结构（中国教育考试网）：
 考试结构可以随改革变化。为避免破坏既有 Paper 数据，结构层引入版本 ID：
 
 - `CET6_EXAM_SPEC.examSpecId = "cet6-current-2026"` —— 当前生效结构的稳定 ID。
-- `KNOWN_EXAM_SPEC_IDS` —— 已知 spec ID 列表（未来新增版本时追加，不修改旧条目）。
+- `KNOWN_EXAM_SPEC_IDS` —— **显式历史列表**（Phase 2B.1 收紧）：未来新增版本时在列表尾部追加（如 `"cet6-current-2027"`），**禁止删除/修改历史条目**。即使 `CET6_EXAM_SPEC.examSpecId`（current）改变，旧绑定仍保持 known，不被新结构重新解释。
 - `isKnownExamSpecId(id)` —— Paper 引用的 spec ID 校验函数：
-  - `undefined`（Paper 未声明）→ 视为当前 spec（`cet6-current-2026`），合法；
+  - `undefined`（Paper 未声明）→ 仅 fixture / 非 production 场景兼容；**production-capable Paper 必须显式绑定**（见下）；
   - 已知 ID → 合法；
   - 未知 ID → Paper 校验报错（`unknown examSpecId`）。
-- `CET6Paper.examSpecId?: string` —— Paper 可显式声明其遵守的规范版本；缺省即当前版。
+- `CET6Paper.examSpecId?: string` —— Paper 显式声明其遵守的规范版本。
+
+**Phase 2B.1 强绑定规则（`requiresExplicitExamSpecId`）**——以下 Paper 必须显式绑定 `examSpecId`，缺省即报错（`must explicitly bind examSpecId`）：
+- `authenticity = past_exam`；
+- `rights.licenseStatus = "licensed"`；
+- `status ∈ {active, published}`；
+- 完整（`isPartial ≠ true`）且 `authenticity ∈ {original, practice}`（含 staging 原创卷）。
+仅 `fixture = true` 的测试夹具与 partial 样卷兼容缺省。
 
 **迁移规则**：官方改革推出新结构时，新增一个 spec 版本（如 `cet6-current-2027`），旧 Paper 保留旧 `examSpecId` 不被破坏；新 Paper 引用新版本。
 
@@ -87,13 +94,36 @@ CET6 当前官方考试结构（中国教育考试网）：
 
 ---
 
+## 4.5 三命名空间（Phase 2B.1：real / fixture / mock 结构隔离）
+
+Paper identity 使用三个**结构上互不碰撞**的命名空间（`stable-id.ts`）：
+
+| 命名空间 | 格式 | 判定（`stableIdNamespace`） | 用途 |
+| --- | --- | --- | --- |
+| `real` | `cet6:<year>-<session>:set<N>`（`^cet6:\d{4}-(6|12):set\d+$`） | `isRealStableId` | **真实 administered past papers**（仅 staging/审计，无授权不进 production） |
+| `fixture` | `cet6:fixture:<fixtureId>` | `isFixtureStableId` | **TEST FIXTURE 测试夹具**（内置于代码、不发布、语义上**不是** staging 原创卷） |
+| `mock` | `cet6:mock:<mockId>`（`^cet6:mock:[a-z0-9][a-z0-9-]*$`） | `isMockStableId` | **原创高仿真卷（original mock / practice）**，如 Paper 001 |
+
+**交叉校验（`validatePaper`，Phase 2B.1 新增）**：
+- `fixture = true` → 必须 FIXTURE 命名空间；`fixture ≠ true` → 禁止占用 FIXTURE。
+- `authenticity = past_exam` → 必须 REAL 命名空间。
+- `authenticity ∈ {original, practice}` → 必须 MOCK 命名空间（禁止把原创 mock 塞入 REAL date namespace，反之亦然）。
+- `fixture = true` 与 `authenticity = past_exam` 互斥。
+- `mockPaperStableId(mockId)` 生成 `cet6:mock:<mockId>`，`mock` 为第二段保留字；mock ID 不得借用 year-session-set 格式或 `fixture` 保留字。
+
+**TEST FIXTURE ≠ staging 原创卷**：`cet6:fixture:*` 是测试夹具（代码内联、校验结构用）；`cet6:mock:paper-001` 才是 Paper 001 的正式 ID。二者语义与 namespace 均不同。
+
+---
+
 ## 5. Paper 001 — 第一套原创高仿真卷生产规范
 
 > 本文件只定义生产规范（结构、数量、来源、权利、质量门槛），**不包含任何试题正文**。试题正文由 Phase 2B 之后的原创生产流程产出，全部带 `TEST FIXTURE`/自研标记。
 
 ### 5.1 目标
 
-生产 CET-6 Daily 第一套**自研原创高仿真卷**（Paper 001，`cet6:2026-6:set1` 命名空间预留），完整卷（`isPartial: false`），满足 2.1–2.3 全部题量与结构约束。
+生产 CET-6 Daily 第一套**自研原创高仿真卷**（Paper 001，正式 ID `cet6:mock:paper-001`，由 `mockPaperStableId("paper-001")` 生成），完整卷（`isPartial: false`），满足 2.1–2.3 全部题量与结构约束。
+
+> **Phase 2B.1 修正**：Paper 001 属 original mock，使用 MOCK 命名空间。早期预留 ID `cet6:2026-6:set1` **不再使用、也不建 alias**——该 ID 语义上指向真实 2026-6 set1 administered paper，若被原创卷占用会造成身份冲突；REAL 命名空间只为真实真题（staging/审计）保留。
 
 ### 5.2 各 Section 内容策略（继承 Phase 2A 结论，不导入真实真题）
 
@@ -131,7 +161,7 @@ V13 Paper 是 **V10 Content System 的扩展，而非平行系统**：
 - 复用同一 `registry.ts`（`getPublishableItems` 只放行 allowed + active/published + 非 mock/unknown）。
 - 复用同一 `validator.ts`（跨 pack 去重、paper identity 查重）。
 - 复用同一 `importer.ts` / `import-batch.ts`（确定性 + 幂等导入）。
-- 复用 `stable-id.ts`（REAL / FIXTURE 双 namespace）。
+- 复用 `stable-id.ts`（REAL / FIXTURE / MOCK 三 namespace，Phase 2B.1）。
 - 复用 `rights.ts` / `lifecycle.ts` / `aliases.ts` / `difficulty.ts`。
 
 **不新建** PaperRepository / 第二套注册表 / 第二套校验器。
