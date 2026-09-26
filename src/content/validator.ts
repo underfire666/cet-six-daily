@@ -1,6 +1,8 @@
 import type { ContentPack } from "./types";
 import { getSource } from "./sources";
 import { validatePaper } from "./papers";
+import { rightsIssues } from "./rights";
+import { hashString } from "./normalize";
 
 export interface ValidationIssue { level: "error" | "warning"; packId: string; itemId?: string; message: string }
 export interface ValidationReport {
@@ -23,13 +25,15 @@ export function validatePack(pack: ContentPack): ValidationIssue[] {
   const seen = new Set<string>();
   for (const item of pack.items) {
     const questions = new Set<string>();
-    if (!object(item) || !text(item.id)) { error("item missing id"); continue; }
-    const id = item.id;
+    if (!object(item)) { error("item missing id"); continue; }
+    // paper item 以 paperId 为稳定 id（registry/validator 统一兼容，模型保持 paperId 单字段）
+    const id = (item as { id?: string }).id ?? (pack.contentType === "paper" ? (item as { paperId?: string }).paperId : undefined);
+    if (!text(id)) { error("item missing id"); continue; }
     const check = (ok: unknown, message: string) => { if (!ok) error(message,id); };
     if (seen.has(id)) error(`duplicate id: ${id}`,id);
     seen.add(id);
-    check(["draft","active","deprecated"].includes(String(item.status)), "invalid or missing status");
-    check(text(item.version), "missing version");
+    check(["draft","active","deprecated","raw","normalized","validated","reviewed","publishable","staging","published"].includes(String(item.status)), "invalid or missing status");
+    check(text(item.version) || (pack.contentType === "paper" && text(item.contentVersion)), "missing version");
     check(text(item.sourceId) && !!getSource(item.sourceId), "missing or unknown item sourceId");
     check(item.sourceId === pack.sourceId, "item source differs from pack");
     check([item.createdAt,item.updatedAt].every(x => typeof x === "string" && Number.isFinite(Date.parse(x))), "invalid timestamps");
@@ -77,7 +81,20 @@ export function validatePack(pack: ContentPack): ValidationIssue[] {
         check(Array.isArray(item.outline) && item.outline.every(x => object(x) && text(x.type) && text(x.content)), "invalid outline");
       }
     }
-    if (pack.contentType === "paper") for (const message of validatePaper(item)) error(message,id);
+    if (pack.contentType === "paper") {
+      for (const message of validatePaper(item)) error(message,id);
+      // V13：production published pack 强制 rights（unknown / permission_required 拦截）
+      const itemRights = (item as { rights?: unknown }).rights as
+        | { licenseStatus?: string }
+        | undefined;
+      if (itemRights) {
+        for (const issue of rightsIssues(itemRights as never, { scope: "production" })) {
+          error(`rights: ${issue.message}`, id);
+        }
+      }
+    }
+    if (item.schemaVersion !== undefined && !text(item.schemaVersion)) error("invalid schemaVersion",id);
+    if (item.contentVersion !== undefined && !text(item.contentVersion)) error("invalid contentVersion",id);
   }
   return issues;
 }
@@ -86,15 +103,46 @@ export function validateAll(packs: ContentPack[]): ValidationReport {
   const report: ValidationReport = { errors:[], warnings:[], counts:{vocabulary:0,reading:0,listening:0,translation:0,writing:0,paper:0} };
   const ids = new Set<string>();
   const packIds = new Set<string>();
+  // V13 duplicate detection：同 (exam,year,session,set) 的 paper 只能出现一次；
+  // 同 passage/transcript 文本（normalized hash）跨 pack 重复 → warning（同源合法导入/疑似重复）。
+  const paperIdentities = new Map<string, string>();
+  const textHashes = new Map<string, string>();
   for (const pack of packs) {
     const issues = validatePack(pack);
     if (packIds.has(pack.id)) issues.push({level:"error",packId:pack.id,message:"duplicate pack id"});
     packIds.add(pack.id);
     if (Array.isArray(pack.items)) {
       if (types.includes(pack.contentType)) report.counts[pack.contentType] += pack.items.length;
-      for (const item of pack.items) if (object(item) && text(item.id)) {
-        if (ids.has(item.id)) issues.push({level:"error",packId:pack.id,itemId:item.id,message:`duplicate id across packs: ${item.id}`});
-        ids.add(item.id);
+      for (const item of pack.items) {
+        if (!object(item)) continue;
+        const itemId = (item as { id?: string }).id ?? (pack.contentType === "paper" ? (item as { paperId?: string }).paperId : undefined);
+        if (text(itemId)) {
+          if (ids.has(itemId)) issues.push({level:"error",packId:pack.id,itemId:itemId,message:`duplicate id across packs: ${itemId}`});
+          ids.add(itemId);
+        }
+        // paper identity duplicate
+        if (pack.contentType === "paper" && text(itemId)) {
+          const yr = Number(item.year);
+          const ses = Number(item.session);
+          const st = Number(item.set);
+          if (Number.isInteger(yr) && yr >= 2000 && [6, 12].includes(ses) && Number.isInteger(st) && st >= 1) {
+            const key = `${String(item.exam)}:${yr}-${ses}:set${st}`;
+            if (paperIdentities.has(key)) issues.push({level:"error",packId:pack.id,itemId:itemId,message:`duplicate paper identity: ${key} (already ${paperIdentities.get(key)})`});
+            else paperIdentities.set(key, itemId);
+          }
+        }
+        // normalized text duplicate（reading passage / listening transcript / writing prompt / translation promptChinese）
+        const textField =
+          pack.contentType === "reading" ? item.passage
+          : pack.contentType === "listening" ? item.transcript
+          : pack.contentType === "writing" ? item.prompt
+          : pack.contentType === "translation" ? item.promptChinese
+          : undefined;
+        if (typeof textField === "string" && textField.trim().length > 20 && text(itemId)) {
+          const h = hashString(textField.trim().toLowerCase().replace(/\s+/g," ")).toString(16);
+          if (textHashes.has(h)) issues.push({level:"warning",packId:pack.id,itemId:itemId,message:`duplicate normalized text hash ${h} (also ${textHashes.get(h)}) — 同源合法导入可忽略，重复注册需排查`});
+          else textHashes.set(h, itemId);
+        }
       }
     }
     for (const issue of issues) report[issue.level === "error" ? "errors" : "warnings"].push(issue);

@@ -170,3 +170,39 @@ V5 已正式开放并验收通过“阅读”专项：每日固定 3 篇阅读�
 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run content:validate`、`npm run content:stats`。
 
 重点验收：每日 20→额外 10→再额外 20，仍保持每日 20/20、额外累计 30；刷新恢复、收藏、XP 去重、跨日、375/390/430px 与桌面布局，以及原每日关卡回归。阅读：每日 3 篇进度与完成态、阅读→答题→复测全流程、生词点击查义加入统一生词本且与词汇生词去重、XP 首次/跨日/同日重复规则、刷新恢复、`/practice/reading` 系列路由 200。V10：错题复习页回放原题（题干/选项/用户作答/答案/解析）、阅读/听力原文关联、缺失内容降级、Importer 拒绝坏 JSON、content:stats 无 unspecified。
+
+## V13 Phase 1（2026-09-26，分支 feature/v13-real-content，尚未 merge main）
+
+### 状态
+
+- **已完成并验证**（本轮真实实现 + 10 项 gates + 浏览器 smoke 全部通过）：
+  - Paper 领域模型 `src/content/papers.ts`：Exam → Paper → Section → Group → Question 完整层级，兼容 V10 旧 paper schema（legacy 结构级校验路径），V13 新 schema 完整校验（稳定 ID、rights、schemaVersion、isPartial/fixture、section/group/question/asset 结构）。
+  - Stable ID `src/content/stable-id.ts`：`cet6:2025-12:set1[:reading[:careful:g1[:q1]]]` 分层 ID 生成 + 格式校验；现有 mock ID（word_/r-/l-/t-/w-）不批量重命名。
+  - Rights/License `src/content/rights.ts`：owned/official_public_material → allowed；licensed+evidence → allowed(warning)；licensed 无证据 / permission_required / unknown → blocked/unknown（禁进 production）。
+  - Content Lifecycle `src/content/lifecycle.ts`：raw→normalized→validated→reviewed→publishable→published→deprecated 状态机 + V10 status 映射。
+  - Import Batch `src/content/import-batch.ts` + `importer.ts` 扩展：inputFingerprint/batchId deterministic，同源同输入幂等（不重复注册）。
+  - Duplicate Detection（validator.ts）：跨 pack id 去重、paper identity（exam:year-session:set）重复 → error、同 normalized 文本 hash 跨 pack → warning。
+  - Staging vs Published 隔离：`getPublishableItems()`（production pool）只含 allowed + active/published；synthetic fixture 注册为 staging，学习页 Selector/Repository 绝不暴露；`resolveContentById/getPaperById` 仅开发/测试 resolve。
+  - 首份原创 synthetic CET6 Paper fixture `src/content/fixture/cet6-2025-12-synthetic.ts`：isPartial=true、fixture=true、status=staging、rights=owned；4 section / 7 group / 10 题 / 1 音频 asset（占位）；全部内容原创，不含真实真题与真实音频。
+  - 新增 `npm run content:rights`；content:validate / content:stats 扩展（paper counts、rights bucket、section/group/question 统计）。
+  - 新增测试 `tests/v13-content.test.ts`（29 项：paper 模型、stable ID、rights、lifecycle、import batch、duplicate、隔离、59 mock 回归、deprecated ID alias、exam spec、importer 拒收）。
+  - Deprecated ID 兼容：`aliases.ts` 增加运行时 `registerAlias`，旧 ID → Registry resolve → replay 测试通过。
+  - Exam Specification `src/content/exam-spec.ts`：CET6 官方公开结构元数据（official_public_material），validator 参考，不硬编码在 UI。
+
+- **未做（V13 Phase 1 边界内明确不做）**：不导入网上 CET-6 历年真题全文、不引入真实真题音频、不引入培训机构 PDF；不建立第二套平行 Content System；不改任何学习 UI/首页/账号；不改 V12 tag/Release；不 merge main、不开始 V13 Phase 2。
+
+### Gates（全部通过）
+
+`npm test` 399/399（新增 29 + 既有 370）｜`npm run typecheck` PASS｜`npm run lint` 0 errors｜`npm run build` PASS｜`npm run content:validate` 0 errors（59 mock + 1 paper）｜`npm run content:stats` PASS（vocabulary 30/reading 6/listening 7/translation 8/writing 8/paper 1；rights: unknown 5 / owned 1；paper sections 4/groups 7/questions 10）｜`npm run content:rights` PASS（production pool 为空，仅 allowed 可进入）｜`npx prisma validate` PASS｜`npx prisma generate` PASS｜`npx prisma migrate status` 2 migrations up to date。
+
+### 浏览器 smoke（真实浏览器）
+
+- `/practice/vocabulary` 词汇首页渲染正常（今日 0/20、开始学习、生词本），点击"开始学习"真实进入会话（sustain → feasible 推进）。
+- `/practice/reading` 阅读首页渲染正常（今日 0/3）。
+- `/review`、`/me`、`/plan/settings`、听力/翻译/写作路由均 200。
+- 学习页面无任何 paper/真题入口；fixture 仅开发/测试 resolve。
+- 无 runtime console error（仅有 Next dev data-inspector-id hydration 差异 warning，非产品缺陷）。
+
+### 检查命令（新增 content:rights）
+
+`npm test`、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run content:validate`、`npm run content:stats`、`npm run content:rights`、`npx prisma validate`、`npx prisma generate`、`npx prisma migrate status`。

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "content:validate": "tsx scripts/content-validate.ts",
-    "content:stats": "tsx scripts/content-stats.ts"
+    "content:stats": "tsx scripts/content-stats.ts",
+    "content:rights": "tsx scripts/content-rights.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.11.3",

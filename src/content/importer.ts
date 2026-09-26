@@ -13,6 +13,7 @@
 import type { ContentPack, ContentMeta } from "./types";
 import { registerContentPack } from "./registry";
 import { validatePack } from "./validator";
+import { createImportBatch, recordImportBatch, wasImported, type ImportBatch } from "./import-batch";
 
 export class ContentImportError extends Error {
   readonly issues: string[];
@@ -122,4 +123,37 @@ export function importAndRegisterContentPack(
   const pack = importContentPackFromJson(raw);
   registerContentPack(pack, options);
   return pack;
+}
+
+/**
+ * V13：带 Import Batch 的确定性 + 幂等导入。
+ * - deterministic：同一原始输入（raw 文本）永远产生相同 inputFingerprint / batchId，
+ *   内容 stable ID 由导入方按源内容确定性给出（同一源同一题永远同 ID）。
+ * - idempotent：同一 sourceId + 同一 fingerprint 已导入时，默认跳过重复注册
+ *   （skipIfImported: true），不产生重复 pack / 重复内容。
+ * - 返回 { pack, batch, imported }：imported=false 表示幂等命中，未重复注册。
+ */
+export interface ImportWithBatchResult {
+  pack: ContentPack;
+  batch: ImportBatch;
+  imported: boolean;
+}
+
+export function importContentPackWithBatch(
+  raw: string,
+  options: { strict?: boolean; skipIfImported?: boolean } = {},
+): ImportWithBatchResult {
+  const pack = importContentPackFromJson(raw);
+  const batch = createImportBatch({
+    sourceId: pack.sourceId,
+    raw,
+    itemCount: Array.isArray(pack.items) ? pack.items.length : 0,
+  });
+  const skip = options.skipIfImported ?? true;
+  if (skip && wasImported(pack.sourceId, raw)) {
+    return { pack, batch, imported: false };
+  }
+  registerContentPack(pack, options);
+  recordImportBatch(batch);
+  return { pack, batch, imported: true };
 }
