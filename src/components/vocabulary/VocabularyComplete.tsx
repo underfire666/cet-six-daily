@@ -11,7 +11,12 @@ import {
 } from "../lesson/UnmasteredReview";
 import { batchProgress } from "@/lib/vocabulary/store";
 import { ExtraLearningDialog } from "./ExtraLearningDialog";
-export function VocabularyComplete({ id }: { id: string }) {
+export function VocabularyComplete({ id, onSession, onHome, onWordbook }: {
+  id: string;
+  onSession?: (id: string) => void;
+  onHome?: () => void;
+  onWordbook?: () => void;
+}) {
   const { ready, store, start, dailyComplete } = useVocabulary();
   const { settings } = useLearning();
   const router = useRouter();
@@ -20,9 +25,11 @@ export function VocabularyComplete({ id }: { id: string }) {
   const badge = useRef<HTMLDivElement>(null);
   const session = store.sessions[id];
   useEffect(() => {
-    if (ready && session && session.phase !== "complete")
-      router.replace(`/practice/vocabulary/session/${id}`);
-  }, [ready, session, id, router]);
+    if (ready && session && session.phase !== "complete") {
+      if (onSession) onSession(id);
+      else router.replace(`/practice/vocabulary/session/${id}`);
+    }
+  }, [ready, session, id, router, onSession]);
   useEffect(() => {
     if (
       session?.phase === "complete" &&
@@ -43,9 +50,8 @@ export function VocabularyComplete({ id }: { id: string }) {
     return (
       <main className="exercise-gate">
         <h1>这份学习记录已无法读取</h1>
-        <Link href="/practice/vocabulary" className="exercise-button">
-          返回词汇
-        </Link>
+        {onHome ? <button className="exercise-button" onClick={onHome}>返回词汇</button> :
+          <Link href="/practice/vocabulary" className="exercise-button">返回词汇</Link>}
       </main>
     );
   if (session.phase !== "complete")
@@ -79,9 +85,9 @@ export function VocabularyComplete({ id }: { id: string }) {
       session.mode,
       session.mode === "single_review" ? session.wordIds[0] : undefined,
     );
-    router.push(
-      next ? `/practice/vocabulary/session/${next}` : "/practice/vocabulary",
-    );
+    if (next && onSession) onSession(next);
+    else if (!next && onHome) onHome();
+    else router.push(next ? `/practice/vocabulary/session/${next}` : "/practice/vocabulary");
   };
   return (
     <main className="exercise-complete">
@@ -152,15 +158,10 @@ export function VocabularyComplete({ id }: { id: string }) {
         <button className="exercise-button" onClick={again}>
           {batchComplete ? "继续再学一组" : batch ? "继续本批次" : "继续学习"}
         </button>
-        <Link href="/practice/vocabulary" className="exercise-text-button">
-          返回词汇首页
-        </Link>
-        <Link
-          href="/practice/vocabulary/wordbook"
-          className="exercise-text-button"
-        >
-          查看生词本
-        </Link>
+        {onHome ? <button className="exercise-text-button" onClick={onHome}>返回词汇首页</button> :
+          <Link href="/practice/vocabulary" className="exercise-text-button">返回词汇首页</Link>}
+        {onWordbook ? <button className="exercise-text-button" onClick={onWordbook}>查看生词本</button> :
+          <Link href="/practice/vocabulary/wordbook" className="exercise-text-button">查看生词本</Link>}
       </div>
       {mistakes && (
         <UnmasteredReview
@@ -169,7 +170,7 @@ export function VocabularyComplete({ id }: { id: string }) {
           onClose={() => setMistakes(false)}
         />
       )}
-      {extraOpen && <ExtraLearningDialog onClose={() => setExtraOpen(false)} />}
+      {extraOpen && <ExtraLearningDialog onClose={() => setExtraOpen(false)} onSession={onSession} />}
     </main>
   );
 }

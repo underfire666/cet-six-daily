@@ -9,3 +9,9 @@ output/
 # Next.js 自动生成 + 浏览器验收截图（不入库）
 next-env.d.ts
 shots/
+# V12 secrets / local DB
+.env
+.env.local
+.env.*.local
+prisma/*.db
+prisma/*.db-journal

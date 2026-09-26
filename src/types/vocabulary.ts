@@ -48,6 +48,11 @@ export interface UserVocabularyState {
   independentTypes: VocabularyQuestionType[];
   addedToWordbook: boolean;
   source: WordSource;
+  /** Cloud wordbook metadata retained alongside the existing vocabulary state. */
+  wordbookAddedAt?: string;
+  wordbookRemovedAt?: string;
+  wordbookUpdatedAt?: string;
+  wordbookVersion?: number;
 }
 
 export interface DailyVocabularyProgress {

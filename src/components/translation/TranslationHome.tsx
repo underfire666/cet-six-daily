@@ -1,23 +1,35 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Languages, History } from "lucide-react";
 import { useTranslation } from "./TranslationProvider";
+import { useLocalPracticeRoute } from "@/components/practice/useLocalPracticeRoute";
+import { TranslationSessionPlayer } from "./TranslationSessionPlayer";
+import { TranslationComplete } from "./TranslationComplete";
 
 export function TranslationHome() {
+  const route = useLocalPracticeRoute("translation");
+  if (route.stage.kind === "session") {
+    const id = route.stage.id;
+    return <TranslationSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+  }
+  if (route.stage.kind === "complete")
+    return <TranslationComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} />;
+  return <TranslationDashboard onSession={route.openSession} />;
+}
+
+function TranslationDashboard({ onSession }: { onSession: (id: string) => void }) {
   const t = useTranslation();
-  const router = useRouter();
   const done = t.progress.completedTaskIds.length;
   const total = t.progress.taskIds.length;
   const completed = t.dailyComplete;
 
   const begin = (mode: "daily" | "extra") => {
     const id = t.start(mode);
-    if (id) router.push(`/practice/translation/session/${id}`);
+    if (id) onSession(id);
   };
   const main = () => {
     if (t.active) {
-      router.push(`/practice/translation/session/${t.active.id}`);
+      onSession(t.active.id);
       return;
     }
     if (!completed) begin("daily");
@@ -75,9 +87,7 @@ export function TranslationHome() {
             <button
               className="subjective-text-button"
               onClick={() =>
-                router.push(
-                  `/practice/translation/session/${t.previousDaily!.id}`,
-                )
+                onSession(t.previousDaily!.id)
               }
             >
               继续 {t.previousDaily.planDate} 未完成的翻译
@@ -87,9 +97,7 @@ export function TranslationHome() {
           <button
             className="subjective-text-button"
             onClick={() =>
-              router.push(
-                `/practice/translation/session/${t.extraActive!.id}`,
-              )
+              onSession(t.extraActive!.id)
             }
           >
             继续未完成的额外翻译
@@ -119,9 +127,7 @@ export function TranslationHome() {
                     <button
                       className="subjective-link-button"
                       onClick={() =>
-                        router.push(
-                          `/practice/translation/session/${entry.sessionId}`,
-                        )
+                        onSession(entry.sessionId!)
                       }
                     >
                       查看

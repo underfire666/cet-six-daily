@@ -26,6 +26,9 @@ import type { TranslationStore } from "@/types/translation";
 import type { SubjectiveSessionMode } from "@/types/subjective";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
+import { enqueueSession, enqueueTranslationHistory } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useTranslationState> | null>(
   null,
@@ -58,7 +61,7 @@ function useTranslationState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadTranslationStore(storage.current);
       latest.current = loaded.store;
@@ -76,6 +79,12 @@ function useTranslationState() {
       window.removeEventListener("focus", tick);
     };
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["translation"], () => {
+    const loaded = loadTranslationStore(storage.current);
+    latest.current = loaded.store;
+    setStore(loaded.store);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), []);
 
   const award = learning.awardXp;
   useEffect(() => {
@@ -104,13 +113,33 @@ function useTranslationState() {
 
   const dispatch = useCallback(
     (id: string, action: TranslationAction) => {
+      const previous = latest.current.sessions[id];
+      const prevLen = latest.current.history.length;
       const next = updateTranslation(
         latest.current,
         id,
         action,
         new Date().toISOString(),
       );
-      if (next !== latest.current) commit(next);
+      if (next !== latest.current) {
+        commit(next);
+        const completed = next.sessions[id];
+        if (!previous?.applied && completed?.applied && completed.completedAt) {
+          enqueueSession({ sessionId: id, module: "translation", activityId: completed.taskId,
+            planDate: completed.planDate, startedAt: completed.startedAt, completedAt: completed.completedAt,
+            status: "completed", payload: completed as unknown as Record<string, unknown> });
+        }
+        if (next.history.length > prevLen) {
+          const h = next.history[next.history.length - 1];
+          enqueueTranslationHistory({
+            itemId: h.sessionId ?? h.taskId,
+            promptId: h.taskId,
+            answer: h.submittedText ?? "",
+            feedback: h.feedback as unknown as Record<string, unknown>,
+            createdAt: h.createdAt,
+          });
+        }
+      }
     },
     [commit],
   );

@@ -9,7 +9,7 @@ import { listeningLesson } from "@/lib/listening/questions";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useListening } from "./ListeningProvider";
 
-export function ListeningComplete({ id }: { id: string }) {
+export function ListeningComplete({ id, onSession, onHome }: { id: string; onSession?: (id: string) => void; onHome?: () => void }) {
   const { ready, store, dailyComplete, start } = useListening();
   const router = useRouter();
   const session = store.sessions[id];
@@ -17,7 +17,10 @@ export function ListeningComplete({ id }: { id: string }) {
     const mode =
       session?.mode === "extra" || dailyComplete ? "extra" : "daily";
     const nextId = start(mode);
-    if (nextId) router.push(`/practice/listening/session/${nextId}`);
+    if (nextId) {
+      if (onSession) onSession(nextId);
+      else router.push(`/practice/listening/session/${nextId}`);
+    }
   };
   if (!ready) return <div className="exercise-loading">正在准备听力…</div>;
   if (!session || !session.applied)
@@ -25,9 +28,8 @@ export function ListeningComplete({ id }: { id: string }) {
       <main className="exercise-gate">
         <h1>这组听力还没完成</h1>
         <p>返回听力页，选择一组开始吧。</p>
-        <Link className="exercise-button" href="/practice/listening">
-          返回听力
-        </Link>
+        {onHome ? <button className="exercise-button" onClick={onHome}>返回听力</button> :
+          <Link className="exercise-button" href="/practice/listening">返回听力</Link>}
       </main>
     );
   const material = listeningMaterialById(session.materialId)!;
@@ -89,9 +91,8 @@ export function ListeningComplete({ id }: { id: string }) {
             ? "继续下一组"
             : "今天再听一组"}
         </button>
-        <Link className="listening-text-button" href="/practice/listening">
-          返回听力首页
-        </Link>
+        {onHome ? <button className="listening-text-button" onClick={onHome}>返回听力首页</button> :
+          <Link className="listening-text-button" href="/practice/listening">返回听力首页</Link>}
       </div>
     </main>
   );

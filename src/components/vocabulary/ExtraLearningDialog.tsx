@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { LessonDialog } from "../lesson/LessonDialog";
 import { useVocabulary } from "./VocabularyProvider";
 
-export function ExtraLearningDialog({ onClose }: { onClose: () => void }) {
+export function ExtraLearningDialog({ onClose, onSession }: { onClose: () => void; onSession?: (id: string) => void }) {
   const { start } = useVocabulary();
   const router = useRouter();
   const [custom, setCustom] = useState("");
@@ -20,7 +20,8 @@ export function ExtraLearningDialog({ onClose }: { onClose: () => void }) {
       return;
     }
     onClose();
-    router.push(`/practice/vocabulary/session/${id}`);
+    if (onSession) onSession(id);
+    else router.push(`/practice/vocabulary/session/${id}`);
   };
   return (
     <LessonDialog title="再学多少个？" onClose={onClose}>

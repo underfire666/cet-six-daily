@@ -1,0 +1,205 @@
+// V12 Cloud Sync Schema
+// Datasource: PostgreSQL. Timestamps in DB are UTC; product dates stay Asia/Shanghai.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(6)
+
+  profile       Profile?
+  preferences   StudyPreferences?
+  sessions      LearningSession[]
+  xpEvents      XpEvent[]
+  wordbook      WordbookEntry[]
+  reviewItems   ReviewItem[]
+  dailyPlans    DailyPlanState[]
+  translationHistories TranslationHistory[]
+  writingHistories     WritingHistory[]
+  settings      UserSettings?
+  syncMutations SyncMutation[]
+  migrationRecords MigrationRecord[]
+}
+
+model Profile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetScore  Int?
+  examDate     DateTime? @db.Date
+  reminders    Json?
+  sound        Json?
+  version      Int      @default(1)
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+}
+
+model StudyPreferences {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payload   Json     // mirrors V8 StudyPreferences shape
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+}
+
+model LearningSession {
+  id           String    @id           // client-generated stable id (UUID)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module       String    // vocabulary | reading | listening | translation | writing
+  activityId   String
+  planDate     String?   // Asia/Shanghai YYYY-MM-DD
+  startedAt    DateTime  @db.Timestamptz(6)
+  completedAt  DateTime? @db.Timestamptz(6)
+  durationSec  Int?
+  status       String    @default("completed")
+  payload      Json?     // lightweight attempt summary
+  version      Int       @default(1)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, id])
+  @@index([userId, planDate])
+}
+
+model XpEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String   // client-generated dedupe key
+  source    String   // vocabulary | review | reading | ...
+  sourceId  String
+  amount    Int
+  earnedAt  DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([userId, eventId])
+  @@index([userId, earnedAt])
+}
+
+model WordbookEntry {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordId    String
+  source    String?   // vocabulary | reading | listening
+  addedAt   DateTime  @default(now()) @db.Timestamptz(6)
+  removedAt DateTime? @db.Timestamptz(6) // tombstone
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  version   Int       @default(1)
+
+  @@unique([userId, wordId])
+  @@index([userId, removedAt])
+}
+
+model ReviewItem {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewItemId String   // V9 stable composite id
+  sourceModule String
+  activityId   String
+  questionId   String
+  status      String    @default("active") // active | mastered | removed
+  mastery     String?
+  dueDate     String?   // Asia/Shanghai YYYY-MM-DD
+  priority    Int?
+  payload     Json?     // complete V9 ReviewItem for lossless domain restore
+  removedAt   DateTime? @db.Timestamptz(6)
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, reviewItemId])
+  @@index([userId, dueDate])
+}
+
+model DailyPlanState {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planDate  String   // Asia/Shanghai YYYY-MM-DD
+  payload   Json     // completed task ids + user modifications
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, planDate])
+}
+
+model TranslationHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId    String   // client stable id
+  promptId  String
+  answer    String
+  feedback  Json?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([userId, itemId])
+}
+
+model WritingHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId    String   // client stable id
+  promptId  String
+  answer    String
+  feedback  Json?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([userId, itemId])
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payload   Json     // feedback + reminder + misc
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+}
+
+model SyncMutation {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mutationId  String   // client dedupe key
+  entityType  String
+  entityId    String
+  operation   String   // upsert | remove
+  payload     Json
+  status      String   @default("applied") // applied | failed
+  attempts    Int      @default(1)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  appliedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, mutationId])
+  @@index([userId, status])
+}
+
+model MigrationRecord {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  migrationId   String   // client-generated idempotency key
+  summary       Json
+  status        String   @default("completed")
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([userId, migrationId])
+}

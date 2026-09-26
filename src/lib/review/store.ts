@@ -55,6 +55,7 @@ function validItem(v: unknown): v is ReviewItem {
     bool(v.favorite) &&
     bool(v.removed) &&
     (v.lastWrongOptionId === undefined || str(v.lastWrongOptionId)) &&
+    (v.version === undefined || num(v.version)) &&
     Array.isArray(v.history) &&
     v.history.every(validHistory) &&
     (v.sources === undefined || (Array.isArray(v.sources) && v.sources.every(s => ["vocabulary", "reading", "listening"].includes(String(s))))) &&
@@ -62,7 +63,11 @@ function validItem(v: unknown): v is ReviewItem {
   );
 }
 
-function validSession(v: unknown): v is ReviewSession {
+export function isValidReviewItem(v: unknown): v is ReviewItem {
+  return validItem(v);
+}
+
+export function validReviewSession(v: unknown): v is ReviewSession {
   if (!obj(v)) return false;
   if (!(
     str(v.id) &&
@@ -120,7 +125,7 @@ export function loadReviewStore(
     }
   if (obj(value.sessions))
     for (const [id, s] of Object.entries(value.sessions)) {
-      if (validSession(s) && s.id === id && s.itemIds.every(itemId => Object.hasOwn(store.items, itemId))) store.sessions[id] = s;
+      if (validReviewSession(s) && s.id === id && s.itemIds.every(itemId => Object.hasOwn(store.items, itemId))) store.sessions[id] = s;
       else issue = issue ?? "部分复习会话已隔离，其他记录已保留";
     }
   if (obj(value.xpLedger))

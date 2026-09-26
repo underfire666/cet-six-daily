@@ -1,22 +1,34 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Headphones } from "lucide-react";
 import { useListening } from "./ListeningProvider";
+import { useLocalPracticeRoute } from "@/components/practice/useLocalPracticeRoute";
+import { ListeningSessionPlayer } from "./ListeningSessionPlayer";
+import { ListeningComplete } from "./ListeningComplete";
 
 export function ListeningHome() {
+  const route = useLocalPracticeRoute("listening");
+  if (route.stage.kind === "session") {
+    const id = route.stage.id;
+    return <ListeningSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+  }
+  if (route.stage.kind === "complete")
+    return <ListeningComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} />;
+  return <ListeningDashboard onSession={route.openSession} />;
+}
+
+function ListeningDashboard({ onSession }: { onSession: (id: string) => void }) {
   const listening = useListening();
-  const router = useRouter();
   const done = listening.progress.completedMaterialIds.length;
   const total = listening.progress.materialIds.length;
   const completed = listening.dailyComplete;
   const begin = (mode: "daily" | "extra") => {
     const id = listening.start(mode);
-    if (id) router.push(`/practice/listening/session/${id}`);
+    if (id) onSession(id);
   };
   const main = () => {
     if (listening.active) {
-      router.push(`/practice/listening/session/${listening.active.id}`);
+      onSession(listening.active.id);
       return;
     }
     if (!completed) begin("daily");
@@ -80,9 +92,7 @@ export function ListeningHome() {
             <button
               className="listening-text-button"
               onClick={() =>
-                router.push(
-                  `/practice/listening/session/${listening.previousDaily!.id}`,
-                )
+                onSession(listening.previousDaily!.id)
               }
             >
               继续 {listening.previousDaily.planDate} 未完成的听力
@@ -92,9 +102,7 @@ export function ListeningHome() {
           <button
             className="listening-text-button"
             onClick={() =>
-              router.push(
-                `/practice/listening/session/${listening.extraActive!.id}`,
-              )
+              onSession(listening.extraActive!.id)
             }
           >
             继续未完成的额外听力

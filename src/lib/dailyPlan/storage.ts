@@ -77,6 +77,10 @@ function validPref(v: unknown): v is StudyPreferences {
   );
 }
 
+export function isValidStudyPreferences(v: unknown): v is StudyPreferences {
+  return validPref(v);
+}
+
 export function loadDailyPlanStore(
   storage: KeyStorage | undefined,
 ): { store: DailyPlanStore; persistent: boolean; issue?: string } {

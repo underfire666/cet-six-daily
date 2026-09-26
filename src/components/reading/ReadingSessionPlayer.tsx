@@ -21,7 +21,7 @@ import { AiHint, LessonExitDialog, LessonDialog } from "../lesson/LessonDialog";
 import { ReadingPassage } from "./ReadingPassage";
 import { WordLookupSheet } from "./WordLookupSheet";
 
-export function ReadingSessionPlayer({ id }: { id: string }) {
+export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; onComplete?: () => void; onExit?: () => void }) {
   const { ready, store, dispatch, notice } = useReading();
   const vocabulary = useVocabulary();
   const { settings } = useLearning();
@@ -32,18 +32,19 @@ export function ReadingSessionPlayer({ id }: { id: string }) {
   const [lookup, setLookup] = useState<string | null>(null);
   const session = store.sessions[id];
   useEffect(() => {
-    if (session?.phase === "complete")
-      router.replace(`/practice/reading/complete/${id}`);
-  }, [session?.phase, id, router]);
+    if (session?.phase === "complete") {
+      if (onComplete) onComplete();
+      else router.replace(`/practice/reading/complete/${id}`);
+    }
+  }, [session?.phase, id, router, onComplete]);
   if (!ready) return <div className="exercise-loading">正在准备阅读…</div>;
   if (!session)
     return (
       <main className="exercise-gate">
         <h1>这次阅读已无法恢复</h1>
         <p>返回阅读页，重新开始一篇。</p>
-        <Link className="exercise-button" href="/practice/reading">
-          返回阅读
-        </Link>
+        {onExit ? <button className="exercise-button" onClick={onExit}>返回阅读</button> :
+          <Link className="exercise-button" href="/practice/reading">返回阅读</Link>}
       </main>
     );
   if (session.phase === "complete")
@@ -189,7 +190,8 @@ export function ReadingSessionPlayer({ id }: { id: string }) {
           onClose={() => setDialog(null)}
           onExit={() => {
             setDialog(null);
-            router.push("/practice/reading");
+            if (onExit) onExit();
+            else router.push("/practice/reading");
           }}
         />
       )}

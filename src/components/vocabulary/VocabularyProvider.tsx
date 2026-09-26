@@ -26,6 +26,9 @@ import {
   loadVocabularyStore,
   saveVocabularyStore,
 } from "@/lib/vocabulary/storage";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
+import { enqueueSession, enqueueWordbook } from "@/lib/sync/adapters";
 import type { VocabularyAction } from "@/lib/vocabulary/session";
 import type {
   VocabularySessionMode,
@@ -57,7 +60,7 @@ function useVocabularyState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadVocabularyStore(storage.current);
       latest.current = loaded.store;
@@ -75,6 +78,12 @@ function useVocabularyState() {
       window.removeEventListener("focus", tick);
     };
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["vocabulary"], () => {
+    const loaded = loadVocabularyStore(storage.current);
+    latest.current = loaded.store;
+    setStore(loaded.store);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), []);
   const award = learning.awardXp;
   useEffect(() => {
     if (ready && learning.ready)
@@ -102,13 +111,22 @@ function useVocabularyState() {
   );
   const dispatch = useCallback(
     (id: string, action: VocabularyAction) => {
+      const previous = latest.current.sessions[id];
       const next = updateVocabulary(
         latest.current,
         id,
         action,
         new Date().toISOString(),
       );
-      if (next !== latest.current) commit(next);
+      if (next !== latest.current) {
+        commit(next);
+        const completed = next.sessions[id];
+        if (!previous?.applied && completed?.applied && completed.completedAt) {
+          enqueueSession({ sessionId: id, module: "vocabulary", activityId: completed.wordIds.join(","),
+            planDate: completed.date, startedAt: completed.lesson.startedAt, completedAt: completed.completedAt,
+            status: "completed", payload: completed as unknown as Record<string, unknown> });
+        }
+      }
     },
     [commit],
   );
@@ -119,24 +137,48 @@ function useVocabularyState() {
       const previous =
         latest.current.states[wordId] ??
         newVocabularyState(word, new Date().toISOString());
+      const now = new Date().toISOString();
+      const nextState = {
+        ...previous,
+        addedToWordbook: !previous.addedToWordbook,
+        wordbookAddedAt: previous.addedToWordbook ? previous.wordbookAddedAt ?? previous.firstSeenAt : now,
+        wordbookRemovedAt: previous.addedToWordbook ? now : undefined,
+        wordbookUpdatedAt: now,
+        wordbookVersion: (previous.wordbookVersion ?? 0) + 1,
+      };
       commit({
         ...latest.current,
         states: {
           ...latest.current.states,
-          [wordId]: { ...previous, addedToWordbook: !previous.addedToWordbook },
+          [wordId]: nextState,
         },
+      });
+      enqueueWordbook({
+        wordId,
+        source: word.source,
+        addedAt: nextState.wordbookAddedAt,
+        removedAt: nextState.wordbookRemovedAt,
+        updatedAt: now,
+        version: nextState.wordbookVersion,
+        removed: previous.addedToWordbook, // if it was in book, toggling off = remove
       });
     },
     [commit],
   );
   const addWordbookWord = useCallback(
     (word: Word) => {
+      const now = new Date().toISOString();
       const result = addWordToWordbook(
         latest.current,
         word,
-        new Date().toISOString(),
+        now,
       );
-      if (result.store !== latest.current) commit(result.store);
+      if (result.store !== latest.current) {
+        commit(result.store);
+        const state = result.store.states[word.id];
+        enqueueWordbook({ wordId: word.id, source: word.source, addedAt: now,
+          updatedAt: now, version: state.wordbookVersion });
+      }
       return result.added;
     },
     [commit],

@@ -65,6 +65,10 @@ export function addWordToWordbook(
   const state = {
     ...(previous ?? newVocabularyState(word, now)),
     addedToWordbook: true,
+    wordbookAddedAt: now,
+    wordbookRemovedAt: undefined,
+    wordbookUpdatedAt: now,
+    wordbookVersion: (previous?.wordbookVersion ?? 0) + 1,
   };
   return {
     store: { ...store, states: { ...store.states, [word.id]: state } },

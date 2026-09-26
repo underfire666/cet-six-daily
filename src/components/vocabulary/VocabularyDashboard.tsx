@@ -1,8 +1,5 @@
 "use client";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   BookMarked,
   RotateCcw,
   ArrowRight,
@@ -13,24 +10,32 @@ import { useVocabulary } from "./VocabularyProvider";
 import type { VocabularySessionMode } from "@/types/vocabulary";
 import { ExtraLearningDialog } from "./ExtraLearningDialog";
 import { batchProgress } from "@/lib/vocabulary/store";
-export function VocabularyHeading({
-  title,
-  back = "/practice/vocabulary",
-}: {
-  title: string;
-  back?: string;
-}) {
-  return (
-    <header className="vocabulary-heading">
-      <Link href={back} className="exercise-icon-button" aria-label="返回">
-        <ArrowLeft size={22} />
-      </Link>
-      <h1>{title}</h1>
-      <span>六级日常</span>
-    </header>
-  );
-}
+import { useLocalPracticeRoute } from "@/components/practice/useLocalPracticeRoute";
+import { VocabularyPlayer } from "./VocabularyPlayer";
+import { VocabularyComplete } from "./VocabularyComplete";
+import { WordbookList } from "./WordbookList";
+import { VocabularyHeading } from "./VocabularyHeading";
+export { VocabularyHeading } from "./VocabularyHeading";
 export function VocabularyDashboard() {
+  const route = useLocalPracticeRoute("vocabulary");
+  if (route.stage.kind === "session") {
+    const id = route.stage.id;
+    return <VocabularyPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+  }
+  if (route.stage.kind === "complete")
+    return <VocabularyComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} onWordbook={route.openWordbook} />;
+  if (route.stage.kind === "wordbook")
+    return <WordbookList onSession={route.openSession} onHome={route.goHome} />;
+  return <VocabularyDashboardHome onSession={route.openSession} onWordbook={route.openWordbook} />;
+}
+
+function VocabularyDashboardHome({
+  onSession,
+  onWordbook,
+}: {
+  onSession: (id: string) => void;
+  onWordbook: () => void;
+}) {
   const {
     ready,
     notice,
@@ -45,12 +50,11 @@ export function VocabularyDashboard() {
     dailyComplete,
     previousDaily,
   } = useVocabulary();
-  const router = useRouter();
   const [message, setMessage] = useState("");
   const [extraOpen, setExtraOpen] = useState(false);
   const begin = (mode: VocabularySessionMode) => {
     const id = start(mode);
-    if (id) router.push(`/practice/vocabulary/session/${id}`);
+    if (id) onSession(id);
     else
       setMessage(
         mode === "due_review"
@@ -140,12 +144,12 @@ export function VocabularyDashboard() {
           示例词库 · 新词不足时包含已学词巩固
         </p>
         {previousDaily && (
-          <Link
+          <button
             className="vocabulary-link"
-            href={`/practice/vocabulary/session/${previousDaily.id}`}
+            onClick={() => onSession(previousDaily.id)}
           >
             继续 {previousDaily.date} 未完成的一组
-          </Link>
+          </button>
         )}
       </section>
       <div className="vocabulary-secondary">
@@ -174,13 +178,13 @@ export function VocabularyDashboard() {
           <p>
             <strong>{wordbook.length}</strong> 个收藏
           </p>
-          <Link
+          <button
             className="vocabulary-link"
-            href="/practice/vocabulary/wordbook"
+            onClick={onWordbook}
           >
             查看生词
             <ArrowRight size={17} />
-          </Link>
+          </button>
         </section>
       </div>
       {message && (
@@ -188,7 +192,7 @@ export function VocabularyDashboard() {
           {message}
         </p>
       )}
-      {extraOpen && <ExtraLearningDialog onClose={() => setExtraOpen(false)} />}
+      {extraOpen && <ExtraLearningDialog onClose={() => setExtraOpen(false)} onSession={onSession} />}
     </main>
   );
 }

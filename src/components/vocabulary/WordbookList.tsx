@@ -7,8 +7,11 @@ import { Search, BookMarked } from "lucide-react";
 
 import { useVocabulary } from "./VocabularyProvider";
 import { WordCard, WordAudioButton } from "./WordCard";
-import { VocabularyHeading } from "./VocabularyDashboard";
+import { VocabularyHeading } from "./VocabularyHeading";
 import { LessonDialog } from "../lesson/LessonDialog";
+import { useLocalPracticeRoute } from "@/components/practice/useLocalPracticeRoute";
+import { VocabularyPlayer } from "./VocabularyPlayer";
+import { VocabularyComplete } from "./VocabularyComplete";
 export const masteryLabels = {
   new: "尚未学习",
   learning: "学习中",
@@ -21,12 +24,23 @@ export const sourceLabels = {
   reading: "阅读",
   listening: "听力",
 };
-export function WordbookList() {
+export function WordbookList({ onSession, onHome }: { onSession?: (id: string) => void; onHome?: () => void } = {}) {
+  const route = useLocalPracticeRoute("vocabulary", "/practice/vocabulary/wordbook");
+  const router = useRouter();
+  if (!onSession && route.stage.kind === "session") {
+    const id = route.stage.id;
+    return <VocabularyPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+  }
+  if (!onSession && route.stage.kind === "complete")
+    return <VocabularyComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} onWordbook={route.goHome} />;
+  return <WordbookHome onSession={onSession ?? route.openSession} onHome={onHome ?? (() => router.push("/practice/vocabulary"))} />;
+}
+
+function WordbookHome({ onSession, onHome }: { onSession: (id: string) => void; onHome: () => void }) {
   const { ready, store, wordbook, start, toggleWordbook, notice } =
     useVocabulary();
   const [search, setSearch] = useState(""),
     [selected, setSelected] = useState<string | null>(null);
-  const router = useRouter();
   const words = wordbook
     .map((s) => wordById(s.wordId)!)
     .filter(
@@ -38,11 +52,11 @@ export function WordbookList() {
     state = selected ? store.states[selected] : undefined;
   const begin = (id?: string) => {
     const session = start(id ? "single_review" : "wordbook_review", id);
-    if (session) router.push(`/practice/vocabulary/session/${session}`);
+    if (session) onSession(session);
   };
   return (
     <main className="vocabulary-page">
-      <VocabularyHeading title="我的生词" />
+      <VocabularyHeading title="我的生词" onBack={onHome} />
       {notice && <p className="exercise-notice">{notice}</p>}
       <div className="wordbook-summary">
         <p>{wordbook.length} 个生词</p>

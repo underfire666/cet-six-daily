@@ -24,6 +24,9 @@ import type { ListeningAction } from "@/lib/listening/session";
 import type { ListeningSessionMode, ListeningStore } from "@/types/listening";
 import { useLearning } from "../LearningProvider";
 import { useToday } from "../StudyProvider";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
+import { enqueueSession } from "@/lib/sync/adapters";
 
 const Context = createContext<ReturnType<typeof useListeningState> | null>(
   null,
@@ -49,7 +52,7 @@ function useListeningState() {
     queueMicrotask(() => {
       if (!active) return;
       try {
-        storage.current = window.localStorage;
+        storage.current = getScopedStorage() as Storage | undefined;
       } catch {}
       const loaded = loadListeningStore(storage.current);
       latest.current = loaded.store;
@@ -66,6 +69,12 @@ function useListeningState() {
       window.removeEventListener("focus", tick);
     };
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["listening"], () => {
+    const loaded = loadListeningStore(storage.current);
+    latest.current = loaded.store;
+    setStore(loaded.store);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), []);
   const award = learning.awardXp;
   useEffect(() => {
     if (ready && learning.ready)
@@ -91,13 +100,22 @@ function useListeningState() {
   );
   const dispatch = useCallback(
     (id: string, action: ListeningAction) => {
+      const previous = latest.current.sessions[id];
       const next = updateListening(
         latest.current,
         id,
         action,
         new Date().toISOString(),
       );
-      if (next !== latest.current) commit(next);
+      if (next !== latest.current) {
+        commit(next);
+        const completed = next.sessions[id];
+        if (!previous?.applied && completed?.applied && completed.completedAt) {
+          enqueueSession({ sessionId: id, module: "listening", activityId: completed.materialId,
+            planDate: completed.planDate, startedAt: completed.startedAt, completedAt: completed.completedAt,
+            status: "completed", payload: completed as unknown as Record<string, unknown> });
+        }
+      }
     },
     [commit],
   );

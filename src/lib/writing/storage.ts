@@ -59,7 +59,7 @@ function validFeedback(v: unknown): v is WritingSession["feedback"] {
   );
 }
 
-function validSession(v: unknown): v is WritingSession {
+export function validWritingSession(v: unknown): v is WritingSession {
   if (
     !obj(v) ||
     v.schemaVersion !== 1 ||
@@ -154,7 +154,7 @@ export function loadWritingStore(storage: KeyStorage | undefined): {
     }
   if (obj(value.sessions))
     for (const [id, session] of Object.entries(value.sessions)) {
-      if (validSession(session)) store.sessions[id] = session;
+      if (validWritingSession(session)) store.sessions[id] = session;
       else issue = issue ?? "部分写作记录无法读取，已保留其他有效记录。";
     }
   if (Array.isArray(value.history))

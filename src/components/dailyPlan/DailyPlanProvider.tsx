@@ -1,10 +1,10 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { addDays } from "@/lib/dates";
-import type { DailyPlanStore, StudyPreferences } from "@/types/dailyPlan";
+import type { DailyPlan, DailyPlanStore, StudyPreferences } from "@/types/dailyPlan";
 import type { Lesson } from "@/types/study";
 import { emptyDailyPlanStore, loadDailyPlanStore, saveDailyPlanStore } from "@/lib/dailyPlan/storage";
-import { generatePlan, planStatus } from "@/lib/dailyPlan/generator";
+import { generatePlan, planStatus, taskCompleted } from "@/lib/dailyPlan/generator";
 import { applyPreferences } from "@/lib/dailyPlan/preferences";
 import { rescheduleMissedTasks } from "@/lib/dailyPlan/reschedule";
 import { useVocabulary } from "@/components/vocabulary/VocabularyProvider";
@@ -14,6 +14,46 @@ import { useTranslation } from "@/components/translation/TranslationProvider";
 import { useWriting } from "@/components/writing/WritingProvider";
 import { useLearning } from "@/components/LearningProvider";
 import { useToday } from "@/components/StudyProvider";
+import { getScopedStorage } from "@/lib/storage/scoped";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
+import { enqueueDailyPlan, enqueuePreferences } from "@/lib/sync/adapters";
+import { loadVocabularyStore } from "@/lib/vocabulary/storage";
+import { loadReadingStore } from "@/lib/reading/storage";
+import { loadListeningStore } from "@/lib/listening/storage";
+import { loadTranslationStore } from "@/lib/translation/storage";
+import { loadWritingStore } from "@/lib/writing/storage";
+
+function completionFor(
+  date: string,
+  vocab: ReturnType<typeof loadVocabularyStore>["store"]["daily"],
+  reading: ReturnType<typeof loadReadingStore>["store"]["daily"],
+  listening: ReturnType<typeof loadListeningStore>["store"]["daily"],
+  translation: ReturnType<typeof loadTranslationStore>["store"]["daily"],
+  writing: ReturnType<typeof loadWritingStore>["store"]["daily"],
+) {
+  const v = vocab[date], r = reading[date], l = listening[date];
+  const t = translation[date], w = writing[date];
+  const progress = (done: number, total: number) => ({ done, total, completed: total > 0 && done >= total });
+  return {
+    vocabulary: progress(v?.completedWordIds.length ?? 0, v?.wordIds.length ?? 20),
+    reading: progress(r?.completedArticleIds.length ?? 0, r?.articleIds.length ?? 3),
+    listening: progress(l?.completedMaterialIds.length ?? 0, l?.materialIds.length ?? 3),
+    translation: progress(t?.completedTaskIds.length ?? 0, t?.taskIds.length ?? 1),
+    writing: progress(w?.completedTaskIds.length ?? 0, w?.taskIds.length ?? 1),
+  };
+}
+
+export function completedTaskIdsFor(plan: DailyPlan, completion: ReturnType<typeof completionFor>): string[] {
+  return plan.tasks.filter((task) => !task.removed && taskCompleted(plan, task, completion)).map((task) => task.id);
+}
+
+export function extendCompletedTaskBaseline(previous: string[], current: string[]) {
+  const seen = new Set(previous);
+  return {
+    newlyCompleted: current.some((id) => !seen.has(id)),
+    seen: [...new Set([...seen, ...current])],
+  };
+}
 
 const Context = createContext<ReturnType<typeof useDailyPlanState> | null>(null);
 function useDailyPlanState() {
@@ -27,6 +67,9 @@ function useDailyPlanState() {
   const [store, setStore] = useState<DailyPlanStore>(emptyDailyPlanStore);
   const latest = useRef(store);
   const storage = useRef<Storage | undefined>(undefined);
+  const seenCompletedTaskIds = useRef<Record<string, string[]>>({});
+  const completionBaselineReady = useRef(false);
+  const remoteCompletionDates = useRef(new Set<string>());
   const [loaded, setLoaded] = useState(false);
   const [notice, setNotice] = useState("");
   const ready = loaded && learning.ready && vocab.ready && reading.ready && listening.ready && translation.ready && writing.ready;
@@ -38,11 +81,32 @@ function useDailyPlanState() {
     setNotice(saved ? "" : "浏览器暂时无法保存学习计划，刷新后可能丢失。");
     return saved;
   }, []);
+  useEffect(() => subscribeRemoteHydrate(["dailyPlan", "study", "vocabulary", "reading", "listening", "translation", "writing"], () => {
+    remoteCompletionDates.current.add(today);
+    const loaded = loadDailyPlanStore(storage.current);
+    // Pull has already written all domain stores. Capture the final remote/local
+    // completion snapshot before providers rerender, so it cannot echo as a new
+    // locally completed task while their state updates arrive in separate renders.
+    const v = loadVocabularyStore(storage.current).store;
+    const r = loadReadingStore(storage.current).store;
+    const l = loadListeningStore(storage.current).store;
+    const t = loadTranslationStore(storage.current).store;
+    const w = loadWritingStore(storage.current).store;
+    const plans = { ...loaded.store.plans };
+    plans[today] ??= generatePlan(today, loaded.store.preferences.examDate, loaded.store.preferences);
+    seenCompletedTaskIds.current = Object.fromEntries(Object.entries(plans).map(([date, plan]) => [
+      date, completedTaskIdsFor(plan, completionFor(date, v.daily, r.daily, l.daily, t.daily, w.daily)),
+    ]));
+    completionBaselineReady.current = true;
+    latest.current = loaded.store;
+    setStore(loaded.store);
+    if (loaded.issue) setNotice(loaded.issue);
+  }), [today]);
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      try { storage.current = window.localStorage; } catch {}
+      try { storage.current = getScopedStorage() as Storage | undefined; } catch {}
       const result = loadDailyPlanStore(storage.current);
       latest.current = result.store;
       setStore(result.store);
@@ -54,16 +118,7 @@ function useDailyPlanState() {
 
   // 按计划日期读取专项记录，额外练习不占每日计划进度。
   const getCompletion = useCallback((date: string) => {
-    const v = vocab.store.daily[date], r = reading.store.daily[date], l = listening.store.daily[date];
-    const t = translation.store.daily[date], w = writing.store.daily[date];
-    const progress = (done: number, total: number) => ({ done, total, completed: total > 0 && done >= total });
-    return {
-      vocabulary: progress(v?.completedWordIds.length ?? 0, v?.wordIds.length ?? 20),
-      reading: progress(r?.completedArticleIds.length ?? 0, r?.articleIds.length ?? 3),
-      listening: progress(l?.completedMaterialIds.length ?? 0, l?.materialIds.length ?? 3),
-      translation: progress(t?.completedTaskIds.length ?? 0, t?.taskIds.length ?? 1),
-      writing: progress(w?.completedTaskIds.length ?? 0, w?.taskIds.length ?? 1),
-    };
+    return completionFor(date, vocab.store.daily, reading.store.daily, listening.store.daily, translation.store.daily, writing.store.daily);
   }, [vocab.store.daily, reading.store.daily, listening.store.daily, translation.store.daily, writing.store.daily]);
   const completion = useMemo(() => getCompletion(today), [getCompletion, today]);
 
@@ -78,18 +133,43 @@ function useDailyPlanState() {
       if (status !== plan.status && !(plan.status === "adjusted" && status !== "completed")) plans[date] = { ...plan, status };
     }
     next = { ...next, plans: rescheduleMissedTasks({ plans, today, examDate: next.preferences.examDate, pref: next.preferences, isPlanCompleted: (_, plan) => plan.status === "completed" }) };
-    if (JSON.stringify(next) !== JSON.stringify(latest.current)) commit(next);
+    const planChanged = JSON.stringify(next) !== JSON.stringify(latest.current);
+    if (planChanged) {
+      commit(next);
+    }
+    if (!completionBaselineReady.current) {
+      seenCompletedTaskIds.current = Object.fromEntries(Object.entries(next.plans).map(([date, plan]) => [
+        date, completedTaskIdsFor(plan, getCompletion(date)),
+      ]));
+      completionBaselineReady.current = true;
+      return;
+    }
+    for (const [date, plan] of Object.entries(next.plans)) {
+      if (date > today) continue;
+      const completedTaskIds = completedTaskIdsFor(plan, getCompletion(date));
+      const { newlyCompleted, seen } = extendCompletedTaskBaseline(seenCompletedTaskIds.current[date] ?? [], completedTaskIds);
+      seenCompletedTaskIds.current[date] = seen;
+      if (newlyCompleted) {
+        if (date === today && plan.status === "completed") remoteCompletionDates.current.delete(today);
+        enqueueDailyPlan({ planDate: date, completedTaskIds, plan });
+      }
+    }
   }, [ready, today, getCompletion, commit]);
 
   const awardXp = learning.awardXp;
   useEffect(() => {
-    if (!ready || store.plans[today]?.status !== "completed") return;
+    if (!ready || store.plans[today]?.status !== "completed" || remoteCompletionDates.current.has(today)) return;
     const key = `daily-plan-complete:${today}`;
     awardXp(key, 10);
     if (latest.current.completionLedger[key] === undefined) commit({ ...latest.current, completionLedger: { ...latest.current.completionLedger, [key]: 10 } });
   }, [ready, today, store.plans, awardXp, commit]);
 
-  const updatePreferences = useCallback((pref: StudyPreferences, syncFuture: boolean) => commit(applyPreferences(latest.current, today, pref, syncFuture, getCompletion(today))), [commit, today, getCompletion]);
+  const updatePreferences = useCallback((pref: StudyPreferences, syncFuture: boolean) => {
+    const next = applyPreferences(latest.current, today, pref, syncFuture, getCompletion(today));
+    const saved = commit(next);
+    enqueuePreferences(pref as unknown as Record<string, unknown>);
+    return saved;
+  }, [commit, today, getCompletion]);
   const getPlan = useCallback((date: string) => store.plans[date] ?? (date >= today ? generatePlan(date, store.preferences.examDate, store.preferences) : undefined), [store.plans, store.preferences, today]);
   const getLesson = (date: string): Lesson => {
     const plan = getPlan(date);

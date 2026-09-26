@@ -1,8 +1,9 @@
 "use client";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { BottomNavigation } from "./Navigation";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+  const search = useSearchParams();
   const exercise =
     path.startsWith("/lesson/") ||
     path.startsWith("/practice/vocabulary/session") ||
@@ -14,7 +15,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     path.startsWith("/practice/translation/session") ||
     path.startsWith("/practice/translation/complete") ||
     path.startsWith("/practice/writing/session") ||
-    path.startsWith("/practice/writing/complete");
+    path.startsWith("/practice/writing/complete") ||
+    (/^(?:\/practice\/(?:vocabulary|reading|listening|translation|writing)(?:\/wordbook)?|\/review)$/.test(path) &&
+      (search.has("session") || search.has("complete")));
   return (
     <>
       <a href="#page-content" className="skip-link">

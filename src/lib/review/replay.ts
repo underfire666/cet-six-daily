@@ -34,7 +34,8 @@ export function replayReviewItem(item: ReviewItem): ReviewReplay | null {
   if (item.sourceModule === "reading") {
     const article = readingArticleById(item.sourceActivityId);
     if (!article) return null;
-    const q = article.questions.find((x) => x.id === item.questionId);
+    const questionId = item.questionId.startsWith("rq:") ? item.questionId.slice(3) : item.questionId;
+    const q = article.questions.find((x) => x.id === questionId);
     if (!q) return null;
     return {
       sourceModule: "reading",
@@ -52,7 +53,8 @@ export function replayReviewItem(item: ReviewItem): ReviewReplay | null {
   if (item.sourceModule === "listening") {
     const material = listeningMaterialById(item.sourceActivityId);
     if (!material) return null;
-    const q = material.questions.find((x) => x.id === item.questionId);
+    const questionId = item.questionId.startsWith("lq:") ? item.questionId.slice(3) : item.questionId;
+    const q = material.questions.find((x) => x.id === questionId);
     if (!q) return null;
     return {
       sourceModule: "listening",

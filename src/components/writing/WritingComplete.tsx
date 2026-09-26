@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Check, NotebookPen, Zap } from "lucide-react";
 import { useWriting } from "./WritingProvider";
 
-export function WritingComplete({ id }: { id: string }) {
+export function WritingComplete({ id, onSession, onHome }: { id: string; onSession?: (id: string) => void; onHome?: () => void }) {
   const { ready, store, dailyComplete, start } = useWriting();
   const router = useRouter();
   const session = store.sessions[id];
@@ -15,9 +15,8 @@ export function WritingComplete({ id }: { id: string }) {
       <main className="exercise-gate">
         <h1>这篇写作还没完成</h1>
         <p>返回写作页，重新开始吧。</p>
-        <Link className="exercise-button" href="/practice/writing">
-          返回写作
-        </Link>
+        {onHome ? <button className="exercise-button" onClick={onHome}>返回写作</button> :
+          <Link className="exercise-button" href="/practice/writing">返回写作</Link>}
       </main>
     );
   }
@@ -25,7 +24,10 @@ export function WritingComplete({ id }: { id: string }) {
     const mode =
       session.mode === "extra" || dailyComplete ? "extra" : "daily";
     const nextId = start(mode);
-    if (nextId) router.push(`/practice/writing/session/${nextId}`);
+    if (nextId) {
+      if (onSession) onSession(nextId);
+      else router.push(`/practice/writing/session/${nextId}`);
+    }
   };
   return (
     <main className="subjective-complete">
@@ -64,9 +66,8 @@ export function WritingComplete({ id }: { id: string }) {
             ? "继续下一篇"
             : "再写一篇"}
         </button>
-        <Link className="subjective-text-button" href="/practice/writing">
-          返回写作首页
-        </Link>
+        {onHome ? <button className="subjective-text-button" onClick={onHome}>返回写作首页</button> :
+          <Link className="subjective-text-button" href="/practice/writing">返回写作首页</Link>}
       </div>
     </main>
   );
