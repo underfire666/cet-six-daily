@@ -28,7 +28,7 @@ import {
   FIXTURE_PREFIX,
   type PaperIdentity,
 } from "../src/content/stable-id";
-import { validatePaper, type CET6Paper, type PaperSection } from "../src/content/papers";
+import { validatePaper, type CET6Paper, type PaperSection, type PaperQuestion } from "../src/content/papers";
 import { rightsVerdict, rightsIssues, isPublishable } from "../src/content/rights";
 import { canTransition, advanceLifecycle, lifecycleFromStatus, isLearningVisible } from "../src/content/lifecycle";
 import {
@@ -44,7 +44,7 @@ import { registerBuiltinPacks } from "../src/content/packs";
 import { validateAll } from "../src/content/validator";
 import { registerSyntheticPaperFixture, syntheticCet6Paper, SYNTHETIC_PAPER_ID, SYNTHETIC_FIXTURE_ID } from "../src/content/fixture/cet6-2025-12-synthetic";
 import { registerAlias, resolveAlias } from "../src/content/aliases";
-import { CET6_EXAM_SPEC, allowedSubsections } from "../src/content/exam-spec";
+import { CET6_EXAM_SPEC, allowedSubsections, isKnownExamSpecId } from "../src/content/exam-spec";
 import { vocabularyRepository } from "../src/content/repositories";
 import { MOCK_SOURCE, SYNTHETIC_PAPER_SOURCE } from "../src/content/sources";
 import type { ContentRights } from "../src/content/types";
@@ -136,6 +136,230 @@ function registerPaperPack(packId: string, paper: CET6Paper): void {
     updatedAt: "2026-09-26T00:00:00.000Z",
   } as never);
 }
+
+// ---------------------------------------------------------------- V13 Phase 2B helpers
+
+/** 生成 n 道内联 choice 题（Paper 作用域 stable ID）。 */
+function makeQuestions(base: string, n: number, type: PaperQuestion["type"] = "choice"): PaperQuestion[] {
+  const out: PaperQuestion[] = [];
+  for (let i = 1; i <= n; i++) {
+    const q: PaperQuestion = {
+      questionId: extendStableId(base, `q${i}`),
+      order: i,
+      prompt: `Test question ${i} (Phase 2B fixture)`,
+      type,
+      options: [
+        { id: "a", text: "Option A" },
+        { id: "b", text: "Option B" },
+      ],
+      answerId: "a",
+      answerText: "Answer.",
+      shortExplanation: "Short.",
+      detailedExplanation: "Detailed.",
+    };
+    out.push(q);
+  }
+  return out;
+}
+
+/**
+ * 构造符合当前官方 CET6 结构的完整卷（非 partial）：
+ * writing 1 / listening 25（长对话 8 + 篇章 7 + 讲话·报道·讲座 10）/ reading 30（10+10+10）/ translation 1。
+ * 用于 spec conformance / listening 结构测试（内容全部为 TEST FIXTURE 标记，不进入 production）。
+ */
+function makeCompletePaper(identity: PaperIdentity, rights: ContentRights, status: CET6Paper["status"]): CET6Paper {
+  const paperId = paperStableId(identity);
+  const sec = (type: PaperSection["type"]) => sectionStableId({ ...identity, section: type });
+  const grp = (section: string, sub: string | undefined, g: string) =>
+    sub ? extendStableId(extendStableId(sec(section as PaperSection["type"]), sub), g) : extendStableId(sec(section as PaperSection["type"]), g);
+
+  const listeningGroups: PaperSection["groups"] = [
+    { groupId: grp("listening", "long_conversation", "g1"), type: "long_conversation", order: 1, transcript: "TEST FIXTURE: long conversation script.", questions: makeQuestions(grp("listening", "long_conversation", "g1"), 8) },
+    { groupId: grp("listening", "passage", "g2"), type: "passage", order: 2, transcript: "TEST FIXTURE: passage script.", questions: makeQuestions(grp("listening", "passage", "g2"), 7) },
+    { groupId: grp("listening", "lecture", "g3"), type: "lecture", order: 3, transcript: "TEST FIXTURE: lecture script.", questions: makeQuestions(grp("listening", "lecture", "g3"), 10) },
+  ];
+  const readingGroups: PaperSection["groups"] = [
+    { groupId: grp("reading", "cloze", "g1"), type: "cloze", order: 1, passage: "TEST FIXTURE: cloze passage.", questions: makeQuestions(grp("reading", "cloze", "g1"), 10) },
+    { groupId: grp("reading", "matching", "g2"), type: "matching", order: 2, passage: "TEST FIXTURE: matching passage.", questions: makeQuestions(grp("reading", "matching", "g2"), 10, "matching") },
+    { groupId: grp("reading", "careful_reading", "g3"), type: "careful_reading", order: 3, passage: "TEST FIXTURE: careful reading passage.", questions: makeQuestions(grp("reading", "careful_reading", "g3"), 10) },
+  ];
+
+  return {
+    paperId,
+    type: "paper",
+    tags: [],
+    examSpecId: CET6_EXAM_SPEC.examSpecId,
+    exam: "CET6",
+    level: "CET6",
+    year: identity.year,
+    session: identity.session,
+    set: identity.set,
+    title: `Complete Paper ${paperId}`,
+    sourceId: SYNTHETIC_PAPER_SOURCE.id,
+    rights,
+    sections: [
+      { sectionId: sec("writing"), type: "writing", order: 1, groups: [{ groupId: grp("writing", undefined, "g1"), type: "writing", order: 1, prompt: "TEST FIXTURE: writing prompt.", questions: makeQuestions(grp("writing", undefined, "g1"), 1, "subjective_writing") }] },
+      { sectionId: sec("listening"), type: "listening", order: 2, groups: listeningGroups },
+      { sectionId: sec("reading"), type: "reading", order: 3, groups: readingGroups },
+      { sectionId: sec("translation"), type: "translation", order: 4, groups: [{ groupId: grp("translation", undefined, "g1"), type: "translation", order: 1, prompt: "TEST FIXTURE: translation prompt.", questions: makeQuestions(grp("translation", undefined, "g1"), 1, "subjective_translation") }] },
+    ],
+    schemaVersion: "1.0.0",
+    contentVersion: "1.0.0",
+    isPartial: false,
+    fixture: false,
+    status,
+    authenticity: "original",
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  };
+}
+
+// ---------------------------------------------------------------- V13 Phase 2B: Exam Spec（当前官方结构）
+
+test("exam spec: current official CET6 structure is versioned (examSpecId)", () => {
+  assert.equal(CET6_EXAM_SPEC.examSpecId, "cet6-current-2026");
+  assert.ok(isKnownExamSpecId("cet6-current-2026"));
+  assert.ok(isKnownExamSpecId(undefined), "missing examSpecId defaults to current spec");
+  assert.ok(!isKnownExamSpecId("cet6-1999"), "unknown spec id must be rejected");
+  // listening 当前官方结构：25 题 / 30 分钟，子节 8 + 7 + 10 = 25
+  const listening = CET6_EXAM_SPEC.sections.find((s) => s.kind === "listening")!;
+  assert.equal(listening.questionCount, 25);
+  assert.equal(listening.timeMinutes, 30);
+  assert.equal(listening.scoreRatio, "35%");
+  const sub = CET6_EXAM_SPEC.listeningSubsections;
+  assert.equal(sub.length, 3);
+  assert.deepEqual(sub.map((s) => s.kind), ["long_conversation", "passage", "lecture"]);
+  assert.deepEqual(sub.map((s) => s.questionCount), [8, 7, 10]);
+  assert.deepEqual(sub.map((s) => s.scoreRatio), ["8%", "7%", "20%"]);
+  assert.equal(sub.reduce((n, s) => n + s.questionCount, 0), 25);
+  // 旧结构不得重新出现
+  const text = JSON.stringify(CET6_EXAM_SPEC);
+  assert.ok(!/short conversation/i.test(text), "old 'short conversation' structure must not reappear");
+  assert.ok(!/8 short conversations/i.test(text));
+  assert.ok(!/2 long conversations/i.test(text));
+  assert.ok(!/3 passages/i.test(text));
+  // reading 子节：10+10+10 = 30
+  const reading = CET6_EXAM_SPEC.readingSubsections;
+  assert.deepEqual(reading.map((s) => s.questionCount), [10, 10, 10]);
+  assert.equal(reading.reduce((n, s) => n + s.questionCount, 0), 30);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2B: Paper spec conformance
+
+test("paper spec: complete paper conforming to current official structure passes", () => {
+  setup();
+  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const errors = validatePaper(complete);
+  assert.deepEqual(errors, [], `complete paper must pass conformance: ${errors.join("; ")}`);
+});
+
+test("paper spec: unknown examSpecId rejected", () => {
+  setup();
+  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  bad.examSpecId = "cet6-1999";
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("unknown examSpecId")), `expected unknown spec error: ${errors.join("; ")}`);
+});
+
+test("paper spec: listening subsection counts must match current official structure (8/7/10)", () => {
+  setup();
+  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  // 长对话 8 → 9：违反当前官方结构
+  const bad = structuredClone(complete) as CET6Paper;
+  const lc = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "long_conversation")!;
+  (lc.questions as PaperQuestion[]).push({
+    questionId: extendStableId(lc.groupId, "q9"),
+    order: 9,
+    prompt: "Extra question.",
+    type: "choice",
+    options: [{ id: "a", text: "A" }, { id: "b", text: "B" }],
+    answerId: "a",
+  });
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("long_conversation") && e.includes("9 != spec 8")),
+    `expected subsection count error: ${errors.join("; ")}`,
+  );
+});
+
+test("paper spec: listening total must be 25 for complete paper", () => {
+  setup();
+  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  const passage = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "passage")!;
+  (passage.questions as PaperQuestion[]).pop(); // 7 → 6
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("listening subsection passage") && e.includes("6 != spec 7")),
+    `expected passage count error: ${errors.join("; ")}`,
+  );
+  assert.ok(errors.some((e) => e.includes("section") && e.includes("question count 24 != spec 25")), `expected section total error: ${errors.join("; ")}`);
+});
+
+test("paper spec: partial paper is exempt from full question-count conformance", () => {
+  setup();
+  // fixture 是 partial（结构合法即可，不强制 25 题）
+  assert.equal(syntheticCet6Paper.isPartial, true);
+  const errors = validatePaper(syntheticCet6Paper);
+  assert.deepEqual(errors, [], `fixture must still pass: ${errors.join("; ")}`);
+});
+
+test("paper spec: listening group must carry a transcript (script)", () => {
+  setup();
+  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  const lc = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "long_conversation")!;
+  delete (lc as Partial<typeof lc>).transcript;
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("missing transcript")), `expected transcript error: ${errors.join("; ")}`);
+});
+
+test("paper spec: assetIds must cross-reference paper.assets (orphan rejected)", () => {
+  setup();
+  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  const lecture = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "lecture")!;
+  lecture.assetIds = ["cet6:2026-6:set1:listening:lecture:g3:audio1"]; // 不在 assets 中
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("orphan asset")), `expected orphan asset error: ${errors.join("; ")}`);
+});
+
+test("paper spec: audio asset must carry rights metadata", () => {
+  setup();
+  const complete = makeCompletePaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  const audioId = assetStableId({ exam: "CET6", year: 2026, session: 6, set: 1, section: "listening", subsection: "lecture", group: "g3", asset: "audio1" });
+  bad.assets = [
+    { assetId: audioId, type: "audio", source: "mock://test/audio.mp3", mimeType: "audio/mpeg" },
+  ];
+  const lecture = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "lecture")!;
+  lecture.assetIds = [audioId];
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("audio asset") && e.includes("missing rights")), `expected audio rights error: ${errors.join("; ")}`);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2B: public_domain rights
+
+test("rights: public_domain + redistribution=true → allowed", () => {
+  const pd: ContentRights = { licenseStatus: "public_domain", redistributionAllowed: true };
+  assert.equal(rightsVerdict(pd), "allowed");
+  assert.ok(isPublishable(pd));
+  const issues = rightsIssues(pd, { scope: "production" });
+  assert.ok(issues.some((i) => i.level === "warning" && i.message.includes("public_domain")), "public_domain should carry verify-before-publish warning");
+});
+
+test("rights: public_domain unconfirmed → unknown (not publishable)", () => {
+  const pd: ContentRights = { licenseStatus: "public_domain" };
+  assert.equal(rightsVerdict(pd), "unknown");
+  assert.ok(!isPublishable(pd));
+});
+
+test("rights: public_domain + redistributionAllowed=false → blocked", () => {
+  const pd: ContentRights = { licenseStatus: "public_domain", redistributionAllowed: false };
+  assert.equal(rightsVerdict(pd), "blocked");
+  assert.ok(!isPublishable(pd));
+});
 
 // ---------------------------------------------------------------- Paper 模型
 

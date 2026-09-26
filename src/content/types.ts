@@ -31,7 +31,9 @@ export type ContentLicenseStatus =
   | "licensed"
   | "official_public_material"
   | "permission_required"
-  | "unknown";
+  | "unknown"
+  /** V13 Phase 2B：公有领域（CC0 / 已过保护期等）。与 owned 一样可 production（fail-closed 仍需 redistribution 确认）。 */
+  | "public_domain";
 
 /** 内容质量状态（V10 不做后台审核，仅预留字段）。 */
 export type ContentQuality = "draft" | "reviewed" | "approved";

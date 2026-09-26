@@ -14,21 +14,47 @@ export interface Cet6ExamSectionSpec {
   scoreRatio: string; // 例如 "15%"
 }
 
+/** 听力小节（当前官方结构，V13 Phase 2A.1 已按 NEEA 官方修正）。 */
+export interface Cet6ListeningSubsectionSpec {
+  kind: "long_conversation" | "passage" | "lecture";
+  name: string;
+  questionCount: number;
+  scoreRatio: string;
+}
+
+/** 阅读小节（官方公开结构）。 */
+export interface Cet6ReadingSubsectionSpec {
+  kind: "cloze" | "matching" | "careful_reading";
+  name: string;
+  questionCount: number;
+  scoreRatio: string;
+}
+
 export interface Cet6ExamSpec {
+  /** 规范版本稳定 ID（V13 Phase 2B：考试结构可以 versioned，改革时新增版本而非破坏旧 Paper）。 */
+  examSpecId: string;
   exam: "CET6";
   level: "CET6";
   source: string;
   rightsStatus: "official_public_material";
   totalTimeMinutes: number;
   sections: Cet6ExamSectionSpec[];
-  /** 听力小节（公开结构信息）。 */
-  listeningSubsections: { kind: string; name: string }[];
-  /** 阅读小节（公开结构信息）。 */
-  readingSubsections: { kind: string; name: string }[];
+  /** 听力小节（含当前官方结构题量与占比：长对话 8 题 8% / 篇章 7 题 7% / 讲话·报道·讲座 10 题 20%）。 */
+  listeningSubsections: Cet6ListeningSubsectionSpec[];
+  /** 阅读小节（含题量与占比：选词填空 10 题 5% / 长篇阅读 10 题 10% / 仔细阅读 10 题 20%）。 */
+  readingSubsections: Cet6ReadingSubsectionSpec[];
 }
 
-/** CET6 官方公开考试结构（结构信息，非真题内容）。 */
+/**
+ * CET6 官方公开考试结构（结构信息，非真题内容）。
+ * 依据：https://cet.neea.edu.cn/xhtml1/report/16123/201-1.htm（考核内容）
+ *      https://cet.neea.edu.cn/xhtml1/folder/16113/1586-1.htm（考试大纲）
+ * Listening 当前官方结构（25 题 / 30 分钟 / 35%）：
+ *   长对话 8 题（8%）→ 听力篇章 7 题（7%）→ 讲话/报道/讲座 10 题（20%）。
+ * 禁止重新引入旧结构（short conversations / 8+2 对话 / 3 passages）。
+ */
 export const CET6_EXAM_SPEC: Cet6ExamSpec = {
+  examSpecId: "cet6-current-2026",
   exam: "CET6",
   level: "CET6",
   source: "https://cet.neea.edu.cn/ (CET6 考试结构公开说明)",
@@ -41,16 +67,25 @@ export const CET6_EXAM_SPEC: Cet6ExamSpec = {
     { kind: "translation", name: "Translation (C-E)", questionCount: 1, timeMinutes: 30, scoreRatio: "15%" },
   ],
   listeningSubsections: [
-    { kind: "long_conversation", name: "Long Conversation" },
-    { kind: "passage", name: "Passage" },
-    { kind: "lecture", name: "Speech / Report / Lecture" },
+    { kind: "long_conversation", name: "Long Conversation", questionCount: 8, scoreRatio: "8%" },
+    { kind: "passage", name: "Passage", questionCount: 7, scoreRatio: "7%" },
+    { kind: "lecture", name: "Speech / Report / Lecture", questionCount: 10, scoreRatio: "20%" },
   ],
   readingSubsections: [
-    { kind: "cloze", name: "Vocabulary Comprehension / Cloze" },
-    { kind: "matching", name: "Long Reading / Matching" },
-    { kind: "careful_reading", name: "Careful Reading" },
+    { kind: "cloze", name: "Vocabulary Comprehension / Cloze", questionCount: 10, scoreRatio: "5%" },
+    { kind: "matching", name: "Long Reading / Matching", questionCount: 10, scoreRatio: "10%" },
+    { kind: "careful_reading", name: "Careful Reading", questionCount: 10, scoreRatio: "20%" },
   ],
 };
+
+/** 已知 examSpecId 集合（校验 Paper 引用用）。 */
+export const KNOWN_EXAM_SPEC_IDS: readonly string[] = [CET6_EXAM_SPEC.examSpecId];
+
+/** 校验 examSpecId 是否已知（未知 → false）。 */
+export function isKnownExamSpecId(id: string | undefined): boolean {
+  if (!id) return true; // 缺省 = 当前 spec（current）
+  return KNOWN_EXAM_SPEC_IDS.includes(id);
+}
 
 /** 供 validator 使用：某 section 允许的 subsection kind。 */
 export function allowedSubsections(kind: string): string[] {

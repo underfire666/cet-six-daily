@@ -17,6 +17,7 @@
  */
 import type { ContentRights } from "./types";
 import { FIXTURE_PREFIX, isValidStableId, paperStableId, stableIdNamespace } from "./stable-id";
+import { CET6_EXAM_SPEC, isKnownExamSpecId } from "./exam-spec";
 
 export type PaperLevel = "CET6";
 export type PaperSession = 6 | 12;
@@ -112,6 +113,8 @@ export interface CET6Paper {
   /** 内容系统公共字段：paper 也是 content item（type 恒为 "paper"，tags 可空）。 */
   type: "paper";
   tags?: string[];
+  /** V13 Phase 2B：引用的考试规范版本（缺省 = 当前 spec cet6-current-2026）。 */
+  examSpecId?: string;
   exam: "CET6";
   level: "CET6";
   year: number;
@@ -154,6 +157,10 @@ const QUESTION_TYPES: PaperQuestion["type"][] = [
   "subjective_writing",
   "subjective_translation",
 ];
+/** 听力小节 group 类型（必须携带脚本/transcript；脚本与音频权利分离）。 */
+const LISTENING_GROUP_TYPES: PaperGroupType[] = ["long_conversation", "passage", "lecture"];
+/** 已知 examSpecId（错误提示用）。 */
+const KNOWN_SPEC_IDS_JOIN = CET6_EXAM_SPEC.examSpecId;
 
 const object = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
@@ -216,6 +223,9 @@ export function validatePaper(value: unknown): string[] {
   if (!Number.isInteger(paper.set) || paper.set < 1) err(`paper ${paper.paperId ?? "?"} bad set`);
   if (!text(paper.title)) err(`paper ${paper.paperId ?? "?"} missing title`);
   if (!text(paper.sourceId)) err(`paper ${paper.paperId ?? "?"} missing sourceId`);
+  if (paper.examSpecId !== undefined && !isKnownExamSpecId(paper.examSpecId)) {
+    err(`paper ${paper.paperId ?? "?"} unknown examSpecId: ${String(paper.examSpecId)} (known: ${KNOWN_SPEC_IDS_JOIN})`);
+  }
   if (!text(paper.schemaVersion)) err(`paper ${paper.paperId ?? "?"} missing schemaVersion`);
   if (!object(paper.rights) || !text((paper.rights as { licenseStatus?: unknown }).licenseStatus as string)) {
     err(`paper ${paper.paperId ?? "?"} missing rights metadata (required for publishable pack)`);
@@ -228,6 +238,8 @@ export function validatePaper(value: unknown): string[] {
     if (!uniqueSorted(secOrders)) err(`paper ${paper.paperId} section orders must be 1..N`);
     for (const sec of paper.sections) validateSection(sec, paper, errors, paperNs);
   }
+  // V13 Phase 2B：完整卷（非 partial）必须符合当前官方 exam spec 题量结构。
+  validateSpecConformance(paper, errors);
   if (paper.assets) {
     for (const asset of paper.assets) {
       if (!text(asset.assetId)) err(`paper ${paper.paperId} asset missing assetId`);
@@ -239,6 +251,12 @@ export function validatePaper(value: unknown): string[] {
       if (!text(asset.source)) err(`paper ${paper.paperId} asset ${asset.assetId ?? "?"} missing source`);
       if (!text(asset.mimeType)) err(`paper ${paper.paperId} asset ${asset.assetId ?? "?"} missing mimeType`);
       if (asset.duration !== undefined && (!Number.isFinite(asset.duration) || asset.duration <= 0)) err(`paper ${paper.paperId} bad asset duration`);
+      // V13 Phase 2B：音频资产必须带 rights（audio rights 与 script rights 分离追踪）。
+      if (asset.type === "audio") {
+        if (!object(asset.rights) || !text((asset.rights as { licenseStatus?: unknown }).licenseStatus as string)) {
+          err(`paper ${paper.paperId} audio asset ${asset.assetId ?? "?"} missing rights metadata (audio rights must be tracked separately from script rights)`);
+        }
+      }
     }
   }
   // partial paper 必须显式 isPartial=true；fixture 必须显式标记
@@ -278,6 +296,10 @@ function validateGroup(g: unknown, paper: CET6Paper, sec: PaperSection, errors: 
   }
   if (!GROUP_TYPES.includes(grp.type)) err(`paper ${paper.paperId} group bad type: ${String(grp.type)}`);
   if (!Number.isInteger(grp.order) || grp.order < 1) err(`paper ${paper.paperId} group bad order`);
+  // V13 Phase 2B：听力小节 group 必须携带脚本（transcript）。脚本权利与音频权利分离追踪。
+  if (LISTENING_GROUP_TYPES.includes(grp.type) && !text(grp.transcript)) {
+    err(`paper ${paper.paperId} listening group ${grp.groupId} missing transcript (script rights tracked separately from audio rights)`);
+  }
   const refs = grp.questionRefs ?? [];
   const qs = grp.questions ?? [];
   if (refs.length === 0 && qs.length === 0) {
@@ -315,5 +337,68 @@ function validateGroup(g: unknown, paper: CET6Paper, sec: PaperSection, errors: 
       err(`paper ${paper.paperId} question ${qq.questionId} invalid explanation metadata`);
     }
   }
-  if (grp.assetIds !== undefined && !strArr(grp.assetIds)) err(`paper ${paper.paperId} group ${grp.groupId} invalid assetIds`);
+  if (grp.assetIds !== undefined) {
+    if (!strArr(grp.assetIds)) {
+      err(`paper ${paper.paperId} group ${grp.groupId} invalid assetIds`);
+    } else {
+      // V13 Phase 2B：assetIds 必须交叉引用 paper.assets（orphan asset 引用 → error）。
+      const knownAssets = new Set((paper.assets ?? []).map((a) => a.assetId));
+      for (const aid of grp.assetIds) {
+        if (!knownAssets.has(aid)) {
+          err(`paper ${paper.paperId} group ${grp.groupId} assetId ${aid} not found in paper.assets (orphan asset reference)`);
+        }
+      }
+    }
+  }
+}
+
+/** group 内题目数：questionRefs + questions。 */
+function questionCountOfGroup(g: PaperGroup): number {
+  return (g.questionRefs?.length ?? 0) + (g.questions?.length ?? 0);
+}
+
+/** section 内题目总数。 */
+function questionCountOfSection(sec: PaperSection): number {
+  return sec.groups.reduce((n, g) => n + questionCountOfGroup(g), 0);
+}
+
+/**
+ * V13 Phase 2B：完整卷（非 partial）必须符合当前官方 CET6 exam spec 题量结构。
+ * - section 级：writing 1 / listening 25 / reading 30 / translation 1；
+ * - listening subsection 级：长对话 8 / 篇章 7 / 讲话·报道·讲座 10；
+ * - reading subsection 级：选词填空 10 / 长篇阅读 10 / 仔细阅读 10。
+ * partial（fixture / 样卷节选）豁免 —— 只要求结构与字段合法，不强制完整题量。
+ */
+function validateSpecConformance(paper: CET6Paper, errors: string[]): void {
+  if (paper.isPartial === true) return;
+  const err = (m: string) => errors.push(m);
+  const spec = CET6_EXAM_SPEC;
+  if (!Array.isArray(paper.sections)) return;
+  for (const sec of paper.sections) {
+    const sectionSpec = spec.sections.find((s) => s.kind === sec.type);
+    const count = questionCountOfSection(sec);
+    if (sectionSpec && count !== sectionSpec.questionCount) {
+      err(`paper ${paper.paperId} section ${sec.sectionId} question count ${count} != spec ${sectionSpec.questionCount} (${sectionSpec.name})`);
+    }
+    if (sec.type === "listening") {
+      const bySub = new Map<string, number>();
+      for (const g of sec.groups) bySub.set(g.type, (bySub.get(g.type) ?? 0) + questionCountOfGroup(g));
+      for (const subSpec of spec.listeningSubsections) {
+        const actual = bySub.get(subSpec.kind) ?? 0;
+        if (actual !== subSpec.questionCount) {
+          err(`paper ${paper.paperId} listening subsection ${subSpec.kind} question count ${actual} != spec ${subSpec.questionCount} (${subSpec.name})`);
+        }
+      }
+    }
+    if (sec.type === "reading") {
+      const bySub = new Map<string, number>();
+      for (const g of sec.groups) bySub.set(g.type, (bySub.get(g.type) ?? 0) + questionCountOfGroup(g));
+      for (const subSpec of spec.readingSubsections) {
+        const actual = bySub.get(subSpec.kind) ?? 0;
+        if (actual !== subSpec.questionCount) {
+          err(`paper ${paper.paperId} reading subsection ${subSpec.kind} question count ${actual} != spec ${subSpec.questionCount} (${subSpec.name})`);
+        }
+      }
+    }
+  }
 }

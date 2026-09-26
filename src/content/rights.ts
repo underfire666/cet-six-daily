@@ -32,6 +32,8 @@ function hasEvidence(rights: ContentRights): boolean {
  * 判断内容能否进入 production published pack（fail closed）。
  *
  * - owned：自有内容 → allowed；若显式 redistributionAllowed=false（所有者决定）→ blocked。
+ * - public_domain：公有领域（CC0 / 已过保护期）→ redistributionAllowed=true 时 allowed；
+ *   未确认 → unknown（不静默放行）。
  * - licensed：必须有有效授权证据，且 redistributionAllowed=true → allowed；
  *   缺证据 → blocked；证据存在但再分发未确认（!= true）→ unknown。
  * - official_public_material：必须有明确再利用依据（evidence）且 redistributionAllowed=true
@@ -43,6 +45,11 @@ export function rightsVerdict(rights: ContentRights | undefined | null): RightsV
   const status = rights.licenseStatus;
   if (status === "owned") {
     if (rights.redistributionAllowed === false) return "blocked";
+    return "allowed";
+  }
+  if (status === "public_domain") {
+    if (rights.redistributionAllowed === false) return "blocked";
+    if (rights.redistributionAllowed !== true) return "unknown"; // 公有领域身份未确认 → 不静默放行
     return "allowed";
   }
   if (status === "licensed") {
@@ -71,6 +78,7 @@ export type RightsBucket =
   | "licensed"
   | "official_public_material"
   | "permission_required"
+  | "public_domain"
   | "unknown";
 
 export function bucketOf(rights: ContentRights | undefined | null): RightsBucket {
@@ -122,6 +130,12 @@ export function rightsIssues(
     issues.push({
       level: "warning",
       message: "official public material allowed with explicit reuse evidence (verify before publish)",
+    });
+  }
+  if (rights.licenseStatus === "public_domain") {
+    issues.push({
+      level: "warning",
+      message: "public_domain claimed — verify CC0 / expiry evidence before publish",
     });
   }
   if (rights.commercialUseAllowed !== true) {
