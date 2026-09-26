@@ -8,7 +8,7 @@ import { ArrowLeft, Check, ChevronDown, Languages } from "lucide-react";
 
 import { useTranslation } from "./TranslationProvider";
 
-export function TranslationSessionPlayer({ id }: { id: string }) {
+export function TranslationSessionPlayer({ id, onComplete, onExit }: { id: string; onComplete?: () => void; onExit?: () => void }) {
   const { ready, store, dispatch, lastSaveOk } = useTranslation();
   const router = useRouter();
   const session = store.sessions[id];
@@ -43,9 +43,8 @@ export function TranslationSessionPlayer({ id }: { id: string }) {
       <main className="exercise-gate">
         <h1>找不到这次翻译</h1>
         <p>返回翻译页，重新开始吧。</p>
-        <Link className="exercise-button" href="/practice/translation">
-          返回翻译
-        </Link>
+        {onExit ? <button className="exercise-button" onClick={onExit}>返回翻译</button> :
+          <Link className="exercise-button" href="/practice/translation">返回翻译</Link>}
       </main>
     );
   }
@@ -67,15 +66,15 @@ export function TranslationSessionPlayer({ id }: { id: string }) {
 
   const finish = () => {
     dispatch(id, { type: "finish", now: new Date().toISOString() });
-    router.push(`/practice/translation/complete/${id}`);
+    if (onComplete) onComplete();
+    else router.push(`/practice/translation/complete/${id}`);
   };
 
   return (
     <main className="subjective-session">
       <header className="subjective-session-bar">
-        <Link href="/practice/translation" aria-label="关闭">
-          <ArrowLeft size={19} />
-        </Link>
+        {onExit ? <button className="exercise-icon-button" onClick={onExit} aria-label="关闭"><ArrowLeft size={19} /></button> :
+          <Link href="/practice/translation" aria-label="关闭"><ArrowLeft size={19} /></Link>}
         <span>翻译 · {task.title}</span>
         <small>{session.mode === "daily" ? "每日任务" : "额外练习"}</small>
       </header>
@@ -222,15 +221,11 @@ export function TranslationSessionPlayer({ id }: { id: string }) {
                 完成并结算
               </button>
             )}
-            {session.phase === "complete" && (
-              <Link
-                className="subjective-button"
-                href="/practice/translation"
-              >
-                <ArrowLeft size={18} />
-                返回翻译
-              </Link>
-            )}
+            {session.phase === "complete" && (onExit ? (
+              <button className="subjective-button" onClick={onExit}><ArrowLeft size={18} />返回翻译</button>
+            ) : (
+              <Link className="subjective-button" href="/practice/translation"><ArrowLeft size={18} />返回翻译</Link>
+            ))}
           </section>
         )}
     </main>

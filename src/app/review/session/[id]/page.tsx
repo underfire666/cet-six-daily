@@ -20,11 +20,14 @@ const MODULE_LABEL: Record<string, string> = {
   listening: "听力",
 };
 
-export default function ReviewSessionPage() {
-  const params = useParams();
+export function ReviewSession({ sessionId, onComplete, onExit }: {
+  sessionId: string;
+  onComplete?: () => void;
+  onExit?: () => void;
+}) {
   const router = useRouter();
   const { store, answer, finish, ready } = useReview();
-  const sid = String(params.id);
+  const sid = sessionId;
   const session = store.sessions[sid];
 
   const currentItem = useMemo(() => {
@@ -40,12 +43,15 @@ export default function ReviewSessionPage() {
 
   useEffect(() => {
     if (!ready || !session) return;
-    if (session.applied) router.replace(`/review/session/${sid}/complete`);
+    if (session.applied) {
+      if (onComplete) onComplete();
+      else router.replace(`/review/session/${sid}/complete`);
+    }
     else if (session.currentIndex >= session.itemIds.length) finish(sid);
-  }, [ready, session, sid, finish, router]);
+  }, [ready, session, sid, finish, router, onComplete]);
 
   if (!ready) return <main className="review-page"><p>加载中…</p></main>;
-  if (!session) return <main className="review-page"><p>会话不存在。<button onClick={() => router.push("/review")}>返回</button></p></main>;
+  if (!session) return <main className="review-page"><p>会话不存在。<button onClick={() => onExit ? onExit() : router.push("/review")}>返回</button></p></main>;
   if (session.applied || session.currentIndex >= session.itemIds.length) {
     return <main className="review-page"><p>正在整理复习结果…</p></main>;
   }
@@ -61,7 +67,7 @@ export default function ReviewSessionPage() {
   return (
     <main className="review-session-page">
       <header className="review-session-head">
-        <button className="exercise-icon-button" onClick={() => router.push("/review")}>
+        <button className="exercise-icon-button" onClick={() => onExit ? onExit() : router.push("/review")}>
           <ArrowLeft size={20} />
         </button>
         <span>复习 {progress} / {total}</span>
@@ -135,4 +141,9 @@ export default function ReviewSessionPage() {
       </div>
     </main>
   );
+}
+
+export default function ReviewSessionPage() {
+  const params = useParams();
+  return <ReviewSession sessionId={String(params.id)} />;
 }

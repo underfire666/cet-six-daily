@@ -80,7 +80,7 @@ function LookupSheet({
   );
 }
 
-export function ListeningSessionPlayer({ id }: { id: string }) {
+export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string; onComplete?: () => void; onExit?: () => void }) {
   const { ready, store, dispatch, notice } = useListening();
   const vocabulary = useVocabulary();
   const { settings } = useLearning();
@@ -91,18 +91,19 @@ export function ListeningSessionPlayer({ id }: { id: string }) {
   const [lookup, setLookup] = useState<string | null>(null);
   const session = store.sessions[id];
   useEffect(() => {
-    if (session?.phase === "complete")
-      router.replace(`/practice/listening/complete/${id}`);
-  }, [session?.phase, id, router]);
+    if (session?.phase === "complete") {
+      if (onComplete) onComplete();
+      else router.replace(`/practice/listening/complete/${id}`);
+    }
+  }, [session?.phase, id, router, onComplete]);
   if (!ready) return <div className="exercise-loading">正在准备听力…</div>;
   if (!session)
     return (
       <main className="exercise-gate">
         <h1>这次听力已无法恢复</h1>
         <p>返回听力页，重新开始一组。</p>
-        <Link className="exercise-button" href="/practice/listening">
-          返回听力
-        </Link>
+        {onExit ? <button className="exercise-button" onClick={onExit}>返回听力</button> :
+          <Link className="exercise-button" href="/practice/listening">返回听力</Link>}
       </main>
     );
   if (session.phase === "complete")
@@ -293,7 +294,8 @@ export function ListeningSessionPlayer({ id }: { id: string }) {
           onClose={() => setDialog(null)}
           onExit={() => {
             setDialog(null);
-            router.push("/practice/listening");
+            if (onExit) onExit();
+            else router.push("/practice/listening");
           }}
         />
       )}

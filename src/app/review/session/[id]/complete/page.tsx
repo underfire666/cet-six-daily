@@ -3,16 +3,18 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, RotateCcw } from "lucide-react";
 import { useReview } from "@/components/review/ReviewProvider";
 
-export default function ReviewCompletePage() {
-  const params = useParams();
+export function ReviewComplete({ sessionId, onReviewHome }: {
+  sessionId: string;
+  onReviewHome?: () => void;
+}) {
   const router = useRouter();
   const { store, ready } = useReview();
-  const sid = String(params.id);
+  const sid = sessionId;
   const session = store.sessions[sid];
 
   if (!ready) return <main className="review-page"><p>加载中…</p></main>;
   if (!session || !session.applied) {
-    return <main className="review-page"><p>会话未完成。<button onClick={() => router.push("/review")}>返回错题本</button></p></main>;
+    return <main className="review-page"><p>会话未完成。<button onClick={() => onReviewHome ? onReviewHome() : router.push("/review")}>返回错题本</button></p></main>;
   }
 
   const total = session.itemIds.length;
@@ -22,7 +24,7 @@ export default function ReviewCompletePage() {
   return (
     <main className="review-page">
       <header className="review-header">
-        <button className="exercise-icon-button" onClick={() => router.push("/")}>
+        <button className="exercise-icon-button" onClick={() => onReviewHome ? onReviewHome() : router.push("/")}>
           <ArrowLeft size={22} />
         </button>
         <h1>复习完成</h1>
@@ -37,13 +39,18 @@ export default function ReviewCompletePage() {
       </section>
 
       <div className="review-actions">
-        <button className="primary-button" onClick={() => router.push("/")}>
-          返回今日学习
+        <button className="primary-button" onClick={() => onReviewHome ? onReviewHome() : router.push("/")}>
+          {onReviewHome ? "返回错题本" : "返回今日学习"}
         </button>
-        <button className="secondary-button" onClick={() => router.push("/review")}>
+        <button className="secondary-button" onClick={() => onReviewHome ? onReviewHome() : router.push("/review")}>
           <RotateCcw size={16} /> 再复习一组
         </button>
       </div>
     </main>
   );
+}
+
+export default function ReviewCompletePage() {
+  const params = useParams();
+  return <ReviewComplete sessionId={String(params.id)} />;
 }

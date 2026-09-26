@@ -18,25 +18,26 @@ import { LessonProgress } from "../lesson/LessonProgress";
 import { QuestionRenderer } from "../lesson/QuestionRenderer";
 import { AnswerFeedback } from "../lesson/AnswerFeedback";
 import { AiHint, LessonExitDialog } from "../lesson/LessonDialog";
-export function VocabularyPlayer({ id }: { id: string }) {
+export function VocabularyPlayer({ id, onComplete, onExit }: { id: string; onComplete?: () => void; onExit?: () => void }) {
   const { ready, store, dispatch, toggleWordbook, notice } = useVocabulary();
   const { settings } = useLearning();
   const router = useRouter();
   const [dialog, setDialog] = useState<"hint" | "exit" | null>(null);
   const session = store.sessions[id];
   useEffect(() => {
-    if (session?.phase === "complete")
-      router.replace(`/practice/vocabulary/complete/${id}`);
-  }, [session?.phase, id, router]);
+    if (session?.phase === "complete") {
+      if (onComplete) onComplete();
+      else router.replace(`/practice/vocabulary/complete/${id}`);
+    }
+  }, [session?.phase, id, router, onComplete]);
   if (!ready) return <div className="exercise-loading">正在准备词汇…</div>;
   if (!session)
     return (
       <main className="exercise-gate">
         <h1>这次练习已无法恢复</h1>
         <p>返回词汇页，开始新的一组。</p>
-        <Link className="exercise-button" href="/practice/vocabulary">
-          返回词汇
-        </Link>
+        {onExit ? <button className="exercise-button" onClick={onExit}>返回词汇</button> :
+          <Link className="exercise-button" href="/practice/vocabulary">返回词汇</Link>}
       </main>
     );
   if (session.phase === "complete")
@@ -180,7 +181,8 @@ export function VocabularyPlayer({ id }: { id: string }) {
           onClose={() => setDialog(null)}
           onExit={() => {
             setDialog(null);
-            router.push("/practice/vocabulary");
+            if (onExit) onExit();
+            else router.push("/practice/vocabulary");
           }}
         />
       )}

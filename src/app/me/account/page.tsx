@@ -2,14 +2,26 @@
 
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { loadQueue, pushQueue, pullRemote, type SyncStatus } from "@/lib/sync/client";
+import { useEffect, useRef, useState } from "react";
+import { loadQueue, pushQueue, pullRemote, SYNC_QUEUE_EVENT, SYNC_STATUS_EVENT, type SyncEventDetail, type SyncStatus } from "@/lib/sync/client";
 import { isManualSyncBusy, runManualSync } from "@/lib/sync/manual";
 import { hydrateFromPull } from "@/lib/sync/hydrate";
 import { buildGuestMigrationPlan, type GuestMigrationPlan } from "@/lib/sync/migration";
+import { getStorageForNamespace } from "@/lib/storage/scoped";
 
 const MIGRATED_FLAG = "cet-daily:v12:guest-migrated-to";
 const MIGRATION_ID_KEY = "cet-daily:v12:guest-migration-id:";
+const LAST_SYNC_KEY = "cet-daily:v12:last-sync";
+
+function lastSyncFor(userId: string): string {
+  try {
+    const raw = getStorageForNamespace({ type: "user", id: userId })?.getItem(LAST_SYNC_KEY);
+    const at = raw ? (JSON.parse(raw) as { at?: unknown }).at : null;
+    return typeof at === "string" && Number.isFinite(Date.parse(at)) ? new Date(at).toLocaleString() : "";
+  } catch {
+    return "";
+  }
+}
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
@@ -23,6 +35,7 @@ export default function AccountPage() {
   const [alreadyMigrated, setAlreadyMigrated] = useState(false);
   const [migrationError, setMigrationError] = useState("");
   const [syncError, setSyncError] = useState("");
+  const manualSyncInFlight = useRef(false);
 
   const derivedStatus: SyncStatus =
     status === "unauthenticated" ? "guest" : syncStatus === "guest" ? "pending" : syncStatus;
@@ -36,22 +49,67 @@ export default function AccountPage() {
       setAlreadyMigrated(localStorage.getItem(MIGRATED_FLAG) === userId);
     });
   }, [userId]);
+  useEffect(() => {
+    if (!userId) return;
+    let mounted = true;
+    const refresh = () => {
+      const count = loadQueue(userId).length;
+      setPendingCount(count);
+      return count;
+    };
+    const onQueue = (event: Event) => {
+      const detail = (event as CustomEvent<SyncEventDetail>).detail;
+      if (detail?.userId !== userId) return;
+      const count = refresh();
+      if (!manualSyncInFlight.current && count > 0)
+        setSyncStatus((current) => current === "syncing" ? current : navigator.onLine === false ? "offline" : "pending");
+    };
+    const onStatus = (event: Event) => {
+      const detail = (event as CustomEvent<SyncEventDetail>).detail;
+      if (detail?.userId !== userId || !detail.status) return;
+      refresh();
+      if (manualSyncInFlight.current) return;
+      setSyncStatus(detail.status);
+      if (detail.status === "synced") setLastSync(lastSyncFor(userId));
+    };
+    const onOffline = () => {
+      if (!manualSyncInFlight.current) setSyncStatus("offline");
+    };
+    window.addEventListener(SYNC_QUEUE_EVENT, onQueue);
+    window.addEventListener(SYNC_STATUS_EVENT, onStatus);
+    window.addEventListener("offline", onOffline);
+    queueMicrotask(() => {
+      if (!mounted) return;
+      const count = refresh();
+      const previous = lastSyncFor(userId);
+      setLastSync(previous);
+      setSyncStatus((current) => current === "syncing" ? current
+        : navigator.onLine === false ? "offline" : count > 0 ? "pending" : previous ? "synced" : "pending");
+    });
+    return () => {
+      mounted = false;
+      window.removeEventListener(SYNC_QUEUE_EVENT, onQueue);
+      window.removeEventListener(SYNC_STATUS_EVENT, onStatus);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, [userId]);
   const stats = migrationPlan?.preview;
   const hasLocalData = Boolean(stats?.hasData);
 
   function refreshPending(): number {
-    const count = loadQueue().length;
+    const count = loadQueue(userId).length;
     setPendingCount(count);
     return count;
   }
 
   async function onSync() {
-    if (!userId) return;
+    if (!userId || manualSyncInFlight.current) return;
+    manualSyncInFlight.current = true;
     setSyncError("");
     try {
       await runManualSync({
         onStatus: setSyncStatus,
-        push: () => pushQueue(),
+        push: () => pushQueue({ userId }),
         pull: () => pullRemote(),
         hydrate: (remote) => hydrateFromPull(userId, remote as Parameters<typeof hydrateFromPull>[1]),
         refreshPending,
@@ -60,6 +118,8 @@ export default function AccountPage() {
     } catch (error) {
       refreshPending();
       setSyncError(error instanceof Error ? error.message : "同步失败，请重试");
+    } finally {
+      manualSyncInFlight.current = false;
     }
   }
 

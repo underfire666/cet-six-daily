@@ -1,23 +1,35 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, History, NotebookPen } from "lucide-react";
 import { useWriting } from "./WritingProvider";
+import { useLocalPracticeRoute } from "@/components/practice/useLocalPracticeRoute";
+import { WritingSessionPlayer } from "./WritingSessionPlayer";
+import { WritingComplete } from "./WritingComplete";
 
 export function WritingHome() {
+  const route = useLocalPracticeRoute("writing");
+  if (route.stage.kind === "session") {
+    const id = route.stage.id;
+    return <WritingSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+  }
+  if (route.stage.kind === "complete")
+    return <WritingComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} />;
+  return <WritingDashboard onSession={route.openSession} />;
+}
+
+function WritingDashboard({ onSession }: { onSession: (id: string) => void }) {
   const w = useWriting();
-  const router = useRouter();
   const done = w.progress.completedTaskIds.length;
   const total = w.progress.taskIds.length;
   const completed = w.dailyComplete;
 
   const begin = (mode: "daily" | "extra") => {
     const id = w.start(mode);
-    if (id) router.push(`/practice/writing/session/${id}`);
+    if (id) onSession(id);
   };
   const main = () => {
     if (w.active) {
-      router.push(`/practice/writing/session/${w.active.id}`);
+      onSession(w.active.id);
       return;
     }
     if (!completed) begin("daily");
@@ -74,9 +86,7 @@ export function WritingHome() {
           <button
             className="subjective-text-button"
             onClick={() =>
-              router.push(
-                `/practice/writing/session/${w.previousDaily!.id}`,
-              )
+              onSession(w.previousDaily!.id)
             }
           >
             继续 {w.previousDaily.planDate} 未完成的写作
@@ -86,7 +96,7 @@ export function WritingHome() {
           <button
             className="subjective-text-button"
             onClick={() =>
-              router.push(`/practice/writing/session/${w.extraActive!.id}`)
+              onSession(w.extraActive!.id)
             }
           >
             继续未完成的额外写作
@@ -118,9 +128,7 @@ export function WritingHome() {
                     <button
                       className="subjective-link-button"
                       onClick={() =>
-                        router.push(
-                          `/practice/writing/session/${entry.sessionId}`,
-                        )
+                        onSession(entry.sessionId!)
                       }
                     >
                       查看

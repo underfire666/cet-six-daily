@@ -7,7 +7,7 @@ import { Check, Languages, Zap } from "lucide-react";
 
 import { useTranslation } from "./TranslationProvider";
 
-export function TranslationComplete({ id }: { id: string }) {
+export function TranslationComplete({ id, onSession, onHome }: { id: string; onSession?: (id: string) => void; onHome?: () => void }) {
   const { ready, store, dailyComplete, start } = useTranslation();
   const router = useRouter();
   const session = store.sessions[id];
@@ -18,9 +18,8 @@ export function TranslationComplete({ id }: { id: string }) {
       <main className="exercise-gate">
         <h1>这篇翻译还没完成</h1>
         <p>返回翻译页，重新开始吧。</p>
-        <Link className="exercise-button" href="/practice/translation">
-          返回翻译
-        </Link>
+        {onHome ? <button className="exercise-button" onClick={onHome}>返回翻译</button> :
+          <Link className="exercise-button" href="/practice/translation">返回翻译</Link>}
       </main>
     );
   }
@@ -29,7 +28,10 @@ export function TranslationComplete({ id }: { id: string }) {
     const mode =
       session.mode === "extra" || dailyComplete ? "extra" : "daily";
     const nextId = start(mode);
-    if (nextId) router.push(`/practice/translation/session/${nextId}`);
+    if (nextId) {
+      if (onSession) onSession(nextId);
+      else router.push(`/practice/translation/session/${nextId}`);
+    }
   };
   return (
     <main className="subjective-complete">
@@ -68,12 +70,8 @@ export function TranslationComplete({ id }: { id: string }) {
             ? "继续下一篇"
             : "再练一篇"}
         </button>
-        <Link
-          className="subjective-text-button"
-          href="/practice/translation"
-        >
-          返回翻译首页
-        </Link>
+        {onHome ? <button className="subjective-text-button" onClick={onHome}>返回翻译首页</button> :
+          <Link className="subjective-text-button" href="/practice/translation">返回翻译首页</Link>}
       </div>
     </main>
   );

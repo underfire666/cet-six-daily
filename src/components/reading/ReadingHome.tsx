@@ -1,22 +1,34 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, BookOpen, Check } from "lucide-react";
 import { useReading } from "./ReadingProvider";
+import { useLocalPracticeRoute } from "@/components/practice/useLocalPracticeRoute";
+import { ReadingSessionPlayer } from "./ReadingSessionPlayer";
+import { ReadingComplete } from "./ReadingComplete";
 
 export function ReadingHome() {
+  const route = useLocalPracticeRoute("reading");
+  if (route.stage.kind === "session") {
+    const id = route.stage.id;
+    return <ReadingSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+  }
+  if (route.stage.kind === "complete")
+    return <ReadingComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} />;
+  return <ReadingDashboard onSession={route.openSession} />;
+}
+
+function ReadingDashboard({ onSession }: { onSession: (id: string) => void }) {
   const reading = useReading();
-  const router = useRouter();
   const done = reading.progress.completedArticleIds.length;
   const total = reading.progress.articleIds.length;
   const completed = reading.dailyComplete;
   const begin = (mode: "daily" | "extra") => {
     const id = reading.start(mode);
-    if (id) router.push(`/practice/reading/session/${id}`);
+    if (id) onSession(id);
   };
   const main = () => {
     if (reading.active) {
-      router.push(`/practice/reading/session/${reading.active.id}`);
+      onSession(reading.active.id);
       return;
     }
     if (!completed) begin("daily");
@@ -63,7 +75,7 @@ export function ReadingHome() {
           <button
             className="reading-text-button"
             onClick={() =>
-              router.push(`/practice/reading/session/${reading.previousDaily!.id}`)
+              onSession(reading.previousDaily!.id)
             }
           >
             继续 {reading.previousDaily.planDate} 未完成的阅读

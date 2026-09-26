@@ -9,7 +9,7 @@ import { readingLesson } from "@/lib/reading/questions";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useReading } from "./ReadingProvider";
 
-export function ReadingComplete({ id }: { id: string }) {
+export function ReadingComplete({ id, onSession, onHome }: { id: string; onSession?: (id: string) => void; onHome?: () => void }) {
   const { ready, store, dailyComplete, start } = useReading();
   const router = useRouter();
   const session = store.sessions[id];
@@ -17,7 +17,10 @@ export function ReadingComplete({ id }: { id: string }) {
     const mode =
       session?.mode === "extra" || dailyComplete ? "extra" : "daily";
     const nextId = start(mode);
-    if (nextId) router.push(`/practice/reading/session/${nextId}`);
+    if (nextId) {
+      if (onSession) onSession(nextId);
+      else router.push(`/practice/reading/session/${nextId}`);
+    }
   };
   if (!ready) return <div className="exercise-loading">正在准备阅读…</div>;
   if (!session || !session.applied)
@@ -25,9 +28,8 @@ export function ReadingComplete({ id }: { id: string }) {
       <main className="exercise-gate">
         <h1>这篇阅读还没完成</h1>
         <p>返回阅读页，选择一篇文章开始吧。</p>
-        <Link className="exercise-button" href="/practice/reading">
-          返回阅读
-        </Link>
+        {onHome ? <button className="exercise-button" onClick={onHome}>返回阅读</button> :
+          <Link className="exercise-button" href="/practice/reading">返回阅读</Link>}
       </main>
     );
   const article = readingArticleById(session.articleId)!;
@@ -82,9 +84,8 @@ export function ReadingComplete({ id }: { id: string }) {
             ? "继续下一篇"
             : "今天再读一篇"}
         </button>
-        <Link className="reading-text-button" href="/practice/reading">
-          返回阅读首页
-        </Link>
+        {onHome ? <button className="reading-text-button" onClick={onHome}>返回阅读首页</button> :
+          <Link className="reading-text-button" href="/practice/reading">返回阅读首页</Link>}
       </div>
     </main>
   );

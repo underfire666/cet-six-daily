@@ -3,9 +3,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bookmark, CheckCircle2, RotateCcw, Star, Trash2 } from "lucide-react";
 import { useReview } from "@/components/review/ReviewProvider";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { shortDate } from "@/lib/dates";
 import type { ReviewMastery } from "@/types/review";
+import { ReviewSession } from "./session/[id]/page";
+import { ReviewComplete } from "./session/[id]/complete/page";
+
+type LocalReviewRoute = { stage: "session" | "complete"; id: string } | null;
+
+function readLocalRoute(): LocalReviewRoute {
+  const params = new URLSearchParams(window.location.search);
+  const complete = params.get("complete");
+  if (complete) return { stage: "complete", id: complete };
+  const session = params.get("session");
+  return session ? { stage: "session", id: session } : null;
+}
 
 const MASTERY_LABEL: Record<ReviewMastery, string> = {
   new: "新收录",
@@ -24,6 +36,21 @@ export default function ReviewHomePage() {
   const router = useRouter();
   const { store, dueToday, stats, startSession, toggleFavorite, remove, ready } = useReview();
   const [filter, setFilter] = useState<"all" | "due" | "unmastered" | "favorite" | "mastered">("all");
+  const [localRoute, setLocalRoute] = useState<LocalReviewRoute>(null);
+
+  useEffect(() => {
+    const update = () => setLocalRoute(readLocalRoute());
+    update();
+    window.addEventListener("popstate", update);
+    return () => window.removeEventListener("popstate", update);
+  }, []);
+
+  const navigateLocal = useCallback((route: LocalReviewRoute, replace = false) => {
+    const url = route ? `/review?${route.stage}=${encodeURIComponent(route.id)}` : "/review";
+    if (replace) window.history.replaceState(null, "", url);
+    else window.history.pushState(null, "", url);
+    setLocalRoute(route);
+  }, []);
 
   const items = Object.values(store.items)
     .filter((i) => !i.removed)
@@ -42,8 +69,17 @@ export default function ReviewHomePage() {
       Object.values(store.items).filter((i) => !i.removed && i.favorite);
     if (pool.length === 0) return;
     const sid = startSession(pool, mode === "due" ? "daily" : "manual", mode === "due" ? "daily_plan" : "manual");
-    if (sid) router.push(`/review/session/${sid}`);
+    if (sid) navigateLocal({ stage: "session", id: sid });
   };
+
+  if (localRoute?.stage === "session") {
+    return <ReviewSession sessionId={localRoute.id}
+      onComplete={() => navigateLocal({ stage: "complete", id: localRoute.id }, true)}
+      onExit={() => navigateLocal(null)} />;
+  }
+  if (localRoute?.stage === "complete") {
+    return <ReviewComplete sessionId={localRoute.id} onReviewHome={() => navigateLocal(null)} />;
+  }
 
   return (
     <main className="review-page">

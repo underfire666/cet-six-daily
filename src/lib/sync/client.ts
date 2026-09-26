@@ -22,13 +22,38 @@ export interface QueuedMutation {
 }
 
 const GUEST_QUEUE_KEY = "cet-daily:v12:sync-queue";
+export const SYNC_QUEUE_EVENT = "cet-daily:v12:sync-queue-changed";
+export const SYNC_STATUS_EVENT = "cet-daily:v12:sync-status-changed";
 
-function queueKey(): string {
-  if (typeof window === "undefined") return GUEST_QUEUE_KEY;
+export interface SyncEventDetail {
+  userId: string;
+  status?: SyncStatus;
+  pendingCount: number;
+}
+
+function activeUserId(): string | null {
+  if (typeof window === "undefined") return null;
+  return (window as unknown as { __CET_SYNC_USER_ID?: string }).__CET_SYNC_USER_ID ?? null;
+}
+
+function queueKey(userId?: string | null): string {
   // User-scoped queue: User A's pending mutations never get pushed as User B's.
-  const w = window as unknown as { __CET_SYNC_USER_ID?: string };
-  const m = w.__CET_SYNC_USER_ID;
-  return m ? `cet-daily:v12:sync-queue:${m}` : GUEST_QUEUE_KEY;
+  const owner = userId === undefined ? activeUserId() : userId;
+  return owner ? `cet-daily:v12:sync-queue:${owner}` : GUEST_QUEUE_KEY;
+}
+
+function notifyQueue(userId: string | null, pendingCount: number) {
+  if (typeof window === "undefined" || !userId || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(new CustomEvent<SyncEventDetail>(SYNC_QUEUE_EVENT, {
+    detail: { userId, pendingCount },
+  }));
+}
+
+export function publishSyncStatus(userId: string, status: SyncStatus) {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(new CustomEvent<SyncEventDetail>(SYNC_STATUS_EVENT, {
+    detail: { userId, status, pendingCount: loadQueue(userId).length },
+  }));
 }
 
 // Per-entity queue merge policy.
@@ -52,10 +77,10 @@ const MERGE_POLICY: Record<string, MergePolicy> = {
   reviewItem: "state",
 };
 
-export function loadQueue(): QueuedMutation[] {
+export function loadQueue(userId?: string | null): QueuedMutation[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(queueKey());
+    const raw = localStorage.getItem(queueKey(userId));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -64,9 +89,11 @@ export function loadQueue(): QueuedMutation[] {
   }
 }
 
-export function saveQueue(queue: QueuedMutation[]) {
+export function saveQueue(queue: QueuedMutation[], userId?: string | null) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(queueKey(), JSON.stringify(queue));
+  const owner = userId === undefined ? activeUserId() : userId;
+  localStorage.setItem(queueKey(owner), JSON.stringify(queue));
+  notifyQueue(owner, queue.length);
 }
 
 export function enqueueMutation(m: Omit<QueuedMutation, "mutationId" | "createdAt" | "attempts" | "status">): QueuedMutation {
@@ -134,13 +161,37 @@ export function dedupeSameEntity(
   });
 }
 
-export async function pushQueue(options?: {
+const inFlightPushes = new Map<string, Promise<{ applied: number; failed: number }>>();
+
+export function pushQueue(options?: {
+  onStatus?: (s: SyncStatus) => void;
+  fetchImpl?: typeof fetch;
+  userId?: string;
+}): Promise<{ applied: number; failed: number }> {
+  const userId = options?.userId ?? activeUserId();
+  const key = queueKey(userId);
+  const existing = inFlightPushes.get(key);
+  if (existing) return existing;
+  const task = pushQueueForUser(userId, options).finally(() => {
+    if (inFlightPushes.get(key) === task) inFlightPushes.delete(key);
+  });
+  inFlightPushes.set(key, task);
+  return task;
+}
+
+async function pushQueueForUser(userId: string | null, options?: {
   onStatus?: (s: SyncStatus) => void;
   fetchImpl?: typeof fetch;
 }): Promise<{ applied: number; failed: number }> {
   const fetchImpl = options?.fetchImpl ?? fetch;
-  const queue = loadQueue().filter((m) => m.status !== "syncing");
+  const queue = loadQueue(userId).filter((m) => m.status !== "syncing");
   if (queue.length === 0) return { applied: 0, failed: 0 };
+
+  // Never send a captured account queue after the browser switched accounts.
+  if (!userId || activeUserId() !== userId) {
+    options?.onStatus?.("failed");
+    return { applied: 0, failed: queue.length };
+  }
 
   options?.onStatus?.("syncing");
   try {
@@ -160,15 +211,61 @@ export async function pushQueue(options?: {
     if (!res.ok) throw new Error(`push ${res.status}`);
     const data = (await res.json()) as { applied: string[]; skipped: string[] };
     const appliedSet = new Set([...data.applied, ...data.skipped]);
-    const remaining = loadQueue().filter((m) => !appliedSet.has(m.mutationId));
-    saveQueue(remaining);
+    const remaining = loadQueue(userId).filter((m) => !appliedSet.has(m.mutationId));
+    saveQueue(remaining, userId);
     options?.onStatus?.(remaining.length === 0 ? "synced" : "pending");
     return { applied: appliedSet.size, failed: 0 };
   } catch {
-    const failed = loadQueue().map((m) => ({ ...m, attempts: m.attempts + 1, status: "failed" as const }));
-    saveQueue(failed);
+    const attempted = new Set(queue.map((m) => m.mutationId));
+    const failed = loadQueue(userId).map((m) => attempted.has(m.mutationId)
+      ? { ...m, attempts: m.attempts + 1, status: "failed" as const }
+      : m);
+    saveQueue(failed, userId);
     options?.onStatus?.(navigator.onLine === false ? "offline" : "failed");
-    return { applied: 0, failed: failed.length };
+    return { applied: 0, failed: queue.length };
+  }
+}
+
+export interface AutoSyncOptions {
+  active: () => boolean;
+  push: () => Promise<{ failed: number }>;
+  pull: () => Promise<Record<string, unknown> | null>;
+  hydrate: (remote: Record<string, unknown>) => void;
+  pending: () => number;
+  onStatus: (status: SyncStatus) => void;
+}
+
+/** One background sync attempt; never hydrates stale cloud data after a failed push. */
+export async function runAutoSync(options: AutoSyncOptions): Promise<"synced" | "pending" | "failed" | "cancelled"> {
+  if (!options.active()) return "cancelled";
+  options.onStatus("syncing");
+  try {
+    const pushed = await options.push();
+    if (!options.active()) return "cancelled";
+    if (pushed.failed > 0) {
+      options.onStatus("failed");
+      return "failed";
+    }
+    const remote = await options.pull();
+    if (!options.active()) return "cancelled";
+    if (!remote) {
+      options.onStatus("failed");
+      return "failed";
+    }
+    // A local edit may arrive while pull is in flight. Push it before applying
+    // the fetched snapshot, so hydrate cannot treat the newer edit as remote.
+    if (options.pending() > 0) {
+      options.onStatus("pending");
+      return "pending";
+    }
+    options.hydrate(remote);
+    if (!options.active()) return "cancelled";
+    const status = options.pending() > 0 ? "pending" : "synced";
+    options.onStatus(status);
+    return status;
+  } catch {
+    if (options.active()) options.onStatus("failed");
+    return options.active() ? "failed" : "cancelled";
   }
 }
 
