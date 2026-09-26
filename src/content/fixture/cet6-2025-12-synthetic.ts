@@ -1,11 +1,18 @@
 /**
- * V13: 首份原创 Synthetic CET6 Paper Fixture
+ * V13: 首份原创 Synthetic CET6 Paper Fixture（V13 Phase 1.1: Identity Hardening）
  *
  * - 结构参照 CET6_EXAM_SPEC 官方公开考试结构（题型/小节划分），
  * - 内容全部原创（原创写作 prompt、原创听力脚本、原创阅读 passage、原创翻译句、原创题目），
  * - 不含任何真实历年真题原文 / 培训机构 PDF / 真实听力音频；
  * - isPartial=true（不是完整真题卷），fixture=true（合成标记），status="staging"
  *   （不进入 production published 池，不暴露给学习页 Selector，仅开发/测试 resolve）。
+ *
+ * IDENTITY（V13 Phase 1.1）：
+ * - 本 fixture 使用 FIXTURE namespace：`cet6:fixture:<fixtureId>`（fixtureId=synthetic-001）。
+ * - REAL paper namespace（cet6:2025-12:set1…）是真实试卷的保留命名空间，
+ *   未来导入真实 2025-12 set1 时与 synthetic fixture 结构上不可能冲突：
+ *   stable ID、paper identity、duplicate detector、alias 全部隔离。
+ * - 交叉校验：fixture=true 必须使用 fixture namespace（papers.ts validatePaper 强制）。
  *
  * 同时演示 Paper 树的两种 question 组织方式：
  *   A) questionRefs：引用已注册内容 item 内题目（如 r-ai-screening / l-campus-meeting）
@@ -15,27 +22,29 @@ import { registerContentPack } from "../registry";
 import { SYNTHETIC_PAPER_SOURCE } from "../sources";
 import type { ContentPack } from "../types";
 import type { CET6Paper } from "../papers";
-import { groupStableId, questionStableId, assetStableId, paperStableId, sectionStableId } from "../stable-id";
+import { extendStableId, fixturePaperStableId } from "../stable-id";
 
-const identity = { exam: "CET6" as const, year: 2025, session: 12 as const, set: 1 };
-
-export const SYNTHETIC_PAPER_ID = paperStableId(identity); // cet6:2025-12:set1
+export const SYNTHETIC_FIXTURE_ID = "synthetic-001";
+export const SYNTHETIC_PAPER_ID = fixturePaperStableId(SYNTHETIC_FIXTURE_ID); // cet6:fixture:synthetic-001
 export const SYNTHETIC_PACK_ID = "pack-paper-cet6-2025-12-synthetic";
 
-const secWriting = sectionStableId({ ...identity, section: "writing" });
-const secListening = sectionStableId({ ...identity, section: "listening" });
-const secReading = sectionStableId({ ...identity, section: "reading" });
-const secTranslation = sectionStableId({ ...identity, section: "translation" });
+// FIXTURE namespace 下的 section / group / question / asset 稳定 ID
+const base = fixturePaperStableId(SYNTHETIC_FIXTURE_ID);
 
-const gWriting = groupStableId({ ...identity, section: "writing", group: "g1" });
-const gConversation = groupStableId({ ...identity, section: "listening", subsection: "long_conversation", group: "g1" });
-const gLecture = groupStableId({ ...identity, section: "listening", subsection: "lecture", group: "g2" });
-const gCloze = groupStableId({ ...identity, section: "reading", subsection: "cloze", group: "g1" });
-const gMatching = groupStableId({ ...identity, section: "reading", subsection: "matching", group: "g2" });
-const gCareful = groupStableId({ ...identity, section: "reading", subsection: "careful_reading", group: "g3" });
-const gTranslation = groupStableId({ ...identity, section: "translation", group: "g1" });
+const secWriting = extendStableId(base, "writing");
+const secListening = extendStableId(base, "listening");
+const secReading = extendStableId(base, "reading");
+const secTranslation = extendStableId(base, "translation");
 
-const audioAssetId = assetStableId({ ...identity, section: "listening", subsection: "lecture", group: "g2", asset: "audio1" });
+const gWriting = extendStableId(secWriting, "g1");
+const gConversation = extendStableId(secListening, "long_conversation", "g1");
+const gLecture = extendStableId(secListening, "lecture", "g2");
+const gCloze = extendStableId(secReading, "cloze", "g1");
+const gMatching = extendStableId(secReading, "matching", "g2");
+const gCareful = extendStableId(secReading, "careful_reading", "g3");
+const gTranslation = extendStableId(secTranslation, "g1");
+
+const audioAssetId = extendStableId(secListening, "lecture", "g2", "audio1");
 
 const now = "2026-09-26T00:00:00.000Z";
 
@@ -45,10 +54,11 @@ export const syntheticCet6Paper: CET6Paper = {
   tags: [],
   exam: "CET6",
   level: "CET6",
+  // 仿真目标卷描述（不影响 identity）：真实 2025-12 set1 的 namespace 与 ID 与 fixture 完全隔离
   year: 2025,
   session: 12,
   set: 1,
-  title: "CET6 Synthetic Paper 2025-12 Set 1 (Original Fixture)",
+  title: "CET6 Synthetic Paper Fixture (Original, Partial)",
   sourceId: SYNTHETIC_PAPER_SOURCE.id,
   rights: {
     licenseStatus: "owned",
@@ -73,7 +83,7 @@ export const syntheticCet6Paper: CET6Paper = {
           prompt: "Write an essay on the role of public libraries in the digital age.",
           questions: [
             {
-              questionId: questionStableId({ ...identity, section: "writing", group: "g1", question: "q1" }),
+              questionId: extendStableId(gWriting, "q1"),
               order: 1,
               prompt: "Write an essay on the role of public libraries in the digital age.",
               type: "subjective_writing",
@@ -109,7 +119,7 @@ export const syntheticCet6Paper: CET6Paper = {
             "W: Hi Mark, have you signed up for the campus volunteer program this semester? M: Not yet. I heard the application deadline is this Friday. W: That's right. They need helpers for the book fair and the community garden project. M: The garden project sounds interesting. What does it involve? W: Mostly weeding and planting on Saturday mornings. Volunteers also get a certificate at the end of the term.",
           questions: [
             {
-              questionId: questionStableId({ ...identity, section: "listening", subsection: "long_conversation", group: "g1", question: "q1" }),
+              questionId: extendStableId(gConversation, "q1"),
               order: 1,
               prompt: "What is the application deadline for the volunteer program?",
               type: "choice",
@@ -124,7 +134,7 @@ export const syntheticCet6Paper: CET6Paper = {
               shortExplanation: "The man says he heard the deadline is this Friday, and the woman confirms.",
             },
             {
-              questionId: questionStableId({ ...identity, section: "listening", subsection: "long_conversation", group: "g1", question: "q2" }),
+              questionId: extendStableId(gConversation, "q2"),
               order: 2,
               prompt: "What do volunteers receive at the end of the term?",
               type: "choice",
@@ -148,7 +158,7 @@ export const syntheticCet6Paper: CET6Paper = {
             "Good morning. Today we examine how cities can bring nature back into dense neighbourhoods. Researchers studied three European capitals and found that small pocket parks, planted rooftops and tree-lined streets measurably lower local summer temperatures. More importantly, residents who lived within a five-minute walk of a green space reported better sleep and lower stress. The costs are modest, but the benefits compound over decades.",
           questions: [
             {
-              questionId: questionStableId({ ...identity, section: "listening", subsection: "lecture", group: "g2", question: "q1" }),
+              questionId: extendStableId(gLecture, "q1"),
               order: 1,
               prompt: "What did researchers find about pocket parks and planted rooftops?",
               type: "choice",
@@ -181,7 +191,7 @@ export const syntheticCet6Paper: CET6Paper = {
             "Online learning has grown rapidly. However, students who study alone often (1) ______ motivation. Researchers suggest forming small study groups, (2) ______ members check each other's progress regularly.",
           questions: [
             {
-              questionId: questionStableId({ ...identity, section: "reading", subsection: "cloze", group: "g1", question: "q1" }),
+              questionId: extendStableId(gCloze, "q1"),
               order: 1,
               prompt: "Choose the best word for blank (1).",
               type: "choice",
@@ -196,7 +206,7 @@ export const syntheticCet6Paper: CET6Paper = {
               shortExplanation: "Students who study alone often lose motivation fits the context.",
             },
             {
-              questionId: questionStableId({ ...identity, section: "reading", subsection: "cloze", group: "g1", question: "q2" }),
+              questionId: extendStableId(gCloze, "q2"),
               order: 2,
               prompt: "Choose the best word for blank (2).",
               type: "choice",
@@ -220,7 +230,7 @@ export const syntheticCet6Paper: CET6Paper = {
             "Match each statement to the correct paragraph. Paragraphs A–D summarise four short passages about urban green spaces, remote work, food delivery robots and lifelong learning.",
           questions: [
             {
-              questionId: questionStableId({ ...identity, section: "reading", subsection: "matching", group: "g2", question: "q1" }),
+              questionId: extendStableId(gMatching, "q1"),
               order: 1,
               prompt: "Which paragraph argues that remote work reduces commuting pressure?",
               type: "matching",
@@ -238,7 +248,7 @@ export const syntheticCet6Paper: CET6Paper = {
             "Urban forests are quietly reshaping how city dwellers experience their neighbourhoods. Beyond their obvious beauty, trees perform measurable services: they cool the air, slow rainwater, and absorb noise. In one longitudinal study, neighbourhoods that planted trees along main streets saw a measurable drop in reported stress among residents over five years. The authors caution, however, that tree planting is not a substitute for addressing the root causes of urban inequality; greenery simply makes crowded lives more bearable while deeper problems remain.",
           questions: [
             {
-              questionId: questionStableId({ ...identity, section: "reading", subsection: "careful_reading", group: "g3", question: "q1" }),
+              questionId: extendStableId(gCareful, "q1"),
               order: 1,
               prompt: "What is the main point of the passage?",
               type: "choice",
@@ -255,7 +265,7 @@ export const syntheticCet6Paper: CET6Paper = {
                 "First sentences describe measurable services (cooling, rain, noise). The study shows stress drop. The caution sentence ('not a substitute') is the key nuance that makes A the best summary.",
             },
             {
-              questionId: questionStableId({ ...identity, section: "reading", subsection: "careful_reading", group: "g3", question: "q2" }),
+              questionId: extendStableId(gCareful, "q2"),
               order: 2,
               prompt: "According to the passage, what did the longitudinal study find?",
               type: "choice",
@@ -287,7 +297,7 @@ export const syntheticCet6Paper: CET6Paper = {
             "传统工艺在当代社会中仍然具有独特价值。它们不仅保留了历史记忆，也为现代生活提供了有温度的选择。越来越多的年轻人开始学习这些技艺，并将其与新的设计理念结合起来。",
           questions: [
             {
-              questionId: questionStableId({ ...identity, section: "translation", group: "g1", question: "q1" }),
+              questionId: extendStableId(gTranslation, "q1"),
               order: 1,
               prompt:
                 "传统工艺在当代社会中仍然具有独特价值。它们不仅保留了历史记忆，也为现代生活提供了有温度的选择。越来越多的年轻人开始学习这些技艺，并将其与新的设计理念结合起来。",
@@ -315,7 +325,7 @@ export const syntheticCet6Paper: CET6Paper = {
     {
       assetId: audioAssetId,
       type: "audio",
-      source: "mock://synthetic/lecture-2025-12-set1.mp3",
+      source: "mock://synthetic/lecture-fixture-synthetic-001.mp3",
       mimeType: "audio/mpeg",
       duration: 90,
       checksum: "synthetic-fixture-placeholder",
@@ -340,7 +350,7 @@ export const syntheticCet6Paper: CET6Paper = {
 export function registerSyntheticPaperFixture(): void {
   registerContentPack({
     id: SYNTHETIC_PACK_ID,
-    name: "CET6 Synthetic Paper (2025-12 Set 1)",
+    name: "CET6 Synthetic Paper Fixture",
     version: "1.0.0",
     contentType: "paper",
     sourceId: SYNTHETIC_PAPER_SOURCE.id,

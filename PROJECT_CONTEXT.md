@@ -206,3 +206,33 @@ V5 已正式开放并验收通过“阅读”专项：每日固定 3 篇阅读�
 ### 检查命令（新增 content:rights）
 
 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run content:validate`、`npm run content:stats`、`npm run content:rights`、`npx prisma validate`、`npx prisma generate`、`npx prisma migrate status`。
+
+## V13 Phase 1.1（2026-09-26，分支 feature/v13-real-content，尚未 merge main）
+
+### 目标
+
+Content Identity + Rights Hardening：进入第一批真实内容之前的小型架构硬化。不扩大范围、不导入真实真题/音频、不改学习 UI。
+
+### 已完成并验证
+
+- **Fixture 命名空间隔离（Identity）**：synthetic fixture 从 `cet6:2025-12:set1` 迁移到独立 FIXTURE namespace `cet6:fixture:synthetic-001`（`fixturePaperStableId`/`extendStableId`，`stableIdNamespace` 判别 real/fixture/invalid）。REAL（`cet6:<year>-<session>:set<N>`）与 FIXTURE namespace 结构上可区分，未来导入真实 2025-12 set1 与 fixture 无 stable-ID / identity / duplicate-detector / alias 冲突。
+- **交叉校验（papers.ts validatePaper）**：fixture=true 必须使用 fixture namespace；real/past_exam 禁止使用 fixture namespace；section/group/question/asset ID 必须与 paperId 同 namespace。
+- **Rights fail-closed（rights.ts）**：official_public_material 不再无条件 allowed——必须有明确再利用依据（permissionEvidence/licenseName/licenseUrl）且 `redistributionAllowed=true` 才 allowed；无依据/未确认 → unknown；redistributionAllowed=false → blocked。owned 显式禁再分发 → blocked；licensed 需 evidence + redistribution=true；commercialUseAllowed 未确认在 rights report 明确显示限制。
+- **Validator 分层（validator.ts）**：validatePack 只做结构校验（schema validity）；production 发布权由 rightsVerdict / rightsIssues(scope=production) / getPublishableItems 把关；unknown/permission_required 允许进入 staging/raw/audit 人工审查，但绝不进入生产 Selector。
+- **Duplicate 检测修正**：paper identity duplicate 仅对 REAL namespace 生效；fixture 与 real 可共存于 Registry 无冲突；两个真实同 identity paper 仍 duplicate ERROR。
+- **59 mock 不受影响**：demo pool 与 production pool 继续明确区分，mock 保持可学习。
+- **测试新增 14 项**（v13-content.test.ts 29 → 43）：fixture namespace 生成/判别、real/fixture 交叉校验、official 四场景、production pool fail-closed matrix（7 场景）、fixture+real 共存、两个 real 冲突、staging 可导入 + production 隔离、licensed 无 redistribution → unknown。
+
+### Gates（全部通过）
+
+`npm test` 413/413（新增 14 + 既有 399）｜`npm run typecheck` PASS｜`npm run lint` 0 errors｜`npm run build` PASS｜`npm run content:validate` 0 errors（59 mock + 1 paper，fixture=cet6:fixture:synthetic-001）｜`npm run content:stats` PASS｜`npm run content:rights` PASS（PUBLISHABLE 1 / BLOCKED 0 / UNKNOWN 5；production pool 空）｜`npx prisma validate` PASS｜`npx prisma generate` PASS｜`npx prisma migrate status` 2 migrations up to date。
+
+### 浏览器 smoke（真实浏览器）
+
+- Vocabulary/Reading/Listening/Translation/Writing/Review 六模块全部正常渲染，mock 内容可学习（词汇会话真实推进 feasible → significant）。
+- 学习页面无任何 paper/真题/fixture 入口（fixture/blocked/unknown-rights 不出现在学习 Selector）。
+- 无 runtime console error（仅有 Next dev data-inspector-id hydration 差异 warning，非产品缺陷）。
+
+### 未做（保持 Phase 1.1 边界）
+
+不导入真实真题/音频/培训机构材料；不改学习 UI/首页/账号；不改 V12 tag/Release；不开始 V13 Phase 2。

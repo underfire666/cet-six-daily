@@ -16,7 +16,7 @@
  * 兼容：validatePaper(value): string[] 签名保持不变（validator.ts 依赖）。
  */
 import type { ContentRights } from "./types";
-import { isValidStableId, paperStableId } from "./stable-id";
+import { FIXTURE_PREFIX, isValidStableId, paperStableId, stableIdNamespace } from "./stable-id";
 
 export type PaperLevel = "CET6";
 export type PaperSession = 6 | 12;
@@ -195,9 +195,19 @@ export function validatePaper(value: unknown): string[] {
   if (!text(paper.paperId)) err("paper missing paperId");
   else if (!isValidStableId(paper.paperId, "paper")) err(`paper invalid paperId format: ${paper.paperId}`);
   else {
-    // paperId 与 year/session/set 一致性
-    const expect = paperStableId({ exam: "CET6", year: paper.year, session: paper.session, set: paper.set });
-    if (paper.paperId !== expect) err(`paperId ${paper.paperId} mismatch identity ${expect}`);
+    const ns = stableIdNamespace(paper.paperId);
+    // V13 Phase 1.1 交叉校验：fixture flag 与 namespace 必须一致
+    if (paper.fixture === true && ns !== "fixture") {
+      err(`paper ${paper.paperId} fixture=true must use fixture namespace (e.g. ${FIXTURE_PREFIX}:<fixtureId>)`);
+    }
+    if (paper.fixture !== true && ns === "fixture") {
+      err(`paper ${paper.paperId} fixture=false/undefined must not use fixture namespace`);
+    }
+    if (ns === "real") {
+      // paperId 与 year/session/set 一致性（仅 REAL namespace 参与）
+      const expect = paperStableId({ exam: "CET6", year: paper.year, session: paper.session, set: paper.set });
+      if (paper.paperId !== expect) err(`paperId ${paper.paperId} mismatch identity ${expect}`);
+    }
   }
   if (paper.exam !== "CET6") err("paper exam must be CET6");
   if (paper.level !== "CET6") err("paper level must be CET6");
@@ -210,17 +220,21 @@ export function validatePaper(value: unknown): string[] {
   if (!object(paper.rights) || !text((paper.rights as { licenseStatus?: unknown }).licenseStatus as string)) {
     err(`paper ${paper.paperId ?? "?"} missing rights metadata (required for publishable pack)`);
   }
+  const paperNs = text(paper.paperId) ? stableIdNamespace(paper.paperId) : ("invalid" as const);
   if (!Array.isArray(paper.sections) || paper.sections.length === 0) {
     err(`paper ${paper.paperId ?? "?"} no sections`);
   } else {
     const secOrders = paper.sections.map((s) => s.order);
     if (!uniqueSorted(secOrders)) err(`paper ${paper.paperId} section orders must be 1..N`);
-    for (const sec of paper.sections) validateSection(sec, paper, errors);
+    for (const sec of paper.sections) validateSection(sec, paper, errors, paperNs);
   }
   if (paper.assets) {
     for (const asset of paper.assets) {
       if (!text(asset.assetId)) err(`paper ${paper.paperId} asset missing assetId`);
       else if (!isValidStableId(asset.assetId, "asset")) err(`paper ${paper.paperId} invalid assetId: ${asset.assetId}`);
+      else if (text(asset.assetId) && stableIdNamespace(asset.assetId) !== paperNs) {
+        err(`paper ${paper.paperId} assetId ${asset.assetId} namespace differs from paperId`);
+      }
       if (!["audio", "image", "transcript", "document"].includes(asset.type)) err(`paper ${paper.paperId} bad asset type`);
       if (!text(asset.source)) err(`paper ${paper.paperId} asset ${asset.assetId ?? "?"} missing source`);
       if (!text(asset.mimeType)) err(`paper ${paper.paperId} asset ${asset.assetId ?? "?"} missing mimeType`);
@@ -236,26 +250,32 @@ export function validatePaper(value: unknown): string[] {
   return errors;
 }
 
-function validateSection(sec: unknown, paper: CET6Paper, errors: string[]): void {
+function validateSection(sec: unknown, paper: CET6Paper, errors: string[], paperNs: ReturnType<typeof stableIdNamespace>): void {
   const err = (m: string) => errors.push(m);
   if (!object(sec)) { err(`paper ${paper.paperId} invalid section`); return; }
   const s = sec as unknown as PaperSection;
   if (!text(s.sectionId)) err(`paper ${paper.paperId} section missing sectionId`);
   else if (!isValidStableId(s.sectionId, "section")) err(`paper ${paper.paperId} invalid sectionId: ${s.sectionId}`);
+  else if (text(s.sectionId) && stableIdNamespace(s.sectionId) !== paperNs) {
+    err(`paper ${paper.paperId} sectionId ${s.sectionId} namespace differs from paperId`);
+  }
   if (!SECTION_KINDS.includes(s.type)) err(`paper ${paper.paperId} section bad type`);
   if (!Number.isInteger(s.order) || s.order < 1) err(`paper ${paper.paperId} section bad order`);
   if (!Array.isArray(s.groups) || s.groups.length === 0) { err(`paper ${paper.paperId} section ${s.sectionId ?? "?"} no groups`); return; }
   const gOrders = s.groups.map((g) => g.order);
   if (!uniqueSorted(gOrders)) err(`paper ${paper.paperId} section ${s.sectionId} group orders must be 1..N`);
-  for (const g of s.groups) validateGroup(g, paper, s, errors);
+  for (const g of s.groups) validateGroup(g, paper, s, errors, paperNs);
 }
 
-function validateGroup(g: unknown, paper: CET6Paper, sec: PaperSection, errors: string[]): void {
+function validateGroup(g: unknown, paper: CET6Paper, sec: PaperSection, errors: string[], paperNs: ReturnType<typeof stableIdNamespace>): void {
   const err = (m: string) => errors.push(m);
   if (!object(g)) { err(`paper ${paper.paperId} invalid group`); return; }
   const grp = g as unknown as PaperGroup;
   if (!text(grp.groupId)) err(`paper ${paper.paperId} group missing groupId`);
   else if (!isValidStableId(grp.groupId, "group")) err(`paper ${paper.paperId} invalid groupId: ${grp.groupId}`);
+  else if (text(grp.groupId) && stableIdNamespace(grp.groupId) !== paperNs) {
+    err(`paper ${paper.paperId} groupId ${grp.groupId} namespace differs from paperId`);
+  }
   if (!GROUP_TYPES.includes(grp.type)) err(`paper ${paper.paperId} group bad type: ${String(grp.type)}`);
   if (!Number.isInteger(grp.order) || grp.order < 1) err(`paper ${paper.paperId} group bad order`);
   const refs = grp.questionRefs ?? [];
@@ -275,6 +295,9 @@ function validateGroup(g: unknown, paper: CET6Paper, sec: PaperSection, errors: 
     if (seenQ.has(q.questionId)) err(`paper ${paper.paperId} duplicate questionId ${q.questionId}`);
     seenQ.add(q.questionId);
     if (!isValidStableId(q.questionId, "question")) err(`paper ${paper.paperId} invalid questionId: ${q.questionId}`);
+    else if (stableIdNamespace(q.questionId) !== paperNs) {
+      err(`paper ${paper.paperId} questionId ${q.questionId} namespace differs from paperId`);
+    }
     const qq = q as PaperQuestion;
     if (!Number.isInteger(qq.order) || qq.order < 1) err(`paper ${paper.paperId} question ${qq.questionId} bad order`);
     if (!text(qq.prompt)) err(`paper ${paper.paperId} question ${qq.questionId} missing prompt`);

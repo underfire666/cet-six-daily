@@ -1,7 +1,7 @@
 import type { ContentPack } from "./types";
 import { getSource } from "./sources";
 import { validatePaper } from "./papers";
-import { rightsIssues } from "./rights";
+import { isRealStableId } from "./stable-id";
 import { hashString } from "./normalize";
 
 export interface ValidationIssue { level: "error" | "warning"; packId: string; itemId?: string; message: string }
@@ -82,16 +82,12 @@ export function validatePack(pack: ContentPack): ValidationIssue[] {
       }
     }
     if (pack.contentType === "paper") {
+      // V13 Phase 1.1：validatePack 只做结构校验（schema validity）。
+      // rights unknown / permission_required / unverified official 允许以 staging/raw 状态
+      // 进入系统做人工审查（“可以被系统保存/审计”）；production 发布权由
+      // rightsVerdict / rightsIssues(scope="production") / getPublishableItems 分层把关
+      // （“可以被产品发布”），学习页 Selector 永远抽不到非 allowed 内容。
       for (const message of validatePaper(item)) error(message,id);
-      // V13：production published pack 强制 rights（unknown / permission_required 拦截）
-      const itemRights = (item as { rights?: unknown }).rights as
-        | { licenseStatus?: string }
-        | undefined;
-      if (itemRights) {
-        for (const issue of rightsIssues(itemRights as never, { scope: "production" })) {
-          error(`rights: ${issue.message}`, id);
-        }
-      }
     }
     if (item.schemaVersion !== undefined && !text(item.schemaVersion)) error("invalid schemaVersion",id);
     if (item.contentVersion !== undefined && !text(item.contentVersion)) error("invalid contentVersion",id);
@@ -120,8 +116,9 @@ export function validateAll(packs: ContentPack[]): ValidationReport {
           if (ids.has(itemId)) issues.push({level:"error",packId:pack.id,itemId:itemId,message:`duplicate id across packs: ${itemId}`});
           ids.add(itemId);
         }
-        // paper identity duplicate
-        if (pack.contentType === "paper" && text(itemId)) {
+        // paper identity duplicate（仅 REAL namespace；FIXTURE namespace 结构上独立，
+        // synthetic fixture 与真实 2025-12 set1 永不冲突）
+        if (pack.contentType === "paper" && text(itemId) && isRealStableId(itemId)) {
           const yr = Number(item.year);
           const ses = Number(item.session);
           const st = Number(item.set);
