@@ -261,3 +261,21 @@ Content Identity + Rights Hardening：进入第一批真实内容之前的小型
 ### 未做（保持 Phase 2C 边界）
 
 未开始 Phase 2D；未生成正式音频；Paper 001 保持 staging 未转 active/published；未开始 V14；未 merge main / 打 tag / 建 Release。
+## V13 Phase 2C.1（2026-09-28，分支 feature/v13-real-content）
+
+### 目标
+
+对 Paper 001 做真正的内容级独立 Editorial Acceptance（57 题逐题语义审查）、清理 "TEST FIXTURE" 文档残留、核查 fixture 目录语义、修正答案分布生成偏差，并做 Git 收尾。
+
+### 已完成并验证
+
+- **独立 Editorial Review**：Writing / Listening / Reading / Translation / Explanation / Language / Difficulty 七项全部 PASS（难度口径为 "editorially calibrated to CET6 specification"，不宣称与官方真实难度等值）。
+- **修复内容缺陷**：cloze q5 双解（选项 B close→cross，消除 bridge/close 双解，讲解同步）；答案位置分布偏差（修订前 a13/b21/c9/d2 → 修订后 a14/b10/c11/d10，重排 15 题选项顺序，题目内容与干扰项语义不变，讲解字母引用同步）。
+- **TEST FIXTURE 文档残留**："V13_CONTENT_SPECIFICATION.md" 两处旧表述修正为 self-authored/original/owned/staging/complete provenance（L104/L114 正确语义保留）。
+- **fixture 目录语义**：Paper 001 自 "src/content/fixture/" 迁移至 "src/content/papers/cet6-mock-paper-001.ts"（fixture/ 仅保留 TEST FIXTURE），脚本/测试/文档 import 路径同步；contentVersion 1.0.0 → 1.0.1。
+- **Gates**：npm test 447/447、typecheck PASS、lint 0 errors 0 warnings、build PASS、content:validate 0 errors 0 warnings（Paper 001 仍 staging）、content:stats PASS、content:rights PASS（production pool 空）。
+- **提交**："fix: refine V13 mock paper 001 editorial quality" + docs commit，已 push "feature/v13-real-content"；v12.0 tag 未动。
+
+### 未做（保持 Phase 2C.1 边界）
+
+未开始 Phase 2D；未生成正式音频；Paper 001 保持 staging；未开始 V14；未 merge main / 打 tag / 建 Release。
