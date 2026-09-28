@@ -43,7 +43,6 @@ import {
 import {
   buildSectionQuestionIds,
   buildQuestionIdToCorrect,
-  buildQuestionIdToQuestion,
   flattenPaperQuestions,
   getPaperTotalQuestions,
 } from "../src/lib/paper/content";
@@ -300,7 +299,6 @@ test("Paper Review: listening wrong answers map to sourceModule=listening", () =
   const paper = setup();
   let session = makeSession(paper);
   // Answer all listening questions wrong
-  const questionIdToCorrect = buildQuestionIdToCorrect(paper);
   for (const section of paper.sections) {
     if (section.type !== "listening") continue;
     for (const group of section.groups) {
@@ -347,7 +345,7 @@ test("Paper XP: settlePaperXp is idempotent for same event ID", () => {
   };
   const { profile: p1, xpAdded: xp1 } = settlePaperXp(profile, paper.paperId, session, result);
   assert.ok(xp1 > 0);
-  const { profile: p2, xpAdded: xp2, alreadySettled } = settlePaperXp(p1, paper.paperId, session, result);
+  const { xpAdded: xp2, alreadySettled } = settlePaperXp(p1, paper.paperId, session, result);
   assert.equal(xp2, 0);
   assert.equal(alreadySettled, true);
 });

@@ -18,8 +18,6 @@
 import { useMemo, useState } from "react";
 import { usePaper } from "./PaperProvider";
 import { flattenPaperQuestions, getGroupAudioAsset } from "@/lib/paper/content";
-import type { FlattenedPaperQuestion } from "@/lib/paper/content";
-import type { PaperSectionKind } from "@/content/papers";
 
 const SECTION_NAMES: Record<string, string> = {
   writing: "写作",

@@ -22,7 +22,7 @@
 import type { CET6Paper } from "@/content/papers";
 import type { PaperSessionState } from "@/types/paper";
 import type { ReviewItem, ReviewStore } from "@/types/review";
-import { emptyReviewStore, loadReviewStore, saveReviewStore, isValidReviewItem } from "@/lib/review/store";
+import { loadReviewStore, saveReviewStore, isValidReviewItem } from "@/lib/review/store";
 import { getWrongQuestionIds } from "@/lib/paper/session";
 import { buildQuestionIdToCorrect, flattenPaperQuestions } from "@/lib/paper/content";
 import { todayInShanghai } from "@/lib/dates";

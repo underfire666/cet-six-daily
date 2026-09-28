@@ -117,12 +117,17 @@ function openAnswer(
   difficulty?: "easy" | "normal" | "hard",
 ): PaperQuestion {
   void difficulty;
+  // Matching 题需要 A-J 段落选项供 UI 渲染
+  const options = type === "matching"
+    ? ["A","B","C","D","E","F","G","H","I","J"].map((id) => ({ id, text: "Paragraph " + id }))
+    : undefined;
   return {
     questionId: q(group, order),
     order,
     prompt,
     type,
     answerText,
+    options,
     answerKey: { value: answerText, source: "cet6-mock-paper-001" },
     shortExplanation,
     detailedExplanation,

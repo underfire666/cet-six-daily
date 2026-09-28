@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { CET6Paper } from "@/content/papers";
@@ -70,17 +70,36 @@ function createNewPaperSession(paper: CET6Paper, ownerNamespace: string): PaperS
   });
 }
 
+function loadSessionFromStorage(paperId: string, ownerNamespace: string): PaperProviderState {
+  if (typeof window === "undefined") return { session: null, loading: true };
+  const inProgress = findInProgressSession(paperId, ownerNamespace);
+  const hasAnswers = inProgress && Object.keys(inProgress.answers ?? {}).length > 0;
+  if (inProgress && hasAnswers) return { session: inProgress, loading: false };
+  const completed = findLatestCompletedSession(paperId, ownerNamespace);
+  if (completed) return { session: completed, loading: false };
+  if (inProgress) return { session: inProgress, loading: false };
+  return { session: null, loading: false };
+}
+
 export function PaperProvider({ paper, ownerNamespace, isLoggedIn, onIssue, children }: PaperProviderProps) {
-  const [state, setState] = useState<PaperProviderState>(() => { const inProgress = findInProgressSession(paper.paperId, ownerNamespace); if (inProgress) return { session: inProgress, loading: false }; return { session: findLatestCompletedSession(paper.paperId, ownerNamespace), loading: false }; });
+  // SSR 和首次客户端渲染保持一致（loading=true, session=null），避免 hydration mismatch
+  const [state, setState] = useState<PaperProviderState>({ session: null, loading: true });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hydratedRef = useRef(false);
+
+  // 挂载后从 localStorage 恢复 session（仅执行一次）
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    setState(loadSessionFromStorage(paper.paperId, ownerNamespace));
+  }, [paper.paperId, ownerNamespace]);
 
   const session = state.session;
   const loading = state.loading;
 
   const sectionQuestionIds = buildSectionQuestionIds(paper);
   const questionIdToCorrect = buildQuestionIdToCorrect(paper);
-
 
   const persist = useCallback((s: PaperSessionState) => {
     setSaveStatus("saving");
