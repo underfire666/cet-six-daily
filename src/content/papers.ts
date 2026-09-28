@@ -106,6 +106,14 @@ export interface PaperAsset {
   duration?: number;
   checksum?: string;
   rights?: ContentRights;
+  /** V13 Phase 2D: audio provenance (optional, backward compatible). */
+  sizeBytes?: number;
+  contentVersion?: string;
+  generatedAt?: string;
+  provider?: string;
+  voice?: string;
+  termsCheckedDate?: string;
+  format?: string;
 }
 
 export interface CET6Paper {

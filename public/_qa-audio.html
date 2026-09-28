@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>QA Audio Smoke</title>
+<style>
+  body { font-family: sans-serif; margin: 24px; }
+  .row { margin: 14px 0; }
+  audio { width: 100%; }
+  button { margin: 4px 8px 4px 0; padding: 6px 14px; }
+  #log { white-space: pre-wrap; font-family: monospace; font-size: 12px; margin-top: 16px; color: #333; }
+</style>
+</head>
+<body>
+<h1>Paper 001 Listening Audio QA</h1>
+<div class="row" id="row-conv">
+  <b>long_conversation g1</b>
+  <audio id="a1" preload="auto" src="/audio/papers/p001-long-conversation-g1.mp3" controls></audio>
+</div>
+<div class="row" id="row-pass">
+  <b>passage g2</b>
+  <audio id="a2" preload="auto" src="/audio/papers/p001-passage-g2.mp3" controls></audio>
+</div>
+<div class="row" id="row-lec">
+  <b>lecture g3</b>
+  <audio id="a3" preload="auto" src="/audio/papers/p001-lecture-g3.mp3" controls></audio>
+</div>
+<div>
+  <button id="playAll">Play All</button>
+  <button id="pauseAll">Pause All</button>
+  <button id="resumeAll">Resume All</button>
+  <button id="rate08">0.8x</button>
+  <button id="rate10">1.0x</button>
+  <button id="replayA1">Replay A1</button>
+</div>
+<div id="log"></div>
+<script>
+  const logEl = document.getElementById("log");
+  const audios = [document.getElementById("a1"), document.getElementById("a2"), document.getElementById("a3")];
+  function log(msg) { logEl.textContent += msg + "\n"; }
+  function ready(a) { return a.readyState >= 2 ? a.duration : null; }
+  audios.forEach((a, i) => {
+    a.addEventListener("error", () => log(`audio${i + 1} ERROR: ${a.error ? a.error.code : "unknown"} src=${a.currentSrc}`));
+    a.addEventListener("loadedmetadata", () => log(`audio${i + 1} metadata duration=${a.duration.toFixed(1)}s`));
+    a.addEventListener("ended", () => log(`audio${i + 1} ENDED`));
+    a.addEventListener("play", () => log(`audio${i + 1} PLAY`));
+    a.addEventListener("pause", () => log(`audio${i + 1} PAUSE`));
+    a.addEventListener("canplay", () => log(`audio${i + 1} CANPLAY`));
+  });
+  document.getElementById("playAll").onclick = () => audios.forEach((a) => a.play());
+  document.getElementById("pauseAll").onclick = () => audios.forEach((a) => a.pause());
+  document.getElementById("resumeAll").onclick = () => audios.forEach((a) => a.play());
+  document.getElementById("rate08").onclick = () => { audios.forEach((a) => { a.playbackRate = 0.8; log(`audio rate -> 0.8`); }); };
+  document.getElementById("rate10").onclick = () => { audios.forEach((a) => { a.playbackRate = 1.0; log(`audio rate -> 1.0`); }); };
+  document.getElementById("replayA1").onclick = () => { const a = audios[0]; a.currentTime = 0; a.play(); log("audio1 replay from 0"); };
+  window.addEventListener("error", (e) => log(`window error: ${e.message}`));
+  log("QA page loaded");
+</script>
+</body>
+</html>

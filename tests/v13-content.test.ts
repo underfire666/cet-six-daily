@@ -1192,7 +1192,7 @@ test("paper 001: 每题都有解析（short + detailed）", () => {
   }
 });
 
-test("paper 001: 听力 4 组全部有 transcript；3 个 audio 为明确 staging placeholder 且带 rights", () => {
+test("paper 001: 听力 4 组全部有 transcript；3 个 audio 为 Phase 2D 真实资产且带 rights", () => {
   const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
   assert.equal(listening.groups.length, 4);
   for (const g of listening.groups) {
@@ -1201,9 +1201,11 @@ test("paper 001: 听力 4 组全部有 transcript；3 个 audio 为明确 stagin
   const audioAssets = (mockPaper001.assets ?? []).filter((a) => a.type === "audio");
   assert.equal(audioAssets.length, 3);
   for (const a of audioAssets) {
-    assert.ok(a.source.startsWith("mock://"), `${a.assetId} 必须用 mock:// 占位 source`);
-    assert.ok(a.source.includes("placeholder") || a.rights?.notes?.includes("staging placeholder"), `${a.assetId} 必须明确标注 placeholder`);
+    assert.ok(!a.source.startsWith("mock://"), `${a.assetId} 必须是真实音频 source（Phase 2D 已替换 placeholder）`);
+    assert.ok(a.source.startsWith("/audio/papers/"), `${a.assetId} source 应为 public 音频路径`);
+    assert.ok(a.checksum && a.checksum.length >= 64, `${a.assetId} 缺真实 checksum`);
     assert.equal(a.rights?.licenseStatus, "owned", `${a.assetId} 必须带 rights=owned`);
+    assert.ok(a.rights?.notes?.includes("Phase 2D"), `${a.assetId} rights notes 应记录 Phase 2D 生成与条款`);
   }
 });
 
@@ -1245,4 +1247,56 @@ test("paper 001: 注册后与 synthetic fixture / 内置 pack 共存，全库 du
   const report = validateAll([...registeredPacks(), getContentPack("pack-paper-cet6-mock-001")!] as never);
   assert.equal(report.errors.length, 0, `全库校验错误: ${report.errors.map((e) => e.message).join("; ")}`);
   assert.equal(report.warnings.length, 0, `全库校验警告: ${report.warnings.map((e) => e.message).join("; ")}`);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2D: Paper 001 Listening Audio
+
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+function paper001AudioAssets() {
+  return (mockPaper001.assets ?? []).filter((a) => a.type === "audio");
+}
+
+test("paper 001 audio: 3 个真实音频资产，无 mock:// placeholder 残留", () => {
+  const audios = paper001AudioAssets();
+  assert.equal(audios.length, 3, "Paper 001 应有 3 个音频资产");
+  for (const a of audios) {
+    assert.ok(!a.source.startsWith("mock://"), `${a.assetId} 仍是 placeholder: ${a.source}`);
+    assert.ok(a.source.startsWith("/audio/papers/"), `${a.assetId} source 应为 public 音频路径: ${a.source}`);
+  }
+});
+
+test("paper 001 audio: 音频文件存在且 size>0（从实际文件检查）", () => {
+  for (const a of paper001AudioAssets()) {
+    const fp = path.resolve(process.cwd(), "public", a.source.replace(/^\//, ""));
+    assert.ok(fs.existsSync(fp), `${a.assetId} 文件不存在: ${a.source}`);
+    const stat = fs.statSync(fp);
+    assert.ok(stat.size > 0, `${a.assetId} 文件为空`);
+    if (typeof a.sizeBytes === "number") assert.equal(a.sizeBytes, stat.size, `${a.assetId} sizeBytes 与实际文件不一致`);
+  }
+});
+
+test("paper 001 audio: checksum/duration/mimeType/provenance/rights 元数据完整", () => {
+  for (const a of paper001AudioAssets()) {
+    assert.ok(a.checksum && a.checksum.length >= 64, `${a.assetId} 缺 checksum`);
+    assert.ok(typeof a.duration === "number" && a.duration > 30, `${a.assetId} duration 缺失或过小`);
+    assert.equal(a.mimeType, "audio/mpeg", `${a.assetId} mimeType 错误`);
+    for (const f of ["sizeBytes", "contentVersion", "generatedAt", "provider", "voice", "termsCheckedDate"]) {
+      assert.ok((a as unknown as Record<string, unknown>)[f] !== undefined && String((a as unknown as Record<string, unknown>)[f]) !== "", `${a.assetId} 缺 provenance 字段 ${f}`);
+    }
+    assert.ok(a.rights?.licenseStatus && a.rights?.rightsHolder && a.rights?.notes, `${a.assetId} rights metadata 不完整`);
+  }
+});
+
+test("paper 001 audio: transcript/contentVersion 与 audio version 一致（无漂移）", () => {
+  for (const a of paper001AudioAssets()) {
+    assert.equal(a.contentVersion, mockPaper001.contentVersion, `${a.assetId} audio version 与 paper contentVersion 不一致`);
+  }
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const audioIds = new Set(paper001AudioAssets().map((a) => a.assetId));
+  const referenced = new Set<string>();
+  for (const g of listening.groups) for (const r of g.assetIds ?? []) referenced.add(r);
+  assert.equal(referenced.size, 3, "listening 组应引用 3 个音频");
+  for (const r of referenced) assert.ok(audioIds.has(r), `group 引用未知 audio asset: ${r}`);
 });

@@ -21,6 +21,10 @@
  * - cloze q5 选项 close→cross，消除 bridge/close 双解。
  * - 文件自 src/content/fixture/ 迁移至 src/content/papers/（fixture/ 仅用于 TEST FIXTURE）。
  *
+ * Phase 2D（audio production, 2026-09-28）：3 个音频资产已由豆包语音 TTS 生成（自研 transcript → WAV 分段 → 拼接转码 MP3，public/audio/papers/），
+ * asset 元数据含 provider/voice/termsCheckedDate/duration/checksum/sizeBytes；rights 独立记录（generated audio rights ≠ paper rights）；
+ * contentVersion 1.0.1（transcript 未变，audio 与 transcript 版本一致）。Paper 001 仍 staging。
+ *
  * 稳定 ID 全部由 cet6:mock:paper-001 确定性派生（extendStableId），无随机/索引 ID。
  */
 import { registerContentPack } from "../registry";
@@ -1006,40 +1010,61 @@ export const mockPaper001: CET6Paper = {
     {
       assetId: audioConv,
       type: "audio",
-      source: "mock://cet6-mock-paper-001/long-conversation-g1.mp3",
+      source: "/audio/papers/p001-long-conversation-g1.mp3",
       mimeType: "audio/mpeg",
-      duration: 150,
-      checksum: "paper-001-audio-placeholder-conv",
+      duration: 128.9,
+      checksum: "adb63cefb7041d54f5248f1e23ccf644feeae8270c108aaa4754c4ec5dfb2260",
+      sizeBytes: 2063090,
+      format: "mp3",
+      contentVersion: "1.0.1",
+      generatedAt: "2026-09-28",
+      provider: "volcengine-doubao-voice",
+      voice: "prebuilt neural voices (female student + male professor), natural American English",
+      termsCheckedDate: "2026-09-28",
       rights: {
         licenseStatus: "owned",
         rightsHolder: "CET-6 Daily Project",
-        notes: "staging placeholder asset：音频尚未生成（Phase 2C 不生成/不引入真实音频）。",
+        notes: "Phase 2D：由项目自研 transcript（owned）经豆包语音 TTS 生成；输出可用于产品内学习播放（火山引擎《生成式模型服务专用条款》3.3/3.5，2026-08-20 版）；仅限中国大陆地区；staging 资产，未发布。",
       },
     },
     {
       assetId: audioPassage,
       type: "audio",
-      source: "mock://cet6-mock-paper-001/passage-g2.mp3",
+      source: "/audio/papers/p001-passage-g2.mp3",
       mimeType: "audio/mpeg",
-      duration: 150,
-      checksum: "paper-001-audio-placeholder-passage",
+      duration: 111.2,
+      checksum: "c6e38c85052e0d50514d56f9f62b641e46b5dc4eb1b520944dfc984ce9b64af0",
+      sizeBytes: 1779714,
+      format: "mp3",
+      contentVersion: "1.0.1",
+      generatedAt: "2026-09-28",
+      provider: "volcengine-doubao-voice",
+      voice: "prebuilt neural voice (female narrator), natural American English",
+      termsCheckedDate: "2026-09-28",
       rights: {
         licenseStatus: "owned",
         rightsHolder: "CET-6 Daily Project",
-        notes: "staging placeholder asset：音频尚未生成（Phase 2C 不生成/不引入真实音频）。",
+        notes: "Phase 2D：由项目自研 transcript（owned）经豆包语音 TTS 生成；输出可用于产品内学习播放（火山引擎《生成式模型服务专用条款》3.3/3.5，2026-08-20 版）；仅限中国大陆地区；staging 资产，未发布。",
       },
     },
     {
       assetId: audioLectureA,
       type: "audio",
-      source: "mock://cet6-mock-paper-001/lecture-g3.mp3",
+      source: "/audio/papers/p001-lecture-g3.mp3",
       mimeType: "audio/mpeg",
-      duration: 150,
-      checksum: "paper-001-audio-placeholder-lecture-a",
+      duration: 108.9,
+      checksum: "91e38671e352ac369791e74e1e725c2b544af6e904988506bacc3b850af32253",
+      sizeBytes: 1743351,
+      format: "mp3",
+      contentVersion: "1.0.1",
+      generatedAt: "2026-09-28",
+      provider: "volcengine-doubao-voice",
+      voice: "prebuilt neural voice (male lecturer), natural American English",
+      termsCheckedDate: "2026-09-28",
       rights: {
         licenseStatus: "owned",
         rightsHolder: "CET-6 Daily Project",
-        notes: "staging placeholder asset：音频尚未生成（Phase 2C 不生成/不引入真实音频）。",
+        notes: "Phase 2D：由项目自研 transcript（owned）经豆包语音 TTS 生成；输出可用于产品内学习播放（火山引擎《生成式模型服务专用条款》3.3/3.5，2026-08-20 版）；仅限中国大陆地区；staging 资产，未发布。",
       },
     },
   ],
