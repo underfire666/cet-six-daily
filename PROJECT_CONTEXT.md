@@ -236,3 +236,28 @@ Content Identity + Rights Hardening：进入第一批真实内容之前的小型
 ### 未做（保持 Phase 1.1 边界）
 
 不导入真实真题/音频/培训机构材料；不改学习 UI/首页/账号；不改 V12 tag/Release；不开始 V13 Phase 2。
+
+## V13 Phase 2B / 2B.1（2026-09-28，分支 feature/v13-real-content）
+
+- **Phase 2B**（commit b048ae4 / 6a17579 / 0844ada）：Paper 内容契约（V13_PAPER_CONTENT_CONTRACT.md）+ Content Specification 的 Paper 001 生产规范（V13_CONTENT_SPECIFICATION.md）+ Phase 2B 报告。
+- **Phase 2B.1**（commit 91f4567 code + 2a190b2 docs）：三 namespace（real/fixture/mock）结构隔离；production Paper 显式 examSpecId 强绑定（KNOWN_EXAM_SPEC_IDS 历史列表稳定）；Paper 001 正式 ID 定为 `cet6:mock:paper-001`（弃用 `cet6:2026-6:set1`，不建 alias）；public_domain 必须有 evidence。
+- **验证**：npm test 435/435、typecheck/lint/build PASS、content:validate/stats/rights PASS、production pool 空。PHASE2B1 FINAL HEAD = `2a190b2`（Local == Remote）。
+
+## V13 Phase 2C（2026-09-28，分支 feature/v13-real-content）
+
+### 目标
+
+生产第一套完整原创高仿真模拟卷 Paper 001（`cet6:mock:paper-001`，57 题/任务，`cet6-current-2026` 显式绑定），全部内容原创、不导入真实真题/音频/第三方解析，status=staging 保持生产隔离。
+
+### 已完成并验证
+
+- **Paper 001 完整落盘**：`src/content/fixture/cet6-mock-paper-001.ts`（Writing 1 / Listening 25（长对话 8+篇章 7+讲话·报道·讲座 10）/ Reading 30（cloze 10+matching 10+careful 10）/ Translation 1；每题 short+detailed 解析，听力 4 组全 transcript，3 个音频为明确 staging placeholder（未生成真实音频））；`sources.ts` 新增 `MOCK_PAPER_001_SOURCE`（original/owned）；三个内容脚本注册 + content-validate 断言。
+- **身份**：authenticity=original、fixture=false、isPartial=false、status=staging、rights=owned、namespace=MOCK（section/group/question/asset 全部由 `cet6:mock:paper-001` 确定性派生）。
+- **专项测试 12 项**（v13-content.test.ts 435 → 447）：身份/57 题 conformance/section 结构/listening 25/reading 30/答案完整/解析完整/transcript+audio placeholder/asset 无 orphan/rights+provenance/staging 不进 production/全库 duplicate=0。
+- **Gates**：npm test 447/447、typecheck PASS、lint 0 errors 0 warnings、build PASS、content:validate 0 errors 0 warnings、content:stats PASS、content:rights PASS（owned 2 / unknown 5；production pool 空）。
+- **Whole-paper editorial QA（§15/§16）**：结构 conformance PASS、每题答案+解析 PASS、transcript+asset 引用 PASS、stable ID 唯一 PASS；答案分布 choice 45 → a=13/b=21/c=9/d=2，matching → E,F,A,G,D,I,J,C,H,B（b 略多，如实记录）。
+- **提交**：`feat: add V13 original mock paper 001`（+ docs 独立 commit），已 push `feature/v13-real-content`；v12.0 tag 未动。
+
+### 未做（保持 Phase 2C 边界）
+
+未开始 Phase 2D；未生成正式音频；Paper 001 保持 staging 未转 active/published；未开始 V14；未 merge main / 打 tag / 建 Release。

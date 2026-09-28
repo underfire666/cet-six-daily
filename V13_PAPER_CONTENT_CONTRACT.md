@@ -181,3 +181,16 @@ V13 Phase 2B 强制规则（`validatePaper` 执行）：
 - `difficulty.ts` → `unifiedDifficulty`（easy/normal/hard；词汇 1–5 映射）为唯一难度口径。
 - 题目/篇章可复用 CEFR 等级、topic 标签、skill 标签作为辅助质量元数据（不改变 unifiedDifficulty 语义）。
 - 生产门槛：content:validate Errors=0；每题有答案+解析；每篇有难度；Listening 有脚本与音频 rights。
+
+---
+
+## 11. V13 Phase 2C 落地记录（Paper 001）
+
+- **Paper ID**: `cet6:mock:paper-001`（MOCK namespace，`mockPaperStableId("paper-001")`；不使用 REAL date namespace）。
+- **Pack**: `pack-paper-cet6-mock-001`；**Source**: `src-cet6-mock-paper-001`（original / owned）。
+- **文件**: `src/content/fixture/cet6-mock-paper-001.ts`（原创正文 + 确定性 stable ID 派生）。
+- **结构**: 57 题/任务，`examSpecId="cet6-current-2026"`（显式绑定）：Writing 1 / Listening 25（长对话 8 + 篇章 7 + 讲话·报道·讲座 10）/ Reading 30（选词填空 10 + 匹配 10 + 仔细阅读 10）/ Translation 1。
+- **身份**: authenticity=original、fixture=false、isPartial=false、status=staging、rights=owned。
+- **音频**: 3 个明确 staging placeholder asset（`mock://cet6-mock-paper-001/…`，rights=owned，注明“音频尚未生成”）；Phase 2C 不生成/不引入真实音频。
+- **生产隔离**: status=staging → `getPublishableItems` 不含 Paper 001；Phase 2D/2E 独立验收后才允许转 active/published。
+- **内容原创性**: 全部正文由本项目编写，未复制真实真题、未复制第三方解析、未引入真实 CET6 音频。

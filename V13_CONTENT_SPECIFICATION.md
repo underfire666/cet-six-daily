@@ -165,3 +165,15 @@ V13 Paper 是 **V10 Content System 的扩展，而非平行系统**：
 - 复用 `rights.ts` / `lifecycle.ts` / `aliases.ts` / `difficulty.ts`。
 
 **不新建** PaperRepository / 第二套注册表 / 第二套校验器。
+
+---
+
+## 7. V13 Phase 2C 落地状态（Paper 001 已生产，staging）
+
+- **交付文件**: `src/content/fixture/cet6-mock-paper-001.ts` + `src/content/sources.ts` 新增 `MOCK_PAPER_001_SOURCE`（original / owned）+ 三个内容脚本注册。
+- **结构**: 57 题/任务，`cet6-current-2026` 显式绑定；Writing 1 / Listening 25（长对话 8 + 篇章 7 + 讲话·报道·讲座 10）/ Reading 30（cloze 10 + matching 10 + careful 10）/ Translation 1。
+- **身份**: authenticity=original、fixture=false、isPartial=false、status=staging、rights=owned、namespace=MOCK。
+- **内容**: 全部原创（自写 scripts/passages/questions/explanations）；3 个音频为明确 staging placeholder（`mock://`，未生成真实音频）。
+- **质量门槛**: content:validate Errors=0/Warnings=0；content:stats / content:rights PASS；content:rights production pool 为空；npm test 447/447（含新增 12 项 Paper 001 专项）；typecheck / lint / build 全 PASS；whole-paper editorial QA PASS（每题答案+解析、transcript、asset 引用、stable ID 唯一）。
+- **答案分布（§16 QA 记录）**: choice 45 题 → a=13 / b=21 / c=9 / d=2（b 略多，如实记录，不以牺牲正确性凑平均）；matching 10 题 → E,F,A,G,D,I,J,C,H,B。
+- **Known limitation**: 音频占位未生成；choice 答案分布 b 略偏多；status 保持 staging 不暴露生产。
