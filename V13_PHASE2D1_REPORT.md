@@ -131,6 +131,22 @@
   - 语速适中
 - `_qa-audio.html` 提供 Play All / Pause / 0.8x / 1.0x / Replay / Check Durations 按钮供人工试听
 
+### AUDIO_QA_RESULTS（7 items）
+
+| # | Asset | Duration | 文件完整 | 可播放 | 自动化检查 | 人工试听（11项） |
+|---|-------|----------|---------|--------|-----------|-----------------|
+| 1 | long-conversation-g1 | 155.8s | PASS | PASS | checksum/size/duration 一致；2段拼接 | 待人工 |
+| 2 | long-conversation-g2 | 142.6s | PASS | PASS | checksum/size/duration 一致；2段拼接；英音 | 待人工 |
+| 3 | passage-g1 | 88.9s | PASS | PASS | checksum/size/duration 一致；单段 | 待人工 |
+| 4 | passage-g2 | 85.1s | PASS | PASS | checksum/size/duration 一致；单段 | 待人工 |
+| 5 | lecture-g1 | 149.2s | PASS | PASS | checksum/size/duration 一致；2段拼接 | 待人工 |
+| 6 | lecture-g2 | 127.7s | PASS | PASS | checksum/size/duration 一致；2段拼接 | 待人工 |
+| 7 | lecture-g3 | 113.0s | PASS | PASS | checksum/size/duration 一致；单段；新增主题 | 待人工 |
+
+**自动化检查全部 PASS**：7 个文件存在、size>0、checksum 与元数据一致、duration 一致、浏览器 readyState=4、可播放、网络请求 200。
+
+**人工试听未完成**：clarity / naturalness / stitching quality / speaker distinction / pronunciation / numbers-dates / proper nouns / volume consistency / TTS glitch / speed 共 11 项需人耳判断。AI 无法替代人耳，故 **MANUAL_AUDIO_QA_COMPLETE = PARTIAL**。
+
 ---
 
 ## 7. 验收字段
@@ -155,6 +171,19 @@
 | PAPER_STATUS | staging |
 | PRODUCTION_POOL_CONTAINS_PAPER001 | NO |
 | PHASE_2E_STARTED | NO |
+
+### Git Finalization
+
+| 字段 | 值 |
+|------|-----|
+| PHASE2D1_CODE_COMMIT | `1126dab` |
+| PHASE2D1_DOCS_COMMIT | `82520ac` |
+| LOCAL_HEAD | `82520ac298f484b0ad1f2f572880b040a62e95ff` |
+| REMOTE_HEAD | `82520ac298f484b0ad1f2f572880b040a62e95ff` |
+| LOCAL == REMOTE | **YES** |
+| WORKTREE | **CLEAN** |
+| V12_TAG | `697772d9412d9d1a4253e099a001734a5230e264`（未动） |
+| BRANCH | `feature/v13-real-content` |
 
 ---
 
