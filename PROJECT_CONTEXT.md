@@ -251,7 +251,7 @@ Content Identity + Rights Hardening：进入第一批真实内容之前的小型
 
 ### 已完成并验证
 
-- **Paper 001 完整落盘**：`src/content/fixture/cet6-mock-paper-001.ts`（Writing 1 / Listening 25（长对话 8+篇章 7+讲话·报道·讲座 10）/ Reading 30（cloze 10+matching 10+careful 10）/ Translation 1；每题 short+detailed 解析，听力 4 组全 transcript，3 个音频为明确 staging placeholder（未生成真实音频））；`sources.ts` 新增 `MOCK_PAPER_001_SOURCE`（original/owned）；三个内容脚本注册 + content-validate 断言。
+- **Paper 001 完整落盘**：`src/content/papers/cet6-mock-paper-001.ts`（Writing 1 / Listening 25（长对话 8+篇章 7+讲话·报道·讲座 10）/ Reading 30（cloze 10+matching 10+careful 10）/ Translation 1；每题 short+detailed 解析，听力 4 组全 transcript，3 个音频为明确 staging placeholder（未生成真实音频））；`sources.ts` 新增 `MOCK_PAPER_001_SOURCE`（original/owned）；三个内容脚本注册 + content-validate 断言。
 - **身份**：authenticity=original、fixture=false、isPartial=false、status=staging、rights=owned、namespace=MOCK（section/group/question/asset 全部由 `cet6:mock:paper-001` 确定性派生）。
 - **专项测试 12 项**（v13-content.test.ts 435 → 447）：身份/57 题 conformance/section 结构/listening 25/reading 30/答案完整/解析完整/transcript+audio placeholder/asset 无 orphan/rights+provenance/staging 不进 production/全库 duplicate=0。
 - **Gates**：npm test 447/447、typecheck PASS、lint 0 errors 0 warnings、build PASS、content:validate 0 errors 0 warnings、content:stats PASS、content:rights PASS（owned 2 / unknown 5；production pool 空）。

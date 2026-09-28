@@ -188,7 +188,7 @@ V13 Phase 2B 强制规则（`validatePaper` 执行）：
 
 - **Paper ID**: `cet6:mock:paper-001`（MOCK namespace，`mockPaperStableId("paper-001")`；不使用 REAL date namespace）。
 - **Pack**: `pack-paper-cet6-mock-001`；**Source**: `src-cet6-mock-paper-001`（original / owned）。
-- **文件**: `src/content/fixture/cet6-mock-paper-001.ts`（原创正文 + 确定性 stable ID 派生）。
+- **文件**: `src/content/papers/cet6-mock-paper-001.ts`（原创正文 + 确定性 stable ID 派生）。
 - **结构**: 57 题/任务，`examSpecId="cet6-current-2026"`（显式绑定）：Writing 1 / Listening 25（长对话 8 + 篇章 7 + 讲话·报道·讲座 10）/ Reading 30（选词填空 10 + 匹配 10 + 仔细阅读 10）/ Translation 1。
 - **身份**: authenticity=original、fixture=false、isPartial=false、status=staging、rights=owned。
 - **音频**: 3 个明确 staging placeholder asset（`mock://cet6-mock-paper-001/…`，rights=owned，注明“音频尚未生成”）；Phase 2C 不生成/不引入真实音频。

@@ -117,7 +117,7 @@ Paper identity 使用三个**结构上互不碰撞**的命名空间（`stable-id
 
 ## 5. Paper 001 — 第一套原创高仿真卷生产规范
 
-> 本文件只定义生产规范（结构、数量、来源、权利、质量门槛），**不包含任何试题正文**。试题正文由 Phase 2B 之后的原创生产流程产出，全部带 `TEST FIXTURE`/自研标记。
+> 本文件只定义生产规范（结构、数量、来源、权利、质量门槛），**不包含任何试题正文**。试题正文由 Phase 2B 之后的原创生产流程产出（self-authored / original / owned / staging / complete provenance），不使用 TEST FIXTURE 标记。
 
 ### 5.1 目标
 
@@ -142,7 +142,7 @@ Paper identity 使用三个**结构上互不碰撞**的命名空间（`stable-id
 3. 每题有 answerText/answerKey（非 choice）或 answerId（choice）+ 正确选项文本。
 4. 每题有 short + detailed explanation；每篇 passage/script 标注难度（unifiedDifficulty）。
 5. Listening 每个 group 有 transcript；每个 audio asset 有独立 rights。
-6. 全部题目带 `TEST FIXTURE` 标记与完整 provenance（作者/来源/时间/依据 spec）。
+6. 全部题目带完整 provenance（作者/来源/时间/依据 spec）；Paper 001 为 self-authored original mock（fixture=false），不使用 TEST FIXTURE 标记。
 7. `status: "staging"` 先行；人工验收后按 lifecycle 转 `active/published`。
 
 ### 5.4 明确禁止
@@ -170,7 +170,7 @@ V13 Paper 是 **V10 Content System 的扩展，而非平行系统**：
 
 ## 7. V13 Phase 2C 落地状态（Paper 001 已生产，staging）
 
-- **交付文件**: `src/content/fixture/cet6-mock-paper-001.ts` + `src/content/sources.ts` 新增 `MOCK_PAPER_001_SOURCE`（original / owned）+ 三个内容脚本注册。
+- **交付文件**: `src/content/papers/cet6-mock-paper-001.ts` + `src/content/sources.ts` 新增 `MOCK_PAPER_001_SOURCE`（original / owned）+ 三个内容脚本注册。
 - **结构**: 57 题/任务，`cet6-current-2026` 显式绑定；Writing 1 / Listening 25（长对话 8 + 篇章 7 + 讲话·报道·讲座 10）/ Reading 30（cloze 10 + matching 10 + careful 10）/ Translation 1。
 - **身份**: authenticity=original、fixture=false、isPartial=false、status=staging、rights=owned、namespace=MOCK。
 - **内容**: 全部原创（自写 scripts/passages/questions/explanations）；3 个音频为明确 staging placeholder（`mock://`，未生成真实音频）。

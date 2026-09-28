@@ -46,7 +46,7 @@ import { resetRegistry, getContentPack, getItems, getPublishableItems, getPaperB
 import { registerBuiltinPacks } from "../src/content/packs";
 import { validateAll } from "../src/content/validator";
 import { registerSyntheticPaperFixture, syntheticCet6Paper, SYNTHETIC_PAPER_ID, SYNTHETIC_FIXTURE_ID } from "../src/content/fixture/cet6-2025-12-synthetic";
-import { registerMockPaper001, mockPaper001, MOCK_PAPER_001_ID } from "../src/content/fixture/cet6-mock-paper-001";
+import { registerMockPaper001, mockPaper001, MOCK_PAPER_001_ID } from "../src/content/papers/cet6-mock-paper-001";
 import { registerAlias, resolveAlias } from "../src/content/aliases";
 import { CET6_EXAM_SPEC, KNOWN_EXAM_SPEC_IDS, allowedSubsections, isKnownExamSpecId } from "../src/content/exam-spec";
 import { vocabularyRepository } from "../src/content/repositories";
