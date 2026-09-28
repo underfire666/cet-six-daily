@@ -16,12 +16,13 @@ import { listContentPacks } from "../src/content/registry";
 import { registerSyntheticPaperFixture } from "../src/content/fixture/cet6-2025-12-synthetic";
 import {  } from "../src/content/papers/cet6-mock-paper-001";
 import { getPaperById } from "../src/content/registry";
-import { MOCK_PAPER_001_ID } from "../src/content/papers/cet6-mock-paper-001";
+import { MOCK_PAPER_001_ID, registerMockPaper001 } from "../src/content/papers/cet6-mock-paper-001";
 
 const PUBLIC_ROOT = path.resolve(__dirname, "../public");
 const MIN_DURATION_S = 30;
 
 registerBuiltinPacks();
+registerMockPaper001();
 registerSyntheticPaperFixture();
 
 const errors: string[] = [];
