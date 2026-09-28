@@ -2,12 +2,12 @@ import { registerBuiltinPacks } from "../src/content/packs";
 import { listContentPacks, getPublishableItems } from "../src/content/registry";
 import { validateAll } from "../src/content/validator";
 import { registerSyntheticPaperFixture, SYNTHETIC_PAPER_ID } from "../src/content/fixture/cet6-2025-12-synthetic";
-import { registerMockPaper001, MOCK_PAPER_001_ID } from "../src/content/papers/cet6-mock-paper-001";
+import { MOCK_PAPER_001_ID, registerMockPaper001 } from "../src/content/papers/cet6-mock-paper-001";
 import { getPaperById } from "../src/content/registry";
 
 registerBuiltinPacks();
-registerSyntheticPaperFixture();
 registerMockPaper001();
+registerSyntheticPaperFixture();
 const report = validateAll(listContentPacks());
 
 console.log("=== Content Validation ===");

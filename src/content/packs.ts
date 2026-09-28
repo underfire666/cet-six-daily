@@ -1,4 +1,4 @@
-import { mockVocabulary } from "@/data/mockVocabulary";
+﻿import { mockVocabulary } from "@/data/mockVocabulary";
 import { mockReadingArticles } from "@/data/mockReading";
 import { mockListeningMaterials } from "@/data/mockListening";
 import { mockTranslationTasks } from "@/data/mockTranslation";
@@ -81,4 +81,5 @@ export function registerBuiltinPacks(): void {
     }));
     registerContentPack(pack);
   }
+
 }

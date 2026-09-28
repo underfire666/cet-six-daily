@@ -14,7 +14,7 @@ import * as crypto from "node:crypto";
 import { registerBuiltinPacks } from "../src/content/packs";
 import { listContentPacks } from "../src/content/registry";
 import { registerSyntheticPaperFixture } from "../src/content/fixture/cet6-2025-12-synthetic";
-import { registerMockPaper001 } from "../src/content/papers/cet6-mock-paper-001";
+import {  } from "../src/content/papers/cet6-mock-paper-001";
 import { getPaperById } from "../src/content/registry";
 import { MOCK_PAPER_001_ID } from "../src/content/papers/cet6-mock-paper-001";
 
@@ -23,7 +23,6 @@ const MIN_DURATION_S = 30;
 
 registerBuiltinPacks();
 registerSyntheticPaperFixture();
-registerMockPaper001();
 
 const errors: string[] = [];
 const warnings: string[] = [];

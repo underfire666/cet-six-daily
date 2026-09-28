@@ -1114,7 +1114,7 @@ function setupWithPaper001() {
   registerBuiltinPacks();
   registerSyntheticPaperFixture();
   registerMockPaper001();
-}
+  }
 
 function paper001AllQuestions(): PaperQuestion[] {
   const out: PaperQuestion[] = [];

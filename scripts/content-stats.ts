@@ -2,13 +2,12 @@ import { registerBuiltinPacks } from "../src/content/packs";
 import { listContentPacks, getPackSource } from "../src/content/registry";
 import { unifiedDifficulty } from "../src/content/difficulty";
 import { registerSyntheticPaperFixture } from "../src/content/fixture/cet6-2025-12-synthetic";
-import { registerMockPaper001 } from "../src/content/papers/cet6-mock-paper-001";
+import {  } from "../src/content/papers/cet6-mock-paper-001";
 import { bucketOf } from "../src/content/rights";
 import type { CET6Paper } from "../src/content/papers";
 
 registerBuiltinPacks();
 registerSyntheticPaperFixture();
-registerMockPaper001();
 const packs = listContentPacks();
 
 const byType: Record<string, number> = {};
