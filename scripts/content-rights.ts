@@ -18,9 +18,11 @@ import { registerBuiltinPacks } from "../src/content/packs";
 import { listContentPacks, getPackSource, getPublishableItems } from "../src/content/registry";
 import { rightsVerdict, bucketOf, rightsIssues, type RightsVerdict } from "../src/content/rights";
 import { registerSyntheticPaperFixture } from "../src/content/fixture/cet6-2025-12-synthetic";
+import { registerMockPaper001 } from "../src/content/fixture/cet6-mock-paper-001";
 
 registerBuiltinPacks();
 registerSyntheticPaperFixture();
+registerMockPaper001();
 
 const verdictCounts: Record<RightsVerdict, number> = { allowed: 0, blocked: 0, unknown: 0 };
 const bucketCounts: Record<string, number> = {};

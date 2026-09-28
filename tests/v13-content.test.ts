@@ -46,6 +46,7 @@ import { resetRegistry, getContentPack, getItems, getPublishableItems, getPaperB
 import { registerBuiltinPacks } from "../src/content/packs";
 import { validateAll } from "../src/content/validator";
 import { registerSyntheticPaperFixture, syntheticCet6Paper, SYNTHETIC_PAPER_ID, SYNTHETIC_FIXTURE_ID } from "../src/content/fixture/cet6-2025-12-synthetic";
+import { registerMockPaper001, mockPaper001, MOCK_PAPER_001_ID } from "../src/content/fixture/cet6-mock-paper-001";
 import { registerAlias, resolveAlias } from "../src/content/aliases";
 import { CET6_EXAM_SPEC, KNOWN_EXAM_SPEC_IDS, allowedSubsections, isKnownExamSpecId } from "../src/content/exam-spec";
 import { vocabularyRepository } from "../src/content/repositories";
@@ -1099,4 +1100,149 @@ test("spec binding: explicit old examSpecId stays valid when current spec change
   real.examSpecId = "cet6-current-2026";
   const errors = validatePaper(real);
   assert.ok(!errors.some((e) => e.includes("unknown examSpecId")), `explicit old spec must remain valid: ${errors.join("; ")}`);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2C: Paper 001 生产验收
+
+function setupWithPaper001() {
+  resetRegistry();
+  resetImportBatches();
+  registerBuiltinPacks();
+  registerSyntheticPaperFixture();
+  registerMockPaper001();
+}
+
+function paper001AllQuestions(): PaperQuestion[] {
+  const out: PaperQuestion[] = [];
+  for (const sec of mockPaper001.sections) {
+    for (const g of sec.groups) {
+      if (g.questions) out.push(...g.questions);
+    }
+  }
+  return out;
+}
+
+test("paper 001: identity 符合 Phase 2C 规格（mock/original/full/staging）", () => {
+  assert.equal(mockPaper001.paperId, "cet6:mock:paper-001");
+  assert.equal(mockPaper001.examSpecId, "cet6-current-2026");
+  assert.equal(mockPaper001.authenticity, "original");
+  assert.equal(mockPaper001.fixture, false);
+  assert.equal(mockPaper001.isPartial, false);
+  assert.equal(mockPaper001.status, "staging");
+  assert.equal(mockPaper001.rights.licenseStatus, "owned");
+  assert.ok(isMockStableId(mockPaper001.paperId), "Paper 001 必须使用 MOCK namespace");
+  assert.ok(!isRealStableId(mockPaper001.paperId), "Paper 001 禁止 REAL namespace");
+  assert.ok(!isFixtureStableId(mockPaper001.paperId), "Paper 001 不是 fixture");
+});
+
+test("paper 001: 完整卷 57 题/任务 conformance 无 error", () => {
+  const errors = validatePaper(mockPaper001);
+  assert.deepEqual(errors, [], `Paper 001 结构错误: ${errors.join("; ")}`);
+});
+
+test("paper 001: section 结构 Writing1/Listening25/Reading30/Translation1", () => {
+  const byType = new Map<string, number>();
+  for (const sec of mockPaper001.sections) {
+    let n = 0;
+    for (const g of sec.groups) n += g.questions?.length ?? 0;
+    byType.set(sec.type, n);
+  }
+  assert.equal(byType.get("writing"), 1);
+  assert.equal(byType.get("listening"), 25);
+  assert.equal(byType.get("reading"), 30);
+  assert.equal(byType.get("translation"), 1);
+  assert.equal(paper001AllQuestions().length, 57);
+});
+
+test("paper 001: listening 25 = 长对话 8 + 篇章 7 + 讲话/报道/讲座 10", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const byGroup = new Map<string, number>();
+  for (const g of listening.groups) byGroup.set(g.type, (byGroup.get(g.type) ?? 0) + (g.questions?.length ?? 0));
+  assert.equal(byGroup.get("long_conversation"), 8);
+  assert.equal(byGroup.get("passage"), 7);
+  assert.equal(byGroup.get("lecture"), 10);
+});
+
+test("paper 001: reading 30 = 选词填空 10 + 匹配 10 + 仔细阅读 10", () => {
+  const reading = mockPaper001.sections.find((s) => s.type === "reading")!;
+  const byGroup = new Map<string, number>();
+  for (const g of reading.groups) byGroup.set(g.type, (byGroup.get(g.type) ?? 0) + (g.questions?.length ?? 0));
+  assert.equal(byGroup.get("cloze"), 10);
+  assert.equal(byGroup.get("matching"), 10);
+  assert.equal(byGroup.get("careful_reading"), 10);
+});
+
+test("paper 001: 每题都有答案（choice→answerId 合法；open→answerText）", () => {
+  const questions = paper001AllQuestions();
+  for (const q of questions) {
+    if (q.type === "choice") {
+      assert.ok(q.answerId, `choice ${q.questionId} 缺 answerId`);
+      assert.ok(q.options?.some((o) => o.id === q.answerId), `choice ${q.questionId} answerId 不在选项内`);
+    } else {
+      assert.ok(q.answerText && q.answerText.trim().length > 0, `open ${q.questionId} 缺 answerText`);
+    }
+    assert.ok(q.answerKey && q.answerKey.value.length > 0, `${q.questionId} 缺 answerKey`);
+  }
+});
+
+test("paper 001: 每题都有解析（short + detailed）", () => {
+  for (const q of paper001AllQuestions()) {
+    assert.ok(q.shortExplanation && q.shortExplanation.trim().length > 0, `${q.questionId} 缺 shortExplanation`);
+    assert.ok(q.detailedExplanation && q.detailedExplanation.trim().length > 0, `${q.questionId} 缺 detailedExplanation`);
+  }
+});
+
+test("paper 001: 听力 4 组全部有 transcript；3 个 audio 为明确 staging placeholder 且带 rights", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  assert.equal(listening.groups.length, 4);
+  for (const g of listening.groups) {
+    assert.ok(g.transcript && g.transcript.trim().length > 0, `${g.groupId} 缺 transcript`);
+  }
+  const audioAssets = (mockPaper001.assets ?? []).filter((a) => a.type === "audio");
+  assert.equal(audioAssets.length, 3);
+  for (const a of audioAssets) {
+    assert.ok(a.source.startsWith("mock://"), `${a.assetId} 必须用 mock:// 占位 source`);
+    assert.ok(a.source.includes("placeholder") || a.rights?.notes?.includes("staging placeholder"), `${a.assetId} 必须明确标注 placeholder`);
+    assert.equal(a.rights?.licenseStatus, "owned", `${a.assetId} 必须带 rights=owned`);
+  }
+});
+
+test("paper 001: 无 orphan asset reference，无 orphan question，assetIds 全部可解析", () => {
+  const assetIds = new Set((mockPaper001.assets ?? []).map((a) => a.assetId));
+  const allIds: string[] = [mockPaper001.paperId];
+  for (const sec of mockPaper001.sections) {
+    allIds.push(sec.sectionId);
+    for (const g of sec.groups) {
+      allIds.push(g.groupId);
+      for (const q of g.questions ?? []) allIds.push(q.questionId);
+      for (const ref of g.assetIds ?? []) {
+        assert.ok(assetIds.has(ref), `group ${g.groupId} 引用不存在的 asset ${ref}`);
+      }
+    }
+  }
+  assert.equal(new Set(allIds).size, allIds.length, "全卷 stable IDs 出现重复（duplicate stable id）");
+});
+
+test("paper 001: rights=owned + provenance 完整，允许生产级使用", () => {
+  assert.equal(mockPaper001.rights.licenseStatus, "owned");
+  assert.ok((mockPaper001.rights?.rightsHolder?.length ?? 0) > 0, "缺 rightsHolder");
+  assert.equal(isPublishable(mockPaper001.rights), true, "owned 应判定 PUBLISHABLE");
+  assert.ok(mockPaper001.sourceId?.length > 0, "缺 sourceId");
+});
+
+test("paper 001: staging 不进入 production pool（学习页 Selector 不暴露）", () => {
+  setupWithPaper001();
+  const publishable = getPublishableItems();
+  assert.ok(!publishable.some((i) => (i as { id?: string }).id === MOCK_PAPER_001_ID || (i as { id?: string }).id === "pack-paper-cet6-mock-001"), "staging Paper 001 不得出现在 publishable items");
+  // 但注册后可解析、可校验（staging 内容已入库等待后续发布）
+  assert.equal(getPaperById<{ paperId?: string }>(MOCK_PAPER_001_ID)?.paperId, MOCK_PAPER_001_ID);
+  const report = validateAll([...registeredPacks(), getContentPack("pack-paper-cet6-mock-001")!] as never);
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate")), `Paper 001 不得产生 duplicate: ${report.errors.map((e) => e.message).join("; ")}`);
+});
+
+test("paper 001: 注册后与 synthetic fixture / 内置 pack 共存，全库 duplicate=0", () => {
+  setupWithPaper001();
+  const report = validateAll([...registeredPacks(), getContentPack("pack-paper-cet6-mock-001")!] as never);
+  assert.equal(report.errors.length, 0, `全库校验错误: ${report.errors.map((e) => e.message).join("; ")}`);
+  assert.equal(report.warnings.length, 0, `全库校验警告: ${report.warnings.map((e) => e.message).join("; ")}`);
 });
