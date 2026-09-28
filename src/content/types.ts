@@ -79,6 +79,10 @@ export interface ContentRights {
   derivativeAllowed?: boolean;
   verifiedAt?: string;
   notes?: string;
+  /** V13 Phase 2D.1：适用地域（如 "China mainland only"），缺省 = 未声明。 */
+  territory?: string;
+  /** V13 Phase 2D.1：明确限制列表（如 standalone audio sublicense not granted / overseas deployment not auto-allowed）。 */
+  restrictions?: string[];
 }
 
 /** 内容来源登记。 */

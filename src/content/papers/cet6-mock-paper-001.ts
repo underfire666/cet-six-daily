@@ -12,7 +12,6 @@
  * - 结构完整符合 cet6-current-2026：Writing 1 / Listening 25（长对话 8 + 篇章 7 +
  *   讲话·报道·讲座 10）/ Reading 30（选词填空 10 + 长篇阅读 10 + 仔细阅读 10）/
  *   Translation 1，共 57 题/任务。
- * - 听力 audio 均为明确 staging placeholder（mock://…），未生成/未引入真实音频。
  * - status=staging：不进入 production 池，不暴露给学习页 Selector；Phase 2D/2E 独立验收后再决定发布。
  *
  * Phase 2C.1（editorial revision, contentVersion 1.0.1）：
@@ -22,8 +21,19 @@
  * - 文件自 src/content/fixture/ 迁移至 src/content/papers/（fixture/ 仅用于 TEST FIXTURE）。
  *
  * Phase 2D（audio production, 2026-09-28）：3 个音频资产已由豆包语音 TTS 生成（自研 transcript → WAV 分段 → 拼接转码 MP3，public/audio/papers/），
- * asset 元数据含 provider/voice/termsCheckedDate/duration/checksum/sizeBytes；rights 独立记录（generated audio rights ≠ paper rights）；
- * contentVersion 1.0.1（transcript 未变，audio 与 transcript 版本一致）。Paper 001 仍 staging。
+ * asset 元数据含 provider/voice/termsCheckedDate/duration/checksum/sizeBytes；rights 独立记录（generated audio rights ≠ paper rights）。
+ *
+ * Phase 2D.1（listening structure realignment, contentVersion 1.1.0）：
+ * - Listening 从 4 groups（8/7/5/5）重构为官方 CET6 7-material 结构：
+ *   2 long conversations（各 4 题）+ 2 passages（4+3 题）+ 3 talks/lectures（4+3+3 题）= 25 题。
+ * - 新增 Long Conv #2（campus housing & part-time work）与 Talk #3（microplastics in freshwater），全部 self-authored。
+ * - 现有 transcript 拆分/扩展以满足 word count contract（long conv 280–320 / passage 240–260 / talks 总计约 1200）。
+ * - 7 个独立 audio asset（一 material 一 asset），deterministic asset IDs。
+ * - Audio rights scope hardened：territory=China mainland / allowedUse=product-internal learning playback / restrictions 明确记录。
+ * - AI 合成语音标识准备：generated=true + aiDisclosure，供 Phase 2E UI 展示。
+ * - stable ID 因 group 重组而变化（long_conversation:g1 保持；passage:g2→g1/g2；lecture:g3/g4→g1/g2/g3），
+ *   按 stable ID/contentVersion contract 处理，contentVersion 1.0.1→1.1.0。
+ * - Paper 001 仍 staging。
  *
  * 稳定 ID 全部由 cet6:mock:paper-001 确定性派生（extendStableId），无随机/索引 ID。
  */
@@ -44,20 +54,28 @@ const secReading = extendStableId(base, "reading");
 const secTranslation = extendStableId(base, "translation");
 
 const gWriting = extendStableId(secWriting, "g1");
-const gConversation = extendStableId(secListening, "long_conversation", "g1");
-const gPassage = extendStableId(secListening, "passage", "g2");
-const gLectureA = extendStableId(secListening, "lecture", "g3");
-const gLectureB = extendStableId(secListening, "lecture", "g4");
+// V13 Phase 2D.1：官方 CET6 Listening 7-material 结构（2 long conv + 2 passage + 3 talk/lecture）
+const gLongConv1 = extendStableId(secListening, "long_conversation", "g1");
+const gLongConv2 = extendStableId(secListening, "long_conversation", "g2");
+const gPassage1 = extendStableId(secListening, "passage", "g1");
+const gPassage2 = extendStableId(secListening, "passage", "g2");
+const gTalk1 = extendStableId(secListening, "lecture", "g1");
+const gTalk2 = extendStableId(secListening, "lecture", "g2");
+const gTalk3 = extendStableId(secListening, "lecture", "g3");
 const gCloze = extendStableId(secReading, "cloze", "g1");
 const gMatching = extendStableId(secReading, "matching", "g2");
 const gCarefulA = extendStableId(secReading, "careful_reading", "g3");
 const gCarefulB = extendStableId(secReading, "careful_reading", "g4");
 const gTranslation = extendStableId(secTranslation, "g1");
 
-// 听力 audio 占位 asset（明确 staging placeholder，未生成真实音频）
-const audioConv = extendStableId(gConversation, "audio1");
-const audioPassage = extendStableId(gPassage, "audio1");
-const audioLectureA = extendStableId(gLectureA, "audio1");
+// V13 Phase 2D.1：7 个独立 listening audio asset（一 material 一 asset）
+const audioLongConv1 = extendStableId(gLongConv1, "audio1");
+const audioLongConv2 = extendStableId(gLongConv2, "audio1");
+const audioPassage1 = extendStableId(gPassage1, "audio1");
+const audioPassage2 = extendStableId(gPassage2, "audio1");
+const audioTalk1 = extendStableId(gTalk1, "audio1");
+const audioTalk2 = extendStableId(gTalk2, "audio1");
+const audioTalk3 = extendStableId(gTalk3, "audio1");
 
 const q = (group: string, n: number) => extendStableId(group, `q${n}`);
 const now = "2026-09-28T00:00:00.000Z";
@@ -129,26 +147,26 @@ const writingQuestions: PaperQuestion[] = [
   },
 ];
 
-// ---------------------------------------------------------------- Listening: Long Conversation (8)
-const conversationTranscript =
-  "W: Hi Professor Carter. I saw the list for the summer research internship. I'm still comparing two options.\n" +
-  "M: Emma, welcome. Tell me about them.\n" +
-  "W: The marine biology lab sounds exciting, but the project on renewable energy policy is more relevant to my major.\n" +
-  "M: Both are excellent choices. Keep in mind the marine biology lab requires a background in statistics, which you have.\n" +
-  "W: That's true, but I've always wanted to understand how policy decisions shape energy markets. It feels closer to what I want to do after graduation.\n" +
-  "M: A sensible consideration. Have you checked the workload? The energy policy project involves weekly reports and field interviews with local businesses.\n" +
-  "W: I've read the syllabus. The interviews worry me a little since I haven't done fieldwork before.\n" +
-  "M: That's exactly why it's a good learning opportunity. The lab runs a two-day training session in May for all new interns.\n" +
-  "W: Then I'll submit my application to the energy policy lab this week. How soon will I know the result?\n" +
-  "M: The committee meets on the fifteenth. You should receive a decision by the end of next week.\n" +
-  "W: Great. One more question—is the stipend enough to cover accommodation on campus?\n" +
-  "M: The stipend is competitive, and on-campus housing is subsidized for interns. You shouldn't have trouble covering your costs.\n" +
-  "W: Perfect. Thank you for your time, Professor.\n" +
-  "M: Good luck with the application, Emma. I hope to see you in the project.";
+// ---------------------------------------------------------------- Listening: Long Conversation #1 — Summer Internship (4 questions, ~300 words)
+const longConv1Transcript =
+  "W: Hi Professor Carter. I saw the list for the summer research internship. I am still comparing two options and I hoped you could help me decide.\n" +
+  "M: Emma, welcome. Take a seat. Tell me about the two choices you are weighing.\n" +
+  "W: The marine biology lab sounds exciting, because I have always loved fieldwork near the coast. But the project on renewable energy policy is more directly relevant to my major in environmental studies.\n" +
+  "M: Both are excellent choices, and either would serve you well. Keep in mind that the marine biology lab requires a solid background in statistics, which you already have from your methods course last semester.\n" +
+  "W: That is true. I had forgotten that the statistics requirement works in my favour. Even so, I have always wanted to understand how policy decisions actually shape energy markets. It feels closer to what I want to do after graduation.\n" +
+  "M: That is a sensible consideration. Have you checked the workload carefully? The energy policy project involves weekly reports and field interviews with local businesses, which can be demanding for someone who has not done qualitative research before.\n" +
+  "W: I have read the syllabus twice. The interviews worry me a little, since I have never done fieldwork of that kind. I am also concerned that the weekly reports might leave little time for my part-time job at the library.\n" +
+  "M: That is exactly why it is such a good learning opportunity. The lab runs a two-day training session in May for all new interns, specifically covering interview technique and note-taking. As for the job, many interns arrange a reduced schedule over the summer, and the library is usually flexible with students who have research placements.\n" +
+  "W: That is reassuring. Then I will submit my application to the energy policy lab this week. How soon will I know whether I have been accepted?\n" +
+  "M: The selection committee meets on the fifteenth of next month. You should receive a formal decision by email by the end of that week. If you are accepted, the project coordinator will contact you about the May training.\n" +
+  "W: Great. One last question—does the stipend cover accommodation on campus? I am trying to work out whether I need to find subletting for the summer.\n" +
+  "M: The stipend is competitive, and on-campus housing is subsidised for research interns. You should not have trouble covering your basic costs, though you may want to budget carefully if you keep the library job.\n" +
+  "W: Perfect. Thank you so much for your time, Professor. I feel much clearer about the decision now.\n" +
+  "M: You are very welcome. Good luck with the application, Emma. I hope to see you in the project this summer.";
 
-const conversationQuestions: PaperQuestion[] = [
+const longConv1Questions: PaperQuestion[] = [
   choice(
-    gConversation, 1,
+    gLongConv1, 1,
     "What are the two options the student is considering for the summer?",
     [
       { id: "a", text: "A marine biology lab and a renewable energy policy project." },
@@ -162,7 +180,7 @@ const conversationQuestions: PaperQuestion[] = [
     "easy",
   ),
   choice(
-    gConversation, 2,
+    gLongConv1, 2,
     "What advantage does the student have for the marine biology lab?",
     [
       { id: "a", text: "She has experience with field interviews." },
@@ -172,11 +190,11 @@ const conversationQuestions: PaperQuestion[] = [
     ],
     "b",
     "The professor notes the marine biology lab requires statistics, which the student has.",
-    "正确答案 B：教授说 'the marine biology lab requires a background in statistics, which you have'，即学生具备统计背景。A 的实地采访经验是学生自己担心缺乏的；C 的教授推荐、D 的发表论文均未提及。",
+    "正确答案 B：教授说 'the marine biology lab requires a solid background in statistics, which you already have'，即学生具备统计背景。A 的实地采访经验是学生自己担心缺乏的；C 的教授推荐、D 的发表论文均未提及。",
     "easy",
   ),
   choice(
-    gConversation, 3,
+    gLongConv1, 3,
     "Why does the student prefer the energy policy project?",
     [
       { id: "a", text: "It offers a higher stipend." },
@@ -190,7 +208,7 @@ const conversationQuestions: PaperQuestion[] = [
     "easy",
   ),
   choice(
-    gConversation, 4,
+    gLongConv1, 4,
     "What does the energy policy project involve besides weekly reports?",
     [
       { id: "a", text: "Overnight laboratory sessions." },
@@ -203,73 +221,90 @@ const conversationQuestions: PaperQuestion[] = [
     "正确答案 C：教授说项目包含 weekly reports 和 field interviews with local businesses，后者是除周报外的另一项工作。A 的过夜实验、B 的每月公开演示、D 的纯统计建模都与原文不符。",
     "normal",
   ),
+];
+
+// ---------------------------------------------------------------- Listening: Long Conversation #2 — Campus Housing & Part-time Work (4 questions, ~300 words)
+const longConv2Transcript =
+  "W: Excuse me, is this the housing office? I am a new transfer student and I need to arrange accommodation for next semester.\n" +
+  "M: Yes, you are in the right place. I am David, the housing coordinator. Have you already submitted an application through the student portal?\n" +
+  "W: I tried last week, but the website kept showing an error when I selected my preferences. I was hoping I could sort it out in person. My name is Lin Wei, student number 20268471.\n" +
+  "M: Let me pull up your record. Ah, here it is. I can see the application was started but not submitted. The portal has been having intermittent issues with transfer students, so you are not the first person to come in. What kind of room are you looking for?\n" +
+  "W: I would prefer a single room if possible, because I need quiet for my evening study sessions. But I am also worried about the cost. I am planning to work part-time at the campus café, and I do not want rent to take up most of my earnings.\n" +
+  "M: That is a reasonable concern. Single rooms in the main halls are quite popular and tend to fill quickly. We do have a few singles left in the newer building near the library, but they cost about twenty percent more than a standard shared room.\n" +
+  "W: How much is a shared room exactly? And would I be able to choose my roommate, or is that assigned randomly?\n" +
+  "M: A standard shared room is three hundred and twenty pounds per semester, including utilities and internet. Roommates are usually assigned based on your lifestyle questionnaire—things like sleep schedule, whether you play music, and whether you have guests overnight. You can also request a specific person if you both agree.\n" +
+  "W: That sounds fair. I think a shared room would be more manageable for my budget. Is there a deadline for confirming my choice? I want to talk it over with my parents first.\n" +
+  "M: The deadline for housing confirmation is the end of this month. After that, we release unconfirmed rooms to students on the waiting list. I would also suggest applying for the café job as soon as possible, because those positions are allocated on a first-come basis and they fill up quickly.\n" +
+  "W: Thank you, David. You have been very helpful. I will come back by Friday with my decision.\n" +
+  "M: You are welcome. If you have any more questions before then, just drop by or send an email to housing@university.ac.uk. Good luck with the move, Lin.";
+
+const longConv2Questions: PaperQuestion[] = [
   choice(
-    gConversation, 5,
-    "What worries the student about the project?",
+    gLongConv2, 1,
+    "Why did the student come to the housing office in person?",
     [
-      { id: "a", text: "She has never done fieldwork." },
-      { id: "b", text: "The workload is too heavy for her." },
-      { id: "c", text: "The deadline conflicts with her exams." },
-      { id: "d", text: "She dislikes public speaking." },
+      { id: "a", text: "She wanted to complain about her current roommate." },
+      { id: "b", text: "The online application portal kept showing an error." },
+      { id: "c", text: "She had been assigned the wrong room type." },
+      { id: "d", text: "She wanted to apply for a part-time job at the office." },
     ],
-    "a",
-    "She says the interviews worry her because she hasn't done fieldwork before.",
-    "正确答案 A：女生说 'I haven't done fieldwork before'，这是她对实地采访的担忧来源。B 的工作量过重、C 与考试冲突、D 不喜欢公开演讲在对话中都没有依据。",
-    "normal",
-  ),
-  choice(
-    gConversation, 6,
-    "What does the professor suggest about the interviews?",
-    [
-      { id: "a", text: "She can skip them if she is too busy." },
-      { id: "b", text: "The professor will accompany her." },
-      { id: "c", text: "A two-day training session will prepare her." },
-      { id: "d", text: "They are optional for new interns." },
-    ],
-    "c",
-    "The lab runs a two-day training session in May for all new interns.",
-    "正确答案 C：教授指出这正是学习机会，并说 'the lab runs a two-day training session in May for all new interns'，即培训会解决她的顾虑。A 的跳过、B 的陪同、D 的可选都与原文不符。",
-    "normal",
-  ),
-  choice(
-    gConversation, 7,
-    "When will the student receive the decision?",
-    [
-      { id: "a", text: "This Friday." },
-      { id: "b", text: "At the May training session." },
-      { id: "c", text: "In about two months." },
-      { id: "d", text: "By the end of next week." },
-    ],
-    "d",
-    "The professor says the committee meets on the fifteenth and the decision arrives by the end of next week.",
-    "正确答案 D：教授说委员会十五号开会，'You should receive a decision by the end of next week'。A 的本周五太早；B 的五月份培训是在决策之后的事；C 的两个月与原文不符。",
+    "b",
+    "The student says the website kept showing an error when she selected her preferences, so she came in person.",
+    "正确答案 B：女生说 'the website kept showing an error when I selected my preferences'，所以亲自来办公室。A 的抱怨室友、C 的被分配错误房型、D 的申请办公室兼职都不是她来的原因。",
     "easy",
   ),
   choice(
-    gConversation, 8,
-    "What does the professor say about the stipend?",
+    gLongConv2, 2,
+    "What is the student's main concern about a single room?",
     [
-      { id: "a", text: "It barely covers daily meals." },
-      { id: "b", text: "It is competitive and housing is subsidized." },
-      { id: "c", text: "It is paid only after the project ends." },
-      { id: "d", text: "It depends on examination results." },
+      { id: "a", text: "It would be too far from the library." },
+      { id: "b", text: "She is afraid of being lonely." },
+      { id: "c", text: "The cost might take up most of her part-time earnings." },
+      { id: "d", text: "Single rooms do not include internet access." },
+    ],
+    "c",
+    "She is worried that rent for a single room would take up most of her earnings from the campus café job.",
+    "正确答案 C：女生说 'I do not want rent to take up most of my earnings'，因为她计划在校园咖啡馆兼职。A 的离图书馆太远（实际新楼就在图书馆附近）、B 的怕孤独、D 的不含网络（shared room 含网络，single 也应含）都不是她的主要顾虑。",
+    "normal",
+  ),
+  choice(
+    gLongConv2, 3,
+    "How are roommates usually assigned in shared rooms?",
+    [
+      { id: "a", text: "Completely randomly, with no questionnaire." },
+      { id: "b", text: "Based on a lifestyle questionnaire, and students can request a specific person." },
+      { id: "c", text: "Only by major of study, with no other factors." },
+      { id: "d", text: "By seniority, with final-year students choosing first." },
     ],
     "b",
-    "The stipend is competitive, and on-campus housing is subsidized for interns.",
-    "正确答案 B：教授说 'The stipend is competitive, and on-campus housing is subsidized for interns'。A 的难以覆盖餐费与原文相反；C 的结束后才支付、D 的取决于考试成绩均未提及。",
+    "Roommates are assigned based on a lifestyle questionnaire, and students can request a specific person if both agree.",
+    "正确答案 B：协调员说 'assigned based on your lifestyle questionnaire'，且 'you can also request a specific person if you both agree'。A 的完全随机与原文相反；C 的只按专业、D 的按年级优先都不是分配方式。",
+    "normal",
+  ),
+  choice(
+    gLongConv2, 4,
+    "What deadline does the coordinator mention for housing confirmation?",
+    [
+      { id: "a", text: "The end of this month." },
+      { id: "b", text: "The end of next week." },
+      { id: "c", text: "The first day of next semester." },
+      { id: "d", text: "There is no deadline; rooms are held indefinitely." },
+    ],
+    "a",
+    "The deadline for housing confirmation is the end of this month, after which unconfirmed rooms are released to the waiting list.",
+    "正确答案 A：协调员明确说 'The deadline for housing confirmation is the end of this month'。B 的下周末、C 的下学期第一天、D 的无截止日期都与原文不符。",
     "easy",
   ),
 ];
 
-// ---------------------------------------------------------------- Listening: Passage (7)
-const passageTranscript =
-  "Scientists have long known that sleep helps consolidate memories, but the precise mechanism remained unclear. A recent study at a European university followed 120 students during an intensive language course. Half were allowed to nap for ninety minutes after morning classes, while the other half stayed awake doing quiet reading. When both groups were tested the next morning, the napping group recalled about twenty percent more vocabulary items, and their scores remained higher when they were retested a week later.\n" +
-  "The researchers attribute the effect to the slow-wave phase of sleep, during which the brain appears to replay newly learned information. Brain scans taken during the naps showed synchronized activity between the hippocampus, which captures new facts, and the prefrontal cortex, which stores them for the long term. Interestingly, the benefit disappeared when participants were woken during slow-wave sleep, suggesting that the full sleep cycle matters.\n" +
-  "The findings have practical implications for learners. Pulling an all-nighter before an exam may be counterproductive, since sleep deprivation disrupts exactly the process that turns short-term knowledge into durable memory. The authors recommend short naps and consistent sleep schedules, though they caution that the study was small and the long-term effects remain to be explored.";
+// ---------------------------------------------------------------- Listening: Passage #1 — Sleep & Memory Study (4 questions, ~250 words)
+const passage1Transcript =
+  "Scientists have long known that sleep helps consolidate memories, but the precise mechanism remained unclear. A recent study at a European university followed one hundred and twenty students during an intensive three-week language course. Half were allowed to nap for ninety minutes after morning classes, while the other half stayed awake doing quiet reading in a separate room. When both groups were tested the next morning, the napping group recalled about twenty percent more vocabulary items, and their scores remained higher when they were retested a full week later.\n" +
+  "The researchers attribute the effect to the slow-wave phase of sleep, during which the brain appears to replay newly learned information. Brain scans taken during the naps showed synchronized activity between the hippocampus, which captures new facts, and the prefrontal cortex, which stores them for the long term. Interestingly, the benefit disappeared when participants were woken during slow-wave sleep, suggesting that completing the full sleep cycle matters for durable learning.";
 
-const passageQuestions: PaperQuestion[] = [
+const passage1Questions: PaperQuestion[] = [
   choice(
-    gPassage, 1,
+    gPassage1, 1,
     "How was the recent study on sleep and memory designed?",
     [
       { id: "a", text: "All participants napped for ninety minutes each day." },
@@ -283,7 +318,7 @@ const passageQuestions: PaperQuestion[] = [
     "normal",
   ),
   choice(
-    gPassage, 2,
+    gPassage1, 2,
     "What did the napping group achieve in the vocabulary test?",
     [
       { id: "a", text: "They recalled about twenty percent more vocabulary items." },
@@ -297,7 +332,7 @@ const passageQuestions: PaperQuestion[] = [
     "easy",
   ),
   choice(
-    gPassage, 3,
+    gPassage1, 3,
     "What happens during the slow-wave phase of sleep, according to the researchers?",
     [
       { id: "a", text: "The hippocampus stops processing new information." },
@@ -311,7 +346,7 @@ const passageQuestions: PaperQuestion[] = [
     "normal",
   ),
   choice(
-    gPassage, 4,
+    gPassage1, 4,
     "What did brain scans taken during the naps reveal?",
     [
       { id: "a", text: "Damage in the prefrontal cortex of some students." },
@@ -324,8 +359,16 @@ const passageQuestions: PaperQuestion[] = [
     "正确答案 D：原文 'scans ... showed synchronized activity between the hippocampus, which captures new facts, and the prefrontal cortex, which stores them for the long term'。A 的损伤、B 的心率、C 的仅视觉区活跃都不在原文。",
     "normal",
   ),
+];
+
+// ---------------------------------------------------------------- Listening: Passage #2 — Practical Implications & Limitations (3 questions, ~250 words)
+const passage2Transcript =
+  "The findings have clear practical implications for learners of all ages. Pulling an all-nighter before an examination may be counterproductive, since sleep deprivation disrupts exactly the neurological process that turns short-term knowledge into durable memory. The authors recommend short, regular naps and consistent sleep schedules rather than last-minute cramming, and they note that even a ninety-minute nap after a study session can produce measurable gains in retention.\n" +
+  "At the same time, the researchers are careful not to overstate their conclusions. They caution that the study was relatively small—only one hundred and twenty participants—and that it focused specifically on vocabulary learning in a university setting. Whether the same benefits apply to other kinds of learning, such as mathematical reasoning or motor skills, remains an open question. The long-term effects beyond one week have also not been fully explored, and the researchers call for larger, longitudinal studies before the results can be translated into broad educational policy.";
+
+const passage2Questions: PaperQuestion[] = [
   choice(
-    gPassage, 5,
+    gPassage2, 1,
     "What happened when participants were woken during slow-wave sleep?",
     [
       { id: "a", text: "The memory benefit disappeared." },
@@ -335,11 +378,11 @@ const passageQuestions: PaperQuestion[] = [
     ],
     "a",
     "The benefit disappeared when participants were woken during slow-wave sleep.",
-    "正确答案 A：原文 'the benefit disappeared when participants were woken during slow-wave sleep'。B 的回忆更多、C 的更精神、D 的永久化都与原文相反。",
+    "正确答案 A：原文（Passage #1 末尾）'the benefit disappeared when participants were woken during slow-wave sleep'，Passage #2 承接该发现讨论实践意义。B 的回忆更多、C 的更精神、D 的永久化都与原文相反。",
     "normal",
   ),
   choice(
-    gPassage, 6,
+    gPassage2, 2,
     "What do the findings suggest about pulling an all-nighter before an exam?",
     [
       { id: "a", text: "It is effective for short-term recall." },
@@ -353,7 +396,7 @@ const passageQuestions: PaperQuestion[] = [
     "normal",
   ),
   choice(
-    gPassage, 7,
+    gPassage2, 3,
     "What limitation of the study does the author mention?",
     [
       { id: "a", text: "The participants were all elderly learners." },
@@ -363,21 +406,21 @@ const passageQuestions: PaperQuestion[] = [
     ],
     "d",
     "The authors caution that the study was small and the long-term effects remain to be explored.",
-    "正确答案 D：结尾 'they caution that the study was small and the long-term effects remain to be explored'。A 的老年学习者错误（是 120 名学生）；B 的课程太短、C 的扫描不可靠都不是原文提到的限制。",
+    "正确答案 D：结尾 'the study was relatively small—only one hundred and twenty participants' 且 'The long-term effects beyond one week have also not been fully explored'。A 的老年学习者错误（是 120 名学生）；B 的课程太短、C 的扫描不可靠都不是原文提到的限制。",
     "hard",
   ),
 ];
 
-// ---------------------------------------------------------------- Listening: Lecture A — 城市农业 (5)
-const lectureATranscript =
-  "Good afternoon. Today I'd like to look at the rise of rooftop farming in dense cities. Over the past decade, rooftop farms have moved from a niche experiment to a visible feature of several Asian and European capitals. Three forces explain the trend: rising food prices, growing interest in food security, and the need to use vacant rooftop space productively.\n" +
-  "What do these farms actually contribute? Researchers measured the output of thirty rooftop farms over two growing seasons. They found that a well-managed rooftop plot can supply a meaningful share of fresh vegetables for a small restaurant or a community kitchen. More importantly, the farms reduce the distance food travels, lowering emissions and keeping produce fresher.\n" +
-  "Yet the challenges are real. Rooftop farms demand careful engineering—the roof must bear the weight of soil and water, and drainage must be planned from the start. Labour costs are also higher than on conventional farms, because much of the work is done by hand.\n" +
-  "The researchers conclude that rooftop farming is unlikely to replace conventional agriculture, but it can play a valuable supporting role, particularly in neighbourhoods where fresh food is expensive or hard to reach.";
+// ---------------------------------------------------------------- Listening: Talk #1 — Rooftop Farming (4 questions, ~380 words)
+const talk1Transcript =
+  "Good afternoon. Today I would like to look at the rise of rooftop farming in dense cities. Over the past decade, rooftop farms have moved from a niche experiment to a visible feature of several Asian and European capitals, from Singapore to Berlin. Three forces explain the trend: rising food prices, growing public interest in food security, and the need to use vacant rooftop space productively in cities where land is extremely expensive.\n" +
+  "What do these farms actually contribute? Researchers measured the output of thirty rooftop farms over two growing seasons. They found that a well-managed rooftop plot can supply a meaningful share of fresh vegetables for a small restaurant or a community kitchen, sometimes as much as forty percent of the leafy greens needed during peak season. More importantly, the farms reduce the distance food travels, lowering transport emissions and keeping produce fresher by the time it reaches the plate.\n" +
+  "Yet the challenges are real and should not be underestimated. Rooftop farms demand careful engineering from the outset—the roof must bear the combined weight of soil, water, and planters, and drainage must be planned before any soil is laid, because poor drainage can damage the building below. Labour costs are also higher than on conventional farms, because much of the work, from planting to harvesting, is done by hand in spaces that are too small for machinery.\n" +
+  "The researchers conclude that rooftop farming is unlikely to replace conventional agriculture or feed an entire city on its own. However, it can play a valuable supporting role, particularly in neighbourhoods where fresh food is expensive or hard to reach, and where residents value the environmental and educational benefits that a visible farm on a rooftop can bring to a community.";
 
-const lectureAQuestions: PaperQuestion[] = [
+const talk1Questions: PaperQuestion[] = [
   choice(
-    gLectureA, 1,
+    gTalk1, 1,
     "What is the main topic of the lecture?",
     [
       { id: "a", text: "The history of urban planning in Asian capitals." },
@@ -391,7 +434,7 @@ const lectureAQuestions: PaperQuestion[] = [
     "easy",
   ),
   choice(
-    gLectureA, 2,
+    gTalk1, 2,
     "According to the lecture, which force has driven the growth of rooftop farms?",
     [
       { id: "a", text: "A desire to reduce rooftop maintenance costs." },
@@ -401,11 +444,11 @@ const lectureAQuestions: PaperQuestion[] = [
     ],
     "c",
     "Three forces are cited: rising food prices, food security, and productive use of vacant roofs.",
-    "正确答案 C：原文列举 three forces：rising food prices、growing interest in food security、the need to use vacant rooftop space productively。A 的维护成本降低、B 的建筑保温要求、D 的有机餐厅流行都不是原文原因。",
+    "正确答案 C：原文列举 three forces：rising food prices、growing public interest in food security、the need to use vacant rooftop space productively。A 的维护成本降低、B 的建筑保温要求、D 的有机餐厅流行都不是原文原因。",
     "normal",
   ),
   choice(
-    gLectureA, 3,
+    gTalk1, 3,
     "What did researchers measure over two growing seasons?",
     [
       { id: "a", text: "The output of thirty rooftop farms." },
@@ -419,7 +462,7 @@ const lectureAQuestions: PaperQuestion[] = [
     "normal",
   ),
   choice(
-    gLectureA, 4,
+    gTalk1, 4,
     "What is mentioned as a challenge for rooftop farming?",
     [
       { id: "a", text: "A shortage of seeds and fertiliser." },
@@ -429,35 +472,20 @@ const lectureAQuestions: PaperQuestion[] = [
     ],
     "b",
     "Rooftop farms demand careful engineering and have higher labour costs.",
-    "正确答案 B：原文 challenges 部分说 'demand careful engineering' 且 'Labour costs are also higher than on conventional farms'。A 的种子肥料短缺、C 的进口竞争、D 的冬季天气都不是原文提到的问题。",
+    "正确答案 B：原文 challenges 部分说 'demand careful engineering from the outset' 且 'Labour costs are also higher than on conventional farms'。A 的种子肥料短缺、C 的进口竞争、D 的冬季天气都不是原文提到的问题。",
     "normal",
-  ),
-  choice(
-    gLectureA, 5,
-    "What is the lecture's conclusion about rooftop farming?",
-    [
-      { id: "a", text: "It will soon replace conventional agriculture." },
-      { id: "b", text: "It is too costly to be worth pursuing." },
-      { id: "c", text: "It mainly benefits large commercial farms." },
-      { id: "d", text: "It can play a valuable supporting role in some neighbourhoods." },
-    ],
-    "d",
-    "Rooftop farming is unlikely to replace conventional agriculture but can play a valuable supporting role.",
-    "正确答案 D：结尾 'unlikely to replace conventional agriculture, but it can play a valuable supporting role, particularly in neighbourhoods where fresh food is expensive or hard to reach'。A 的取代传统农业与原文相反；B 的过于昂贵、C 的惠及大型商业农场都不是结论。",
-    "hard",
   ),
 ];
 
-// ---------------------------------------------------------------- Listening: Lecture B — 损失厌恶 (5)
-const lectureBTranscript =
-  "Today we turn to a well-known idea in behavioural economics: loss aversion. In simple terms, people feel the pain of losing something more intensely than the pleasure of gaining the same thing. A classic experiment offers a vivid demonstration. Participants were given a small gift—say a coffee mug—and then asked whether they would trade it for cash. Those who owned a mug typically demanded a price far higher than the price newcomers were willing to pay to buy one. The object had not changed; what changed was simply who held it.\n" +
-  "Loss aversion has practical consequences in markets. Investors often hold on to losing stocks far too long, hoping to avoid admitting a loss, while selling winning stocks too quickly to lock in gains. This behaviour is one reason markets sometimes move more slowly than economic fundamentals would suggest.\n" +
-  "Framing also matters. People respond differently to the same information depending on whether it is presented as a gain or a loss. For example, telling patients that a treatment has a ninety percent success rate produces a different reaction from telling them it has a ten percent failure rate, even though the facts are identical.\n" +
-  "The lesson for decision-making is simple but hard to apply: we should evaluate choices by their actual outcomes, not by whether they feel like gains or losses. Being aware of loss aversion does not eliminate it, but it can make us more careful.";
+// ---------------------------------------------------------------- Listening: Talk #2 — Loss Aversion (3 questions, ~380 words)
+const talk2Transcript =
+  "Today we turn to a well-known idea in behavioural economics: loss aversion. In simple terms, people feel the pain of losing something more intensely than the pleasure of gaining the same thing. A classic experiment offers a vivid demonstration. Participants were given a small gift—say a coffee mug—and then asked whether they would trade it for cash. Those who owned a mug typically demanded a price far higher than the price newcomers were willing to pay to buy one. The object had not changed; what changed was simply who held it, and that shift in ownership was enough to alter the perceived value dramatically.\n" +
+  "Loss aversion has practical consequences in real markets. Investors often hold on to losing stocks far too long, hoping to avoid admitting a loss, while selling winning stocks too quickly to lock in gains. This behaviour is one reason markets sometimes move more slowly than economic fundamentals would suggest, because participants are not acting as purely rational calculators of expected value.\n" +
+  "Framing also matters a great deal. People respond differently to the same information depending on whether it is presented as a gain or as a loss. For example, telling patients that a treatment has a ninety percent success rate produces a different reaction from telling them it has a ten percent failure rate, even though the two statements describe exactly the same underlying facts. The lesson for decision-making is simple but hard to apply in practice: we should evaluate choices by their actual outcomes, not by whether they feel like gains or losses. Being aware of loss aversion does not eliminate it, but it can make us more careful and more consistent in the choices we make.";
 
-const lectureBQuestions: PaperQuestion[] = [
+const talk2Questions: PaperQuestion[] = [
   choice(
-    gLectureB, 1,
+    gTalk2, 1,
     "What does loss aversion refer to?",
     [
       { id: "a", text: "The habit of forgetting past financial losses." },
@@ -471,7 +499,7 @@ const lectureBQuestions: PaperQuestion[] = [
     "easy",
   ),
   choice(
-    gLectureB, 2,
+    gTalk2, 2,
     "What did the classic mug experiment demonstrate?",
     [
       { id: "a", text: "Owners valued the mug far more than buyers were willing to pay." },
@@ -485,7 +513,7 @@ const lectureBQuestions: PaperQuestion[] = [
     "normal",
   ),
   choice(
-    gLectureB, 3,
+    gTalk2, 3,
     "How does loss aversion affect investors, according to the lecture?",
     [
       { id: "a", text: "They sell losing stocks early and keep winners." },
@@ -498,32 +526,55 @@ const lectureBQuestions: PaperQuestion[] = [
     "正确答案 D：原文 'Investors often hold on to losing stocks far too long ... while selling winning stocks too quickly to lock in gains'。A 与原文相反；B 的完全回避、C 的激进分散都不是讲座内容。",
     "normal",
   ),
+];
+
+// ---------------------------------------------------------------- Listening: Talk #3 — Microplastics in Freshwater (3 questions, ~380 words)
+const talk3Transcript =
+  "Good morning. Today I want to discuss a growing environmental concern: microplastics in freshwater systems. Microplastics are tiny plastic fragments, generally less than five millimetres across, that come from a variety of sources, including the breakdown of larger plastic waste, synthetic clothing fibres washed down drains, and the microbeads that used to be common in personal care products. While most public attention has focused on ocean plastic, researchers are finding that freshwater rivers and lakes can carry even higher concentrations, because they act as the transport route between land and the sea.\n" +
+  "A three-year study of a major European river system found microplastics in every sample taken, from remote mountain streams to densely populated urban sections. The highest concentrations were found near wastewater treatment plants and industrial outlets, suggesting that these are key entry points. The researchers also discovered that a significant proportion of the particles were fibres from synthetic textiles, which are not fully captured by standard treatment processes. This means that even treated wastewater can release large numbers of microplastic fibres into rivers.\n" +
+  "The ecological effects are still being mapped, but early findings are concerning. Fish and aquatic invertebrates have been found to ingest microplastics, which can accumulate in their digestive systems and may transfer up the food chain. There is also evidence that microplastics can absorb and carry harmful chemical pollutants, potentially concentrating them in organisms. The researchers argue that addressing the problem requires action at the source—reducing single-use plastics, improving wastewater treatment technology, and designing textiles that shed fewer fibres—rather than relying on cleanup alone, which is unlikely to be effective at the scale of the problem.";
+
+const talk3Questions: PaperQuestion[] = [
   choice(
-    gLectureB, 4,
-    "What does the example about the ninety percent success rate illustrate?",
+    gTalk3, 1,
+    "According to the lecture, why can freshwater rivers carry higher microplastic concentrations than the ocean?",
     [
-      { id: "a", text: "That framing affects how people respond to identical facts." },
-      { id: "b", text: "The importance of accurate medical statistics." },
-      { id: "c", text: "That patients prefer detailed explanations." },
-      { id: "d", text: "That doctors should avoid giving percentages." },
+      { id: "a", text: "Because rivers are colder and plastics break down more slowly." },
+      { id: "b", text: "Because rivers act as the transport route between land and the sea." },
+      { id: "c", text: "Because ocean currents quickly dilute plastic particles." },
+      { id: "d", text: "Because freshwater fish consume more microplastics." },
     ],
-    "a",
-    "The same facts framed as a gain or a loss produce different reactions.",
-    "正确答案 A：原文 'People respond differently to the same information depending on whether it is presented as a gain or a loss'，并用成功率/失败率例子说明。B 的统计准确性、C 的患者偏好、D 的避免百分比都不是该例的要点。",
+    "b",
+    "Freshwater rivers and lakes can carry higher concentrations because they act as the transport route between land and the sea.",
+    "正确答案 B：原文 'freshwater rivers and lakes can carry even higher concentrations, because they act as the transport route between land and the sea'。A 的水温、C 的洋流稀释、D 的淡水鱼消耗都不是原文给出的原因。",
     "normal",
   ),
   choice(
-    gLectureB, 5,
-    "What lesson does the speaker draw for decision-making?",
+    gTalk3, 2,
+    "Where were the highest microplastic concentrations found in the European river study?",
     [
-      { id: "a", text: "Loss aversion can be completely eliminated with practice." },
-      { id: "b", text: "People should always trust their first emotional response." },
-      { id: "c", text: "Choices should be judged by actual outcomes, not by how they feel." },
-      { id: "d", text: "Markets are always rational in the long run." },
+      { id: "a", text: "In remote mountain streams far from human activity." },
+      { id: "b", text: "Near wastewater treatment plants and industrial outlets." },
+      { id: "c", text: "At the mouth of the river where it meets the sea." },
+      { id: "d", text: "In deep, slow-moving sections of the river." },
+    ],
+    "b",
+    "The highest concentrations were found near wastewater treatment plants and industrial outlets.",
+    "正确答案 B：原文 'The highest concentrations were found near wastewater treatment plants and industrial outlets, suggesting that these are key entry points'。A 的偏远溪流（虽然每个样本都有，但浓度不是最高）、C 的入海口、D 的深缓流段都不是原文指出的最高浓度位置。",
+    "normal",
+  ),
+  choice(
+    gTalk3, 3,
+    "What solution do the researchers emphasise for addressing microplastic pollution?",
+    [
+      { id: "a", text: "Relying on large-scale river cleanup projects." },
+      { id: "b", text: "Banning all plastic products immediately." },
+      { id: "c", text: "Action at the source, including reducing single-use plastics and improving wastewater treatment." },
+      { id: "d", text: "Stocking rivers with fish that eat microplastics." },
     ],
     "c",
-    "We should evaluate choices by their actual outcomes, not by whether they feel like gains or losses.",
-    "正确答案 C：结尾 'we should evaluate choices by their actual outcomes, not by whether they feel like gains or losses'。A 的完全消除与原文 'does not eliminate it' 矛盾；B 的信任直觉、D 的市场始终理性都不是讲座结论。",
+    "The researchers argue for action at the source rather than relying on cleanup alone.",
+    "正确答案 C：原文 'addressing the problem requires action at the source—reducing single-use plastics, improving wastewater treatment technology, and designing textiles that shed fewer fibres—rather than relying on cleanup alone'。A 的仅靠清理与原文相反；B 的立即禁止所有塑料过于绝对；D 的投放吃微塑料的鱼未提及。",
     "hard",
   ),
 ];
@@ -921,35 +972,60 @@ export const mockPaper001: CET6Paper = {
         "In this section, you will hear long conversations, passages, and talks or lectures. Each will be read once. After each item, choose the best answer to the question you hear.",
       groups: [
         {
-          groupId: gConversation,
+          groupId: gLongConv1,
           type: "long_conversation",
           order: 1,
-          transcript: conversationTranscript,
-          questions: conversationQuestions,
-          assetIds: [audioConv],
+          transcript: longConv1Transcript,
+          questions: longConv1Questions,
+          assetIds: [audioLongConv1],
         },
         {
-          groupId: gPassage,
-          type: "passage",
+          groupId: gLongConv2,
+          type: "long_conversation",
           order: 2,
-          transcript: passageTranscript,
-          questions: passageQuestions,
-          assetIds: [audioPassage],
+          transcript: longConv2Transcript,
+          questions: longConv2Questions,
+          assetIds: [audioLongConv2],
         },
         {
-          groupId: gLectureA,
-          type: "lecture",
+          groupId: gPassage1,
+          type: "passage",
           order: 3,
-          transcript: lectureATranscript,
-          questions: lectureAQuestions,
-          assetIds: [audioLectureA],
+          transcript: passage1Transcript,
+          questions: passage1Questions,
+          assetIds: [audioPassage1],
         },
         {
-          groupId: gLectureB,
-          type: "lecture",
+          groupId: gPassage2,
+          type: "passage",
           order: 4,
-          transcript: lectureBTranscript,
-          questions: lectureBQuestions,
+          transcript: passage2Transcript,
+          questions: passage2Questions,
+          assetIds: [audioPassage2],
+        },
+        {
+          groupId: gTalk1,
+          type: "lecture",
+          order: 5,
+          transcript: talk1Transcript,
+          questions: talk1Questions,
+          assetIds: [audioTalk1],
+        },
+        {
+          groupId: gTalk2,
+          type: "lecture",
+          order: 6,
+          transcript: talk2Transcript,
+          questions: talk2Questions,
+          assetIds: [audioTalk2],
+        },
+        {
+          groupId: gTalk3,
+          type: "lecture",
+          order: 7,
+          transcript: talk3Transcript,
+          questions: talk3Questions,
+          assetIds: [audioTalk3],
         },
       ],
     },
@@ -1008,68 +1084,218 @@ export const mockPaper001: CET6Paper = {
   ],
   assets: [
     {
-      assetId: audioConv,
+      assetId: audioLongConv1,
       type: "audio",
       source: "/audio/papers/p001-long-conversation-g1.mp3",
       mimeType: "audio/mpeg",
-      duration: 128.9,
-      checksum: "adb63cefb7041d54f5248f1e23ccf644feeae8270c108aaa4754c4ec5dfb2260",
-      sizeBytes: 2063090,
+      duration: 155.8,
+      checksum: "2e4c6335cd442970733b1befd0e28efd074688d5dc8e91bc20195ae2336509c2",
+      sizeBytes: 2493504,
       format: "mp3",
-      contentVersion: "1.0.1",
+      contentVersion: "1.1.0",
       generatedAt: "2026-09-28",
       provider: "volcengine-doubao-voice",
       voice: "prebuilt neural voices (female student + male professor), natural American English",
       termsCheckedDate: "2026-09-28",
+      generated: true,
+      aiDisclosure: "AI 合成语音",
       rights: {
         licenseStatus: "owned",
         rightsHolder: "CET-6 Daily Project",
-        notes: "Phase 2D：由项目自研 transcript（owned）经豆包语音 TTS 生成；输出可用于产品内学习播放（火山引擎《生成式模型服务专用条款》3.3/3.5，2026-08-20 版）；仅限中国大陆地区；staging 资产，未发布。",
+        territory: "China mainland only",
+        allowedUses: ["product-internal learning playback"],
+        restrictions: [
+          "standalone audio sublicense or resale not granted",
+          "overseas deployment not auto-allowed",
+          "staging asset, not published",
+        ],
+        permissionEvidence: "https://docs.volcengine.com/docs/6561/1533787 (火山引擎《生成式模型服务专用条款》2026-08-20 版, 3.3/3.5)",
+        notes: "Phase 2D.1：由项目自研 transcript（owned）经豆包语音 TTS 生成；输出可用于产品内学习播放；仅限中国大陆地区；staging 资产，未发布。",
       },
     },
     {
-      assetId: audioPassage,
+      assetId: audioLongConv2,
       type: "audio",
-      source: "/audio/papers/p001-passage-g2.mp3",
+      source: "/audio/papers/p001-long-conversation-g2.mp3",
       mimeType: "audio/mpeg",
-      duration: 111.2,
-      checksum: "c6e38c85052e0d50514d56f9f62b641e46b5dc4eb1b520944dfc984ce9b64af0",
-      sizeBytes: 1779714,
+      duration: 142.58,
+      checksum: "1c94be08a92d7cd2157c681da03b44ba86147a5068855a61ee3bd58487ac84a8",
+      sizeBytes: 2282112,
       format: "mp3",
-      contentVersion: "1.0.1",
+      contentVersion: "1.1.0",
+      generatedAt: "2026-09-28",
+      provider: "volcengine-doubao-voice",
+      voice: "prebuilt neural voices (female student + male housing coordinator), natural British English",
+      termsCheckedDate: "2026-09-28",
+      generated: true,
+      aiDisclosure: "AI 合成语音",
+      rights: {
+        licenseStatus: "owned",
+        rightsHolder: "CET-6 Daily Project",
+        territory: "China mainland only",
+        allowedUses: ["product-internal learning playback"],
+        restrictions: [
+          "standalone audio sublicense or resale not granted",
+          "overseas deployment not auto-allowed",
+          "staging asset, not published",
+        ],
+        permissionEvidence: "https://docs.volcengine.com/docs/6561/1533787",
+        notes: "Phase 2D.1：由项目自研 transcript（owned）经豆包语音 TTS 生成；仅限中国大陆地区；staging 资产。",
+      },
+    },
+    {
+      assetId: audioPassage1,
+      type: "audio",
+      source: "/audio/papers/p001-passage-g1.mp3",
+      mimeType: "audio/mpeg",
+      duration: 88.9,
+      checksum: "7eea0f313ee8caaeb12d551870f6d9f63dfdcc97dde62e6d1ff336676b39983c",
+      sizeBytes: 1423296,
+      format: "mp3",
+      contentVersion: "1.1.0",
       generatedAt: "2026-09-28",
       provider: "volcengine-doubao-voice",
       voice: "prebuilt neural voice (female narrator), natural American English",
       termsCheckedDate: "2026-09-28",
+      generated: true,
+      aiDisclosure: "AI 合成语音",
       rights: {
         licenseStatus: "owned",
         rightsHolder: "CET-6 Daily Project",
-        notes: "Phase 2D：由项目自研 transcript（owned）经豆包语音 TTS 生成；输出可用于产品内学习播放（火山引擎《生成式模型服务专用条款》3.3/3.5，2026-08-20 版）；仅限中国大陆地区；staging 资产，未发布。",
+        territory: "China mainland only",
+        allowedUses: ["product-internal learning playback"],
+        restrictions: [
+          "standalone audio sublicense or resale not granted",
+          "overseas deployment not auto-allowed",
+          "staging asset, not published",
+        ],
+        permissionEvidence: "https://docs.volcengine.com/docs/6561/1533787",
+        notes: "Phase 2D.1：由项目自研 transcript（owned）经豆包语音 TTS 生成；仅限中国大陆地区；staging 资产。",
       },
     },
     {
-      assetId: audioLectureA,
+      assetId: audioPassage2,
       type: "audio",
-      source: "/audio/papers/p001-lecture-g3.mp3",
+      source: "/audio/papers/p001-passage-g2.mp3",
       mimeType: "audio/mpeg",
-      duration: 108.9,
-      checksum: "91e38671e352ac369791e74e1e725c2b544af6e904988506bacc3b850af32253",
-      sizeBytes: 1743351,
+      duration: 85.08,
+      checksum: "f775e85c249f27cebbfd570ea16d2c80a46d32423d231fd69d01d4fecae57740",
+      sizeBytes: 1362240,
       format: "mp3",
-      contentVersion: "1.0.1",
+      contentVersion: "1.1.0",
+      generatedAt: "2026-09-28",
+      provider: "volcengine-doubao-voice",
+      voice: "prebuilt neural voice (female narrator), natural American English",
+      termsCheckedDate: "2026-09-28",
+      generated: true,
+      aiDisclosure: "AI 合成语音",
+      rights: {
+        licenseStatus: "owned",
+        rightsHolder: "CET-6 Daily Project",
+        territory: "China mainland only",
+        allowedUses: ["product-internal learning playback"],
+        restrictions: [
+          "standalone audio sublicense or resale not granted",
+          "overseas deployment not auto-allowed",
+          "staging asset, not published",
+        ],
+        permissionEvidence: "https://docs.volcengine.com/docs/6561/1533787",
+        notes: "Phase 2D.1：由项目自研 transcript（owned）经豆包语音 TTS 生成；仅限中国大陆地区；staging 资产。",
+      },
+    },
+    {
+      assetId: audioTalk1,
+      type: "audio",
+      source: "/audio/papers/p001-lecture-g1.mp3",
+      mimeType: "audio/mpeg",
+      duration: 149.18,
+      checksum: "a13a89d70ad731043f4d9755618de805765be0515b0d559baa68321b98213868",
+      sizeBytes: 2387520,
+      format: "mp3",
+      contentVersion: "1.1.0",
       generatedAt: "2026-09-28",
       provider: "volcengine-doubao-voice",
       voice: "prebuilt neural voice (male lecturer), natural American English",
       termsCheckedDate: "2026-09-28",
+      generated: true,
+      aiDisclosure: "AI 合成语音",
       rights: {
         licenseStatus: "owned",
         rightsHolder: "CET-6 Daily Project",
-        notes: "Phase 2D：由项目自研 transcript（owned）经豆包语音 TTS 生成；输出可用于产品内学习播放（火山引擎《生成式模型服务专用条款》3.3/3.5，2026-08-20 版）；仅限中国大陆地区；staging 资产，未发布。",
+        territory: "China mainland only",
+        allowedUses: ["product-internal learning playback"],
+        restrictions: [
+          "standalone audio sublicense or resale not granted",
+          "overseas deployment not auto-allowed",
+          "staging asset, not published",
+        ],
+        permissionEvidence: "https://docs.volcengine.com/docs/6561/1533787",
+        notes: "Phase 2D.1：由项目自研 transcript（owned）经豆包语音 TTS 生成；仅限中国大陆地区；staging 资产。",
+      },
+    },
+    {
+      assetId: audioTalk2,
+      type: "audio",
+      source: "/audio/papers/p001-lecture-g2.mp3",
+      mimeType: "audio/mpeg",
+      duration: 127.68,
+      checksum: "f82dabdd7a9b3d2b838ea9908c4805cd278c022494674be0d24255a6cffb4d9e",
+      sizeBytes: 2043648,
+      format: "mp3",
+      contentVersion: "1.1.0",
+      generatedAt: "2026-09-28",
+      provider: "volcengine-doubao-voice",
+      voice: "prebuilt neural voice (male lecturer), natural American English",
+      termsCheckedDate: "2026-09-28",
+      generated: true,
+      aiDisclosure: "AI 合成语音",
+      rights: {
+        licenseStatus: "owned",
+        rightsHolder: "CET-6 Daily Project",
+        territory: "China mainland only",
+        allowedUses: ["product-internal learning playback"],
+        restrictions: [
+          "standalone audio sublicense or resale not granted",
+          "overseas deployment not auto-allowed",
+          "staging asset, not published",
+        ],
+        permissionEvidence: "https://docs.volcengine.com/docs/6561/1533787",
+        notes: "Phase 2D.1：由项目自研 transcript（owned）经豆包语音 TTS 生成；仅限中国大陆地区；staging 资产。",
+      },
+    },
+    {
+      assetId: audioTalk3,
+      type: "audio",
+      source: "/audio/papers/p001-lecture-g3.mp3",
+      mimeType: "audio/mpeg",
+      duration: 113,
+      checksum: "5c1e35e9ceea65a8c847f2bd557af3c38d315039243b64b6b5b17c57beb1533c",
+      sizeBytes: 1808640,
+      format: "mp3",
+      contentVersion: "1.1.0",
+      generatedAt: "2026-09-28",
+      provider: "volcengine-doubao-voice",
+      voice: "prebuilt neural voice (female lecturer), natural American English",
+      termsCheckedDate: "2026-09-28",
+      generated: true,
+      aiDisclosure: "AI 合成语音",
+      rights: {
+        licenseStatus: "owned",
+        rightsHolder: "CET-6 Daily Project",
+        territory: "China mainland only",
+        allowedUses: ["product-internal learning playback"],
+        restrictions: [
+          "standalone audio sublicense or resale not granted",
+          "overseas deployment not auto-allowed",
+          "staging asset, not published",
+        ],
+        permissionEvidence: "https://docs.volcengine.com/docs/6561/1533787",
+        notes: "Phase 2D.1：由项目自研 transcript（owned）经豆包语音 TTS 生成；仅限中国大陆地区；staging 资产。",
       },
     },
   ],
   schemaVersion: "1.0.0",
-  contentVersion: "1.0.1",
+  contentVersion: "1.1.0",
   isPartial: false,
   fixture: false,
   status: "staging",
@@ -1083,7 +1309,7 @@ export function registerMockPaper001(): void {
   registerContentPack({
     id: MOCK_PAPER_001_PACK_ID,
     name: "CET6 Original Mock Paper 001",
-    version: "1.0.1",
+    version: "1.1.0",
     contentType: "paper",
     sourceId: MOCK_PAPER_001_SOURCE.id,
     items: [mockPaper001],

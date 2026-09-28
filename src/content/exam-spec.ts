@@ -14,12 +14,16 @@ export interface Cet6ExamSectionSpec {
   scoreRatio: string; // 例如 "15%"
 }
 
-/** 听力小节（当前官方结构，V13 Phase 2A.1 已按 NEEA 官方修正）。 */
+/** 听力小节（当前官方结构，V13 Phase 2A.1 已按 NEEA 官方修正；V13 Phase 2D.1 增加 material 结构约束）。 */
 export interface Cet6ListeningSubsectionSpec {
   kind: "long_conversation" | "passage" | "lecture";
   name: string;
   questionCount: number;
   scoreRatio: string;
+  /** V13 Phase 2D.1：官方 material 数量（长对话 2 / 篇章 2 / 讲话·报道·讲座 3）。 */
+  materialCount: number;
+  /** V13 Phase 2D.1：每个 material 允许的题目数（如 long_conversation=[4]、passage=[3,4]、lecture=[3,4]）。 */
+  perMaterialQuestions: number[];
 }
 
 /** 阅读小节（官方公开结构）。 */
@@ -67,9 +71,9 @@ export const CET6_EXAM_SPEC: Cet6ExamSpec = {
     { kind: "translation", name: "Translation (C-E)", questionCount: 1, timeMinutes: 30, scoreRatio: "15%" },
   ],
   listeningSubsections: [
-    { kind: "long_conversation", name: "Long Conversation", questionCount: 8, scoreRatio: "8%" },
-    { kind: "passage", name: "Passage", questionCount: 7, scoreRatio: "7%" },
-    { kind: "lecture", name: "Speech / Report / Lecture", questionCount: 10, scoreRatio: "20%" },
+    { kind: "long_conversation", name: "Long Conversation", questionCount: 8, scoreRatio: "8%", materialCount: 2, perMaterialQuestions: [4] },
+    { kind: "passage", name: "Passage", questionCount: 7, scoreRatio: "7%", materialCount: 2, perMaterialQuestions: [3, 4] },
+    { kind: "lecture", name: "Speech / Report / Lecture", questionCount: 10, scoreRatio: "20%", materialCount: 3, perMaterialQuestions: [3, 4] },
   ],
   readingSubsections: [
     { kind: "cloze", name: "Vocabulary Comprehension / Cloze", questionCount: 10, scoreRatio: "5%" },

@@ -180,9 +180,13 @@ function makeCompletePaper(mockId: string, rights: ContentRights, status: CET6Pa
     sub ? extendStableId(extendStableId(sec(section as PaperSection["type"]), sub), g) : extendStableId(sec(section as PaperSection["type"]), g);
 
   const listeningGroups: PaperSection["groups"] = [
-    { groupId: grp("listening", "long_conversation", "g1"), type: "long_conversation", order: 1, transcript: "TEST FIXTURE: long conversation script.", questions: makeQuestions(grp("listening", "long_conversation", "g1"), 8) },
-    { groupId: grp("listening", "passage", "g2"), type: "passage", order: 2, transcript: "TEST FIXTURE: passage script.", questions: makeQuestions(grp("listening", "passage", "g2"), 7) },
-    { groupId: grp("listening", "lecture", "g3"), type: "lecture", order: 3, transcript: "TEST FIXTURE: lecture script.", questions: makeQuestions(grp("listening", "lecture", "g3"), 10) },
+    { groupId: grp("listening", "long_conversation", "g1"), type: "long_conversation", order: 1, transcript: "TEST FIXTURE: long conversation script 1.", questions: makeQuestions(grp("listening", "long_conversation", "g1"), 4) },
+    { groupId: grp("listening", "long_conversation", "g2"), type: "long_conversation", order: 2, transcript: "TEST FIXTURE: long conversation script 2.", questions: makeQuestions(grp("listening", "long_conversation", "g2"), 4) },
+    { groupId: grp("listening", "passage", "g1"), type: "passage", order: 3, transcript: "TEST FIXTURE: passage script 1.", questions: makeQuestions(grp("listening", "passage", "g1"), 3) },
+    { groupId: grp("listening", "passage", "g2"), type: "passage", order: 4, transcript: "TEST FIXTURE: passage script 2.", questions: makeQuestions(grp("listening", "passage", "g2"), 4) },
+    { groupId: grp("listening", "lecture", "g1"), type: "lecture", order: 5, transcript: "TEST FIXTURE: lecture script 1.", questions: makeQuestions(grp("listening", "lecture", "g1"), 4) },
+    { groupId: grp("listening", "lecture", "g2"), type: "lecture", order: 6, transcript: "TEST FIXTURE: lecture script 2.", questions: makeQuestions(grp("listening", "lecture", "g2"), 3) },
+    { groupId: grp("listening", "lecture", "g3"), type: "lecture", order: 7, transcript: "TEST FIXTURE: lecture script 3.", questions: makeQuestions(grp("listening", "lecture", "g3"), 3) },
   ];
   const readingGroups: PaperSection["groups"] = [
     { groupId: grp("reading", "cloze", "g1"), type: "cloze", order: 1, passage: "TEST FIXTURE: cloze passage.", questions: makeQuestions(grp("reading", "cloze", "g1"), 10) },
@@ -1192,20 +1196,21 @@ test("paper 001: 每题都有解析（short + detailed）", () => {
   }
 });
 
-test("paper 001: 听力 4 组全部有 transcript；3 个 audio 为 Phase 2D 真实资产且带 rights", () => {
+test("paper 001: 听力 7 组全部有 transcript；7 个 audio 为 Phase 2D.1 真实资产且带 rights", () => {
   const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
-  assert.equal(listening.groups.length, 4);
+  assert.equal(listening.groups.length, 7, "官方 CET6 listening 应有 7 个 materials（2 long conv + 2 passage + 3 lecture）");
   for (const g of listening.groups) {
     assert.ok(g.transcript && g.transcript.trim().length > 0, `${g.groupId} 缺 transcript`);
   }
   const audioAssets = (mockPaper001.assets ?? []).filter((a) => a.type === "audio");
-  assert.equal(audioAssets.length, 3);
+  assert.equal(audioAssets.length, 7, "应有 7 个音频资产（一 material 一 asset）");
   for (const a of audioAssets) {
-    assert.ok(!a.source.startsWith("mock://"), `${a.assetId} 必须是真实音频 source（Phase 2D 已替换 placeholder）`);
+    assert.ok(!a.source.startsWith("mock://"), `${a.assetId} 必须是真实音频 source（Phase 2D.1 已替换 placeholder）`);
     assert.ok(a.source.startsWith("/audio/papers/"), `${a.assetId} source 应为 public 音频路径`);
     assert.ok(a.checksum && a.checksum.length >= 64, `${a.assetId} 缺真实 checksum`);
     assert.equal(a.rights?.licenseStatus, "owned", `${a.assetId} 必须带 rights=owned`);
-    assert.ok(a.rights?.notes?.includes("Phase 2D"), `${a.assetId} rights notes 应记录 Phase 2D 生成与条款`);
+    assert.ok(a.rights?.notes?.includes("Phase 2D.1"), `${a.assetId} rights notes 应记录 Phase 2D.1 生成与条款`);
+    assert.equal((a as unknown as { generated?: boolean }).generated, true, `${a.assetId} 应标记 generated=true（AI 合成语音）`);
   }
 });
 
@@ -1258,9 +1263,9 @@ function paper001AudioAssets() {
   return (mockPaper001.assets ?? []).filter((a) => a.type === "audio");
 }
 
-test("paper 001 audio: 3 个真实音频资产，无 mock:// placeholder 残留", () => {
+test("paper 001 audio: 7 个真实音频资产（2 long conv + 2 passage + 3 lecture），无 mock:// placeholder 残留", () => {
   const audios = paper001AudioAssets();
-  assert.equal(audios.length, 3, "Paper 001 应有 3 个音频资产");
+  assert.equal(audios.length, 7, "Paper 001 应有 7 个音频资产（官方 CET6 listening materials）");
   for (const a of audios) {
     assert.ok(!a.source.startsWith("mock://"), `${a.assetId} 仍是 placeholder: ${a.source}`);
     assert.ok(a.source.startsWith("/audio/papers/"), `${a.assetId} source 应为 public 音频路径: ${a.source}`);
@@ -1297,6 +1302,118 @@ test("paper 001 audio: transcript/contentVersion 与 audio version 一致（无�
   const audioIds = new Set(paper001AudioAssets().map((a) => a.assetId));
   const referenced = new Set<string>();
   for (const g of listening.groups) for (const r of g.assetIds ?? []) referenced.add(r);
-  assert.equal(referenced.size, 3, "listening 组应引用 3 个音频");
+  assert.equal(referenced.size, 7, "listening 组应引用 7 个音频（一 material 一 asset）");
   for (const r of referenced) assert.ok(audioIds.has(r), `group 引用未知 audio asset: ${r}`);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2D.1: Listening Material Structure (2+2+3) & Allocation
+
+test("paper 001 listening: official material count = 2 long_conversation + 2 passage + 3 lecture", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const byType = new Map<string, number>();
+  for (const g of listening.groups) byType.set(g.type, (byType.get(g.type) ?? 0) + 1);
+  assert.equal(byType.get("long_conversation"), 2, "长对话应为 2 篇");
+  assert.equal(byType.get("passage"), 2, "篇章应为 2 篇");
+  assert.equal(byType.get("lecture"), 3, "讲话/报道/讲座应为 3 篇");
+  assert.equal(listening.groups.length, 7, "总计 7 个 listening materials");
+});
+
+test("paper 001 listening: per-material question allocation = long conv 4+4 / passage 3+4 / lecture 4+3+3", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const lc = listening.groups.filter((g) => g.type === "long_conversation");
+  const pa = listening.groups.filter((g) => g.type === "passage");
+  const le = listening.groups.filter((g) => g.type === "lecture");
+  // long conv: 每篇 4 题
+  for (const g of lc) assert.equal(g.questions?.length, 4, `${g.groupId} 长对话应为 4 题`);
+  assert.equal(lc.reduce((n, g) => n + (g.questions?.length ?? 0), 0), 8, "长对话合计 8 题");
+  // passage: 3+4 或 4+3，合计 7
+  const paCounts = pa.map((g) => g.questions?.length ?? 0).sort((a, b) => a - b);
+  assert.deepEqual(paCounts, [3, 4], "passage 应为 3+4 题分配");
+  assert.equal(pa.reduce((n, g) => n + (g.questions?.length ?? 0), 0), 7, "passage 合计 7 题");
+  // lecture: 每篇 3-4 题，合计 10
+  for (const g of le) {
+    const qc = g.questions?.length ?? 0;
+    assert.ok(qc >= 3 && qc <= 4, `${g.groupId} lecture 每篇应为 3-4 题，实际 ${qc}`);
+  }
+  assert.equal(le.reduce((n, g) => n + (g.questions?.length ?? 0), 0), 10, "lecture 合计 10 题");
+  // 总计 25
+  assert.equal(listening.groups.reduce((n, g) => n + (g.questions?.length ?? 0), 0), 25);
+});
+
+test("paper 001 listening: 7 transcript units, each non-empty and self-authored (no real CET6 copy)", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  assert.equal(listening.groups.length, 7);
+  for (const g of listening.groups) {
+    assert.ok(g.transcript && g.transcript.trim().length > 50, `${g.groupId} transcript 过短或缺失`);
+    // 不得包含真实 CET6 真题标记
+    assert.ok(!/CET-?6 \d{4} (January|June|December) (真题|past paper)/i.test(g.transcript), `${g.groupId} 不应包含真实真题标记`);
+  }
+});
+
+test("paper 001 listening: no orphan audio assets — every asset referenced by exactly one group", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const audioAssets = paper001AudioAssets();
+  assert.equal(audioAssets.length, 7);
+  const referenced = new Map<string, number>();
+  for (const g of listening.groups) {
+    assert.equal(g.assetIds?.length, 1, `${g.groupId} 应引用恰好 1 个 audio asset（一 material 一 asset）`);
+    for (const ref of g.assetIds ?? []) referenced.set(ref, (referenced.get(ref) ?? 0) + 1);
+  }
+  assert.equal(referenced.size, 7, "应引用 7 个不同 audio asset");
+  for (const [id, count] of referenced) assert.equal(count, 1, `audio asset ${id} 被引用 ${count} 次（应恰好 1 次）`);
+  // 无未引用的 audio asset
+  const assetIds = new Set(audioAssets.map((a) => a.assetId));
+  for (const id of referenced.keys()) assert.ok(assetIds.has(id), `引用了不存在的 asset: ${id}`);
+  for (const id of assetIds) assert.ok(referenced.has(id), `audio asset 未被任何 group 引用: ${id}`);
+});
+
+test("paper 001 listening: wrong material count triggers validator error (long_conversation 2→3)", () => {
+  const bad = structuredClone(mockPaper001) as CET6Paper;
+  const listening = bad.sections.find((s) => s.type === "listening")!;
+  // 复制一个 long_conversation group 使数量变为 3
+  const extra = structuredClone(listening.groups.find((g) => g.type === "long_conversation")!);
+  extra.groupId = extendStableId(listening.sectionId, "long_conversation", "g99");
+  extra.questions = extra.questions?.map((q, i) => ({ ...q, questionId: extendStableId(extra.groupId, `q${i + 1}`) }));
+  listening.groups.push(extra);
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("long_conversation") && e.includes("material count 3 != spec 2")), `应报 material count 错误: ${errors.join("; ")}`);
+});
+
+test("paper 001 listening: wrong per-material allocation triggers validator error (long conv 4→5)", () => {
+  const bad = structuredClone(mockPaper001) as CET6Paper;
+  const listening = bad.sections.find((s) => s.type === "listening")!;
+  const lc = listening.groups.find((g) => g.type === "long_conversation")!;
+  const extraQ = structuredClone(lc.questions![0]);
+  extraQ.questionId = extendStableId(lc.groupId, "q99");
+  extraQ.order = 99;
+  lc.questions!.push(extraQ);
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("long_conversation") && e.includes("has 5 questions")), `应报 per-material allocation 错误: ${errors.join("; ")}`);
+});
+
+test("paper 001: contentVersion 1.1.0（Phase 2D.1 listening 结构重组）", () => {
+  assert.equal(mockPaper001.contentVersion, "1.1.0");
+  for (const a of paper001AudioAssets()) {
+    assert.equal(a.contentVersion, "1.1.0", `${a.assetId} audio contentVersion 应与 paper 一致`);
+  }
+});
+
+test("paper 001: AI 合成语音标识准备（generated=true + aiDisclosure + provider + termsCheckedDate）", () => {
+  for (const a of paper001AudioAssets()) {
+    const rec = a as unknown as { generated?: boolean; aiDisclosure?: string; provider?: string; termsCheckedDate?: string };
+    assert.equal(rec.generated, true, `${a.assetId} 应标记 generated=true`);
+    assert.ok(rec.aiDisclosure && rec.aiDisclosure.length > 0, `${a.assetId} 应有 aiDisclosure 文案`);
+    assert.ok(rec.provider && rec.provider.length > 0, `${a.assetId} 应有 provider`);
+    assert.ok(rec.termsCheckedDate && rec.termsCheckedDate.length > 0, `${a.assetId} 应有 termsCheckedDate`);
+  }
+});
+
+test("paper 001: audio rights scope hardened（territory / allowedUses / restrictions / permissionEvidence）", () => {
+  for (const a of paper001AudioAssets()) {
+    const r = a.rights as unknown as { territory?: string; allowedUses?: string[]; restrictions?: string[]; permissionEvidence?: string };
+    assert.ok(r.territory && r.territory.includes("China"), `${a.assetId} rights 应记录 territory（中国大陆）`);
+    assert.ok(r.allowedUses && r.allowedUses.some((u) => u.includes("learning")), `${a.assetId} rights 应记录 allowedUse（产品内学习播放）`);
+    assert.ok(r.restrictions && r.restrictions.length >= 2, `${a.assetId} rights 应记录 restrictions（至少 2 项）`);
+    assert.ok(r.permissionEvidence && r.permissionEvidence.startsWith("http"), `${a.assetId} rights 应记录 permissionEvidence（条款 URL）`);
+  }
 });

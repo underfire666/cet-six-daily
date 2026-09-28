@@ -129,9 +129,9 @@ if (!paper001) {
       }
     }
   }
-  // Paper 001 应有 3 个音频且无 placeholder
+  // V13 Phase 2D.1：Paper 001 应有 7 个音频（2 long conv + 2 passage + 3 lecture）且无 placeholder
   const audios = (paper001.assets ?? []).filter((a) => a.type === "audio");
-  if (audios.length !== 3) warnings.push(`mock paper 001 audio assets=${audios.length}（预期 3）`);
+  if (audios.length !== 7) errors.push(`mock paper 001 audio assets=${audios.length}（预期 7，官方 CET6 listening materials）`);
 }
 
 console.log("=== Content Audio Validate ===");

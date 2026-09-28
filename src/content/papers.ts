@@ -114,6 +114,10 @@ export interface PaperAsset {
   voice?: string;
   termsCheckedDate?: string;
   format?: string;
+  /** V13 Phase 2D.1：AI 合成标识（true = AI 合成语音，需在 UI 显著展示）。 */
+  generated?: boolean;
+  /** V13 Phase 2D.1：AI 合成语音披露文案（如 "AI 合成语音"），供 Phase 2E UI 展示。 */
+  aiDisclosure?: string;
 }
 
 export interface CET6Paper {
@@ -429,11 +433,29 @@ function validateSpecConformance(paper: CET6Paper, errors: string[]): void {
     }
     if (sec.type === "listening") {
       const bySub = new Map<string, number>();
-      for (const g of sec.groups) bySub.set(g.type, (bySub.get(g.type) ?? 0) + questionCountOfGroup(g));
+      const groupsBySub = new Map<string, PaperGroup[]>();
+      for (const g of sec.groups) {
+        bySub.set(g.type, (bySub.get(g.type) ?? 0) + questionCountOfGroup(g));
+        const arr = groupsBySub.get(g.type) ?? [];
+        arr.push(g);
+        groupsBySub.set(g.type, arr);
+      }
       for (const subSpec of spec.listeningSubsections) {
         const actual = bySub.get(subSpec.kind) ?? 0;
         if (actual !== subSpec.questionCount) {
           err(`paper ${paper.paperId} listening subsection ${subSpec.kind} question count ${actual} != spec ${subSpec.questionCount} (${subSpec.name})`);
+        }
+        // V13 Phase 2D.1：官方 material 数量约束（2 long conv / 2 passage / 3 lecture）。
+        const subGroups = groupsBySub.get(subSpec.kind) ?? [];
+        if (subGroups.length !== subSpec.materialCount) {
+          err(`paper ${paper.paperId} listening subsection ${subSpec.kind} material count ${subGroups.length} != spec ${subSpec.materialCount} (official ${subSpec.name} materials)`);
+        }
+        // V13 Phase 2D.1：per-material question allocation 约束（long conv=4 each；passage=3/4；lecture=3/4）。
+        for (const g of subGroups) {
+          const qc = questionCountOfGroup(g);
+          if (!subSpec.perMaterialQuestions.includes(qc)) {
+            err(`paper ${paper.paperId} listening group ${g.groupId} (${subSpec.kind}) has ${qc} questions, allowed per-material allocation: [${subSpec.perMaterialQuestions.join(",")}]`);
+          }
         }
       }
     }
