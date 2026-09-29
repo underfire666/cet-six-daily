@@ -1,0 +1,35 @@
+{
+  "sessionId": "b391ef54-3646-4181-b29a-0b52c0448340",
+  "baseline": 5,
+  "aPreMerge": 8,
+  "bPreMerge": 7,
+  "finalA": 10,
+  "finalB": 10,
+  "sameSession": true,
+  "sameAnswers": true,
+  "pass": true,
+  "finalAIds": [
+    "cet6:mock:paper-001:writing:g1:q1",
+    "cet6:mock:paper-001:listening:passage:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q3",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q4",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q3",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q4"
+  ],
+  "finalBIds": [
+    "cet6:mock:paper-001:writing:g1:q1",
+    "cet6:mock:paper-001:listening:passage:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q3",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q4",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q3",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q4"
+  ]
+}

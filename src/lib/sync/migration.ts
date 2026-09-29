@@ -54,6 +54,28 @@ export function buildGuestMigrationPlan(storage: KeyStorage, migrationId: string
   const writing = loadWritingStore(storage).store;
   const review = loadReviewStore(storage as Storage).store;
   const dailyPlan = loadDailyPlanStore(storage).store;
+
+  // Read guest paper sessions (flat localStorage keys, V13+)
+  const paperSessions: Array<{ module: string; id: string; activityId: string; planDate: string; startedAt: string; completedAt: string | null; applied: boolean; payload: Record<string, unknown> }> = [];
+  for (let i = 0; i < storage.length; i++) {
+    const k = storage.key(i);
+    if (!k || !k.startsWith("cet-daily:v13:paper-session:")) continue;
+    try {
+      const v = JSON.parse(storage.getItem(k) || "{}");
+      if (!v.sessionId) continue;
+      paperSessions.push({
+        module: "paper",
+        id: v.sessionId,
+        activityId: v.paperId || "unknown",
+        planDate: v.startedAt ? todayInShanghai(new Date(v.startedAt)) : today,
+        startedAt: v.startedAt || new Date().toISOString(),
+        completedAt: v.completedAt || null,
+        applied: v.phase === "completed",
+        payload: v as Record<string, unknown>,
+      });
+    } catch { /* skip malformed */ }
+  }
+
   const mutations: SyncMutationInput[] = [];
   const add = (entityType: SyncMutationInput["entityType"], entityId: string, payload: Record<string, unknown>, operation: SyncMutationInput["operation"] = "upsert") => {
     mutations.push({ mutationId: `guest:${migrationId}:${entityType}:${entityId}`, entityType, entityId, operation, payload });
@@ -83,6 +105,7 @@ export function buildGuestMigrationPlan(storage: KeyStorage, migrationId: string
     ...Object.values(translation.sessions).map((session) => ({ module: "translation", id: session.id, activityId: session.taskId, planDate: session.planDate, startedAt: session.startedAt, completedAt: session.completedAt, applied: session.applied, payload: session })),
     ...Object.values(writing.sessions).map((session) => ({ module: "writing", id: session.id, activityId: session.taskId, planDate: session.planDate, startedAt: session.startedAt, completedAt: session.completedAt, applied: session.applied, payload: session })),
     ...Object.values(review.sessions).map((session) => ({ module: "review", id: session.id, activityId: session.id, planDate: session.date, startedAt: session.startedAt, completedAt: session.completedAt, applied: session.applied, payload: session })),
+    ...paperSessions,
   ];
   for (const session of allSessions) {
     add("session", session.id, {
@@ -176,7 +199,7 @@ export function buildGuestMigrationPlan(storage: KeyStorage, migrationId: string
   const meaningfulPlan = Object.values(dailyPlan.plans).some((plan) => plan.status === "completed" || plan.adjusted) || dailyPlan.customizedDates.length > 0 || Object.keys(dailyPlan.completionLedger).length > 0;
   const preferencesChanged = hasStoredDailyPlan && JSON.stringify(dailyPlan.preferences) !== JSON.stringify(DEFAULT_PREFERENCES);
   const settingsChanged = JSON.stringify(study.settings) !== JSON.stringify(defaultSettings);
-  const hasData = xp > 0 || allSessions.length > 0 || wordCount > 0 || wrongCount > 0 || translation.history.length > 0 || writing.history.length > 0 || profileChanged || meaningfulPlan || preferencesChanged || settingsChanged;
+  const hasData = xp > 0 || allSessions.length > 0 || wordCount > 0 || wrongCount > 0 || translation.history.length > 0 || writing.history.length > 0 || profileChanged || meaningfulPlan || preferencesChanged || settingsChanged || paperSessions.length > 0;
   return {
     preview: { hasData, xp, studyDays: completedDates.size, sessionCount, wordCount, wrongCount, translationCount: translation.history.length, writingCount: writing.history.length },
     mutations: hasData ? mutations : [],
