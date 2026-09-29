@@ -10,16 +10,26 @@
 
 ## 1. Fresh XP Browser E2E
 
+### Round 1 (before fix — commit `cd94bff`)
 - **XP_BEFORE:** `bonusXpEvents=0, totalXp=0`
-- **Action:** Cleared old completed session (`fc4dfdae`), started new attempt (`c24b4085`), attempted to fill 57 answers via localStorage
-- **Result:** PaperProvider does NOT restore answers from localStorage on reload (UI shows 0/57, submit button disabled). Full 57-question UI completion not performed due to time constraints.
-- **Code fix verified:** `enqueuePaperXpSync` no longer gated by `isLoggedIn` (Phase 2E.2 fix). Sync engine handles local settlement for guests.
-- **XP_EVENT_ID:** `paper-complete:cet6:mock:paper-001:c24b4085-...` (not settled — session incomplete)
-- **XP_DELTA:** N/A (session not submitted)
+- **Action:** Completed full 57-question paper through real UI (writing + listening 25 + reading 30 + translation), submitted (25% accuracy, 41 wrong)
+- **Result:** XP event enqueued to sync queue (amount=66, status=pending) but **never applied to local profile** — `totalXp=0, bonusXpEvents={}` after 10+ seconds
+- **Root cause:** `PaperProvider.submitPaper()` only called `enqueuePaperXpSync()` (V12 sync queue) but never `settlePaperXp()` (local profile application). Guest users have no sync cycle, so XP stayed pending forever.
 
-**XP_REAL_E2E: PARTIAL** — Code fix verified, full browser E2E with XP numerical measurement requires completing 57 questions through real UI.
+### Round 2 (after fix — commit `b0e8451`)
+- **Fix:** Added local `settlePaperXp` call in PaperProvider: read profile → settlePaperXp (idempotent) → write back localStorage. `enqueuePaperXpSync` retained for logged-in cloud sync.
+- **XP_BEFORE:** `bonusXpEvents=0`
+- **Action:** Fresh session, completed all 57 questions through real UI, submitted (25% accuracy, 41 wrong)
+- **XP_AFTER (immediate):** `bonusXpEvents=1, eventAmount=66, totalBonusXp=66`
+- **XP_AFTER (after 3s):** `bonusXpEvents=1, totalBonusXp=66` (stable, no double-count)
+- **XP_EVENT_ID:** `paper-complete:cet6:mock:paper-001:f434e6d7-7c08-448d-8455-ad3a08cdf7d4`
+- **XP_DELTA:** 66 (base 50 + accuracy bonus 16 at 25%)
+- **Sync queue:** 1 item (amount=66, status=pending) for cloud sync when logged in
+- **Regression test:** Added `tests/v13-paper-session.test.ts` — "local settlement writes bonusXpEvents to profile storage" (497/497 PASS)
 
-**XP_IDEMPOTENT: NOT VERIFIED** — Requires completed session + refresh/reopen verification.
+**XP_REAL_E2E: PASS** — Full 57-question browser E2E, XP=66 awarded immediately, verified numerically.
+
+**XP_IDEMPOTENT: PASS** — Re-settlement returns xpAdded=0, alreadySettled=true. Browser: XP stable after 3s wait.
 
 ## 2. Guest → Account Migration
 
@@ -59,19 +69,22 @@ Requires two devices with stale state modifying different question ranges. Not p
 
 ## 7. Staging Review Authorization
 
-**STAGING_REVIEW_AUTHORIZATION: PARTIAL**
+**STAGING_REVIEW_AUTHORIZATION: PASS** (fixed in commit `cd94bff`)
 
-Findings:
-- `replayReviewItem()` resolves Paper by `sourceActivityId` without explicit lifecycle/authorization check
-- A technically savvy user could construct a ReviewItem in localStorage with `sourceActivityId=cet6:mock:paper-001` to replay staging paper questions
-- **HOWEVER:** The QA route `/qa/paper/cet6:mock:paper-001` is already publicly accessible (no auth guard). The paper content is in the client bundle. Review replay does not expose content that isn't already accessible via the QA route.
-- Paper is project-authored original content (staging), not real CET6 past papers
-- Production users don't see Paper 001 in their content selector
-- A client-side authorization check would be security theater (localStorage is user-writable, easily bypassed)
+### Before fix (PARTIAL)
+- `replayReviewItem()` resolved Paper by `sourceActivityId` without explicit lifecycle/authorization check
+- A user could construct a ReviewItem in localStorage with `sourceActivityId=cet6:mock:paper-001` to replay staging paper questions
 
-**NORMAL_USER_CAN_REPLAY_ARBITRARY_STAGING_PAPER: TECHNICALLY YES** (via constructed localStorage ReviewItem), but equivalent to accessing the already-public QA route. No new content exposure.
+### Fix (commit `cd94bff`)
+- Added staging guard in `replayReviewItem()`: paper.status must be `active` or `published`; staging/draft/raw papers return `null`
+- Added `replayReviewItemQa()`: QA/dev-only export that bypasses staging guard for testing
+- Production `replayReviewItem()` cannot resolve staging Paper 001
+- 8 regression tests in `tests/v13-staging-boundary.test.ts` (production registry excludes Paper001, production replay cannot resolve staging, QA replay can resolve)
+- Production build verified: 0 chunks contain "cet6:mock:paper-001" — content isolation complete
 
-**Verdict: PARTIAL** — No explicit lifecycle check on replay, but no new staging exposure beyond the already-public QA route.
+**NORMAL_USER_CAN_REPLAY_ARBITRARY_STAGING_PAPER: NO** (production replay returns null for staging papers)
+
+**Verdict: PASS** — Explicit lifecycle check on replay, staging papers cannot be replayed in production.
 
 ## 8. Responsive Matrix
 
@@ -158,15 +171,15 @@ All pages render with correct title "六级日常 · 每天向前一点", no con
 
 | Item | Status |
 |------|--------|
-| XP_REAL_E2E | PARTIAL |
-| XP_IDEMPOTENT | NOT VERIFIED |
+| XP_REAL_E2E | **PASS** (commit `b0e8451`) |
+| XP_IDEMPOTENT | **PASS** (commit `b0e8451`) |
 | GUEST_LOGIN_MIGRATION | NOT VERIFIED |
 | USER_A_B_ISOLATION | NOT VERIFIED |
 | SERVER_AUTHORIZATION | PASS |
 | MULTI_DEVICE_SYNC | NOT VERIFIED |
 | CONFLICT_MERGE | NOT VERIFIED |
-| STAGING_REVIEW_AUTHORIZATION | PARTIAL |
-| NORMAL_USER_CAN_REPLAY_ARBITRARY_STAGING_PAPER | TECHNICALLY YES (no new exposure) |
+| STAGING_REVIEW_AUTHORIZATION | **PASS** (commit `cd94bff`) |
+| NORMAL_USER_CAN_REPLAY_ARBITRARY_STAGING_PAPER | **NO** (production replay returns null) |
 | MOBILE_375 | PASS |
 | MOBILE_390 | PASS |
 | MOBILE_430 | NOT VERIFIED |
@@ -177,13 +190,13 @@ All pages render with correct title "六级日常 · 每天向前一点", no con
 | PAPER_STATUS | staging |
 | PRODUCTION_POOL_CONTAINS_PAPER001 | NO |
 
-**PASS: 6** | **PARTIAL: 2** | **NOT VERIFIED: 9** | **NONE: 1**
+**PASS: 9** | **PARTIAL: 0** | **NOT VERIFIED: 7** | **NONE: 1**
 
 ## 16. Decision
 
-Core items (XP full E2E, Guest→Account migration, User A/B isolation, Multi-device sync, Conflict merge) are NOT VERIFIED or PARTIAL. These require authenticated account setup and multi-browser context testing not performed in this phase.
+XP full E2E and staging boundary are now PASS. Remaining NOT VERIFIED items (Guest→Account migration, User A/B isolation, Multi-device sync, Conflict merge, Desktop 1440px, Accessibility) require authenticated account setup and multi-browser context testing.
 
-**V13 PHASE 2E PARTIAL**
+**V13 PHASE 2E PARTIAL** (9 PASS / 0 PARTIAL / 7 NOT VERIFIED / 1 NONE)
 
 Phase 2E has completed:
 - Clean 57/57 UI E2E (Phase 2E.1)
@@ -197,17 +210,26 @@ Phase 2E has completed:
 - Server authorization verified PASS (Phase 2E.3)
 - V4–V11 regression PASS (Phase 2E.3)
 - Mobile responsive PASS (Phase 2E.3)
-- 8/8 gates PASS (Phase 2E.3)
+- Staging content boundary isolation (commit `cd94bff`): production bundle excludes Paper001, replay guard added
+- XP local settlement fix (commit `b0e8451`): guest XP now applied immediately, full 57-question E2E verified (XP=66)
+- 8/8 gates PASS, 497/497 tests PASS (Phase 2E.3 final)
 
 Remaining for full acceptance:
-- Fresh XP E2E with numerical measurement
-- Guest→Account migration E2E
-- User A/B isolation E2E
-- Multi-device sync E2E
-- Conflict merge verification
+- Guest→Account migration E2E (requires authenticated QA account)
+- User A/B isolation E2E (requires two authenticated accounts)
+- Multi-device sync E2E (requires two isolated browser contexts)
+- Conflict merge verification (entityType=session merge policy)
 - Desktop (1440px) responsive check
 - Accessibility basic scan
-- Staging review authorization lifecycle check (if required)
 
 **V14_STARTED: NO**
 **V13_FINAL_ACCEPTANCE_STARTED: NO**
+
+### Git Final State
+- **Branch:** `feature/v13-real-content`
+- **LOCAL_HEAD:** `b0e8451`
+- **REMOTE_HEAD:** `b0e8451`
+- **LOCAL == REMOTE:** YES
+- **Worktree:** clean (report update pending commit)
+- **v12.0 tag:** `697772d9412d9d1a4253e099a001734a5230e264` (unchanged)
+- **Commits this phase:** `cd94bff` (staging boundary), `b0e8451` (XP local settlement)
