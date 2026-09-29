@@ -350,6 +350,42 @@ test("Paper XP: settlePaperXp is idempotent for same event ID", () => {
   assert.equal(alreadySettled, true);
 });
 
+// ============ 12b. XP local settlement (PaperProvider inline flow) ============
+test("Paper XP: local settlement writes bonusXpEvents to profile storage", () => {
+  const paper = setup();
+  let session = makeSession(paper);
+  session = answerAllQuestions(paper, session);
+  const now = "2026-09-28T10:30:00.000Z";
+  const result = calculatePaperResult(session, buildQuestionIdToCorrect(paper), buildSectionQuestionIds(paper), now);
+  const completedSession = { ...session, phase: "completed" as const, result };
+
+  // Simulate PaperProvider local settlement: read profile → settle → write back
+  const PROFILE_KEY = "cet-daily:v2:profile";
+  const storage = new Map<string, string>();
+  const profile: StudyProfile = {
+    schemaVersion: 1,
+    anchorDate: "2026-09-28",
+    completedLessons: {},
+    rewardsByDay: {},
+    bonusXpEvents: {},
+  };
+  const { profile: newProfile, xpAdded, alreadySettled } = settlePaperXp(profile, paper.paperId, completedSession, result);
+  assert.equal(alreadySettled, false);
+  assert.ok(xpAdded > 0);
+  storage.set(PROFILE_KEY, JSON.stringify(newProfile));
+
+  // Verify stored profile has the XP event
+  const stored = JSON.parse(storage.get(PROFILE_KEY)!);
+  const eventId = `paper-complete:${paper.paperId}:${session.sessionId}`;
+  assert.ok(stored.bonusXpEvents[eventId] !== undefined);
+  assert.equal(stored.bonusXpEvents[eventId], xpAdded);
+
+  // Re-settlement is idempotent (simulates refresh / re-submit)
+  const { xpAdded: xp2, alreadySettled: settled2 } = settlePaperXp(stored, paper.paperId, completedSession, result);
+  assert.equal(xp2, 0);
+  assert.equal(settled2, true);
+});
+
 // ============ 13. Paper content helpers ============
 test("Paper content: flattenPaperQuestions returns all questions in order", () => {
   const paper = setup();

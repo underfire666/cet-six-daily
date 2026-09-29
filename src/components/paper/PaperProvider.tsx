@@ -21,7 +21,7 @@ import {
   buildSectionMeta,
 } from "@/lib/paper/content";
 import { settlePaperReview, createPaperReviewItems, enqueuePaperReviewSync } from "@/lib/paper/review";
-import { calculatePaperXp, enqueuePaperXpSync } from "@/lib/paper/xp";
+import { calculatePaperXp, enqueuePaperXpSync, settlePaperXp } from "@/lib/paper/xp";
 
 export interface PaperProviderProps {
   paper: CET6Paper;
@@ -172,6 +172,24 @@ export function PaperProvider({ paper, ownerNamespace, isLoggedIn, onIssue, chil
     try {
       const xp = calculatePaperXp(result);
       if (xp > 0) {
+        // Local optimistic settlement: apply XP to StudyProfile immediately.
+        // This ensures guest users (no sync cycle) receive XP. Logged-in users
+        // also get local XP; sync enqueue is idempotent (settlePaperXp checks eventId).
+        if (typeof window !== "undefined") {
+          try {
+            const PROFILE_KEY = "cet-daily:v2:profile";
+            const raw = window.localStorage.getItem(PROFILE_KEY);
+            const profile = raw ? JSON.parse(raw) : {};
+            const completedSession = { ...session, phase: "completed" as const, result };
+            const { profile: newProfile, xpAdded, alreadySettled } = settlePaperXp(profile, paper.paperId, completedSession, result);
+            if (!alreadySettled && xpAdded > 0) {
+              window.localStorage.setItem(PROFILE_KEY, JSON.stringify(newProfile));
+            }
+          } catch (profileErr) {
+            console.warn("[Paper] Local XP profile update failed:", profileErr);
+          }
+        }
+        // Enqueue for cloud sync (logged-in users; guest users keep local-only)
         enqueuePaperXpSync(paper.paperId, session.sessionId, xp);
       }
       dispatch({ type: "mark_xp_settled", now });
