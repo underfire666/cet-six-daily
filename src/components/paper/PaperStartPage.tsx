@@ -18,26 +18,28 @@ const SECTION_NAMES: Record<string, string> = {
   translation: "翻译",
 };
 
-export function PaperStartPage() {
+export function PaperStartPage({ qaMode = false }: { qaMode?: boolean }) {
   const { paper, startOrResume, startNew, saveStatus } = usePaper();
   const sectionStats = getPaperSectionStats(paper);
   const totalQuestions = getPaperTotalQuestions(paper);
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "24px 16px 100px" }}>
-      {/* QA / Staging 标识 */}
-      <div style={{
-        display: "inline-block",
-        background: "#fff3cd",
-        color: "#856404",
-        border: "1px solid #ffc107",
-        borderRadius: 4,
-        padding: "4px 10px",
-        fontSize: 12,
-        marginBottom: 12,
-      }}>
-        QA / Staging — 仅开发环境
-      </div>
+      {/* QA / Staging 标识 — 仅 QA route 显示，production route 不显示 */}
+      {qaMode && (
+        <div style={{
+          display: "inline-block",
+          background: "#fff3cd",
+          color: "#856404",
+          border: "1px solid #ffc107",
+          borderRadius: 4,
+          padding: "4px 10px",
+          fontSize: 12,
+          marginBottom: 12,
+        }}>
+          QA / Staging — 仅开发环境
+        </div>
+      )}
 
       {/* 标题 */}
       <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, color: "#1a3a2a" }}>

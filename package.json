@@ -1,6 +1,6 @@
 {
   "name": "cet-six-daily",
-  "version": "13.0.1",
+  "version": "13.0.2",
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
@@ -8,7 +8,7 @@
     "start": "next start --hostname 127.0.0.1",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "tsx --test tests/*.test.ts tests/*.test.tsx",
     "content:validate": "tsx scripts/content-validate.ts",
     "content:stats": "tsx scripts/content-stats.ts",
     "content:rights": "tsx scripts/content-rights.ts",

@@ -35,7 +35,7 @@ function PaperRouter() {
   }
 
   if (!session) {
-    return <PaperStartPage />;
+    return <PaperStartPage qaMode={true} />;
   }
 
   if (session.phase === "completed" && session.result) {
