@@ -20,12 +20,13 @@ test("registry: builtin packs register and list", () => {
   resetRegistry();
   registerBuiltinPacks();
   const packs = listContentPacks();
-  assert.equal(packs.length, 5);
+  assert.equal(packs.length, 6);
   assert.ok(getContentPack("pack-vocabulary-mock"));
   assert.ok(getContentPack("pack-reading-mock"));
   assert.ok(getContentPack("pack-listening-mock"));
   assert.ok(getContentPack("pack-translation-mock"));
   assert.ok(getContentPack("pack-writing-mock"));
+  assert.ok(getContentPack("pack-paper-cet6-mock-001"));
 });
 
 test("registry: duplicate pack id throws", () => {
