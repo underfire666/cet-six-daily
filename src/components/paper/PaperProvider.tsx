@@ -15,6 +15,7 @@ import {
   findInProgressSession,
   findLatestCompletedSession,
 } from "@/lib/paper/storage";
+import { subscribeRemoteHydrate } from "@/lib/storage/hydration-events";
 import {
   buildSectionQuestionIds,
   buildQuestionIdToCorrect,
@@ -93,6 +94,14 @@ export function PaperProvider({ paper, ownerNamespace, isLoggedIn, onIssue, chil
     if (hydratedRef.current) return;
     hydratedRef.current = true;
     setState(loadSessionFromStorage(paper.paperId, ownerNamespace));
+  }, [paper.paperId, ownerNamespace]);
+
+  // 云端同步后重新加载 session（multi-device sync restore）
+  useEffect(() => {
+    const unsubscribe = subscribeRemoteHydrate(["paper"], () => {
+      setState(loadSessionFromStorage(paper.paperId, ownerNamespace));
+    });
+    return unsubscribe;
   }, [paper.paperId, ownerNamespace]);
 
   const session = state.session;

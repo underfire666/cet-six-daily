@@ -102,6 +102,80 @@ export function mergeDailyPlan(
   };
 }
 
+/**
+ * Merge two paper session payloads field-by-field to avoid whole-payload LWW
+ * data loss when two devices answer different question ranges concurrently.
+ *
+ * Merge rules:
+ * - answers: shallow merge by questionId (incoming wins for same question — same-question LWW)
+ * - sectionProgress: merge by sectionId, "completed" wins over "in_progress"
+ * - phase: "completed" wins
+ * - completedAt: non-null wins
+ * - result: incoming result wins if present, otherwise keep existing
+ * - xpSettled / reviewSettled: true wins
+ * - all other fields: incoming wins (LWW)
+ */
+export function mergePaperSessionPayloads(
+  existing: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...existing, ...incoming };
+
+  // answers: merge by questionId
+  const existingAnswers = (existing.answers ?? {}) as Record<string, unknown>;
+  const incomingAnswers = (incoming.answers ?? {}) as Record<string, unknown>;
+  merged.answers = { ...existingAnswers, ...incomingAnswers };
+
+  // sectionProgress: merge by sectionId, completed wins
+  const existingSP = Array.isArray(existing.sectionProgress) ? existing.sectionProgress : [];
+  const incomingSP = Array.isArray(incoming.sectionProgress) ? incoming.sectionProgress : [];
+  const spMap = new Map<string, Record<string, unknown>>();
+  for (const sp of existingSP) {
+    const item = sp as Record<string, unknown>;
+    if (item.sectionId) spMap.set(String(item.sectionId), { ...item });
+  }
+  for (const sp of incomingSP) {
+    const item = sp as Record<string, unknown>;
+    if (!item.sectionId) continue;
+    const key = String(item.sectionId);
+    const prev = spMap.get(key);
+    if (prev) {
+      const prevCompleted = prev.status === "completed";
+      const incomingCompleted = item.status === "completed";
+      spMap.set(key, {
+        ...prev,
+        ...item,
+        status: incomingCompleted || prevCompleted ? "completed" : (item.status ?? prev.status),
+        completedAt: item.completedAt ?? prev.completedAt,
+      });
+    } else {
+      spMap.set(key, { ...item });
+    }
+  }
+  merged.sectionProgress = Array.from(spMap.values());
+
+  // phase: completed wins
+  if (existing.phase === "completed" || incoming.phase === "completed") {
+    merged.phase = "completed";
+  }
+
+  // completedAt: non-null wins
+  if (existing.completedAt && !incoming.completedAt) {
+    merged.completedAt = existing.completedAt;
+  }
+
+  // result: incoming wins if present, otherwise keep existing
+  if (!incoming.result && existing.result) {
+    merged.result = existing.result;
+  }
+
+  // xpSettled / reviewSettled: true wins
+  if (existing.xpSettled === true) merged.xpSettled = true;
+  if (existing.reviewSettled === true) merged.reviewSettled = true;
+
+  return merged;
+}
+
 export async function applyPushBatch(userId: string, mutations: SyncMutationInput[]) {
   const applied: string[] = [];
   const skipped: string[] = [];
@@ -163,30 +237,47 @@ export async function applyMutationInTx(
         update: {},
       });
       return;
-    case "session":
+    case "session": {
+      const sessionModule = String(p.module ?? "vocabulary");
+      // For paper sessions, merge payloads field-by-field to avoid
+      // whole-payload LWW data loss when two devices answer different questions.
+      let mergedPayload = (p.payload as object) ?? {};
+      if (sessionModule === "paper") {
+        const existing = await tx.learningSession.findUnique({
+          where: { userId_id: { userId, id: m.entityId } },
+          select: { payload: true },
+        });
+        if (existing?.payload) {
+          mergedPayload = mergePaperSessionPayloads(
+            existing.payload as Record<string, unknown>,
+            (p.payload as Record<string, unknown>) ?? {},
+          ) as object;
+        }
+      }
       await tx.learningSession.upsert({
         where: { userId_id: { userId, id: m.entityId } },
         create: {
           id: m.entityId,
           userId,
-          module: String(p.module ?? "vocabulary"),
+          module: sessionModule,
           activityId: String(p.activityId ?? ""),
           planDate: (p.planDate as string) ?? null,
           startedAt: new Date(String(p.startedAt ?? new Date().toISOString())),
           completedAt: p.completedAt ? new Date(String(p.completedAt)) : null,
           durationSec: p.durationSec != null ? Number(p.durationSec) : null,
           status: String(p.status ?? "completed"),
-          payload: (p.payload as object) ?? {},
+          payload: mergedPayload,
           version: 1,
         },
         update: {
           status: String(p.status ?? "completed"),
           completedAt: p.completedAt ? new Date(String(p.completedAt)) : undefined,
           durationSec: p.durationSec != null ? Number(p.durationSec) : undefined,
-          payload: (p.payload as object) ?? undefined,
+          payload: mergedPayload,
         },
       });
       return;
+    }
     case "wordbook": {
       const removedAt = m.operation === "remove" ? new Date(String(p.removedAt ?? new Date().toISOString())) : (p.removedAt ? new Date(String(p.removedAt)) : null);
       const existing = await tx.wordbookEntry.findUnique({

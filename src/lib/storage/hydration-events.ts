@@ -13,7 +13,8 @@ export type HydratedDomain =
   | "translation"
   | "writing"
   | "dailyPlan"
-  | "review";
+  | "review"
+  | "paper";
 
 interface RemoteHydrateDetail {
   userId: string;

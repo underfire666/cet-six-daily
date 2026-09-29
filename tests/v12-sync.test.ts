@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mergeDailyPlan, validateMutation, type SyncMutationInput } from "../src/lib/sync/server";
+import { mergeDailyPlan, mergePaperSessionPayloads, validateMutation, type SyncMutationInput } from "../src/lib/sync/server";
 import { backoffDelay, dedupeSameEntity } from "../src/lib/sync/client";
 import { nsKey } from "../src/lib/storage/namespace";
 
@@ -109,4 +109,63 @@ test("validateMutation: review status/mastery enum enforced", () => {
     }),
     null,
   );
+});
+
+// ============ mergePaperSessionPayloads (V13 conflict merge) ============
+
+test("mergePaperSessionPayloads: answers from different question ranges merge, no data loss", () => {
+  const existing = { answers: { q1: { selectedOptionId: "A" }, q2: { selectedOptionId: "B" } } };
+  const incoming = { answers: { q3: { selectedOptionId: "C" }, q4: { selectedOptionId: "D" } } };
+  const merged = mergePaperSessionPayloads(existing, incoming);
+  const answers = merged.answers as Record<string, unknown>;
+  assert.equal(Object.keys(answers).length, 4);
+  assert.ok(answers.q1);
+  assert.ok(answers.q2);
+  assert.ok(answers.q3);
+  assert.ok(answers.q4);
+});
+
+test("mergePaperSessionPayloads: same-question conflict incoming wins (LWW)", () => {
+  const existing = { answers: { q1: { selectedOptionId: "A" } } };
+  const incoming = { answers: { q1: { selectedOptionId: "B" } } };
+  const merged = mergePaperSessionPayloads(existing, incoming);
+  assert.equal((merged.answers as Record<string, { selectedOptionId: string }>).q1.selectedOptionId, "B");
+});
+
+test("mergePaperSessionPayloads: sectionProgress completed wins over in_progress", () => {
+  const existing = { sectionProgress: [{ sectionId: "s1", status: "completed", completedAt: "2026-01-01" }] };
+  const incoming = { sectionProgress: [{ sectionId: "s1", status: "in_progress" }] };
+  const merged = mergePaperSessionPayloads(existing, incoming);
+  const sp = merged.sectionProgress as Array<{ sectionId: string; status: string }>;
+  assert.equal(sp[0].status, "completed");
+});
+
+test("mergePaperSessionPayloads: phase completed wins", () => {
+  const existing = { phase: "completed" };
+  const incoming = { phase: "in_progress" };
+  const merged = mergePaperSessionPayloads(existing, incoming);
+  assert.equal(merged.phase, "completed");
+});
+
+test("mergePaperSessionPayloads: completedAt non-null wins", () => {
+  const existing = { completedAt: "2026-01-01T00:00:00Z" };
+  const incoming = { completedAt: null };
+  const merged = mergePaperSessionPayloads(existing, incoming);
+  assert.equal(merged.completedAt, "2026-01-01T00:00:00Z");
+});
+
+test("mergePaperSessionPayloads: xpSettled/reviewSettled true wins", () => {
+  const existing = { xpSettled: true, reviewSettled: true };
+  const incoming = { xpSettled: false, reviewSettled: false };
+  const merged = mergePaperSessionPayloads(existing, incoming);
+  assert.equal(merged.xpSettled, true);
+  assert.equal(merged.reviewSettled, true);
+});
+
+test("mergePaperSessionPayloads: result kept from existing when incoming has none", () => {
+  const existing = { result: { overallAccuracy: 80, wrongCount: 5 } };
+  const incoming = { answers: { q1: { selectedOptionId: "A" } } };
+  const merged = mergePaperSessionPayloads(existing, incoming);
+  assert.ok(merged.result);
+  assert.equal((merged.result as Record<string, number>).overallAccuracy, 80);
 });
