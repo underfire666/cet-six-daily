@@ -7,10 +7,16 @@
  *
  * 坏记录隔离：单个 session 损坏不影响其他 session。
  * 存储失败明确提示，不显示虚假"已保存"。
+ *
+ * V13 Phase 2E.3 fix: 登录用户使用 user-namespaced storage，
+ * 与 V12 sync pull 的 hydrate 写入路径一致，确保多设备 resume 能找到
+ * 其他设备创建并同步到云端的 paper session。
  */
 
 import type { PaperSessionState } from "@/types/paper";
 import { isValidPaperSession } from "./session";
+import { getStorageForNamespace } from "@/lib/storage/scoped";
+import type { KeyStorage } from "@/lib/lesson/storage";
 
 const PAPER_SESSION_PREFIX = "cet-daily:v13:paper-session:";
 
@@ -19,8 +25,21 @@ export interface PaperStorageIssue {
   sessionId?: string;
 }
 
-function getStorage(): Storage | null {
+/**
+ * Resolve the correct storage adapter for a given owner namespace.
+ * - guest / undefined: raw localStorage (backwards compatible with guest data)
+ * - user:<id>: scoped storage that prefixes keys with `user:<id>:`
+ *
+ * This ensures paper sessions written by a logged-in user land in the same
+ * user-namespaced key space that the V12 sync pull hydrates into, so
+ * multi-device resume can find sessions created on another device.
+ */
+function resolveStorage(ownerNamespace?: string): KeyStorage | null {
   if (typeof window === "undefined") return null;
+  if (ownerNamespace && ownerNamespace !== "guest") {
+    const scoped = getStorageForNamespace({ type: "user", id: ownerNamespace });
+    return scoped ?? null;
+  }
   try {
     return window.localStorage;
   } catch {
@@ -33,8 +52,8 @@ function sessionKey(sessionId: string): string {
 }
 
 /** 加载单个 PaperSession。失败返回 null，不抛出。 */
-export function loadPaperSession(sessionId: string): { session: PaperSessionState | null; issue?: string } {
-  const storage = getStorage();
+export function loadPaperSession(sessionId: string, ownerNamespace?: string): { session: PaperSessionState | null; issue?: string } {
+  const storage = resolveStorage(ownerNamespace);
   if (!storage) return { session: null, issue: "浏览器无法访问本地存储，Paper 进度将不会被保存。" };
   try {
     const raw = storage.getItem(sessionKey(sessionId));
@@ -51,7 +70,7 @@ export function loadPaperSession(sessionId: string): { session: PaperSessionStat
 
 /** 保存单个 PaperSession 到 localStorage。返回是否成功。 */
 export function savePaperSession(session: PaperSessionState): { ok: boolean; issue?: string } {
-  const storage = getStorage();
+  const storage = resolveStorage(session.ownerNamespace);
   if (!storage) return { ok: false, issue: "浏览器无法访问本地存储，当前作答未保存。" };
   try {
     storage.setItem(sessionKey(session.sessionId), JSON.stringify(session));
@@ -63,7 +82,7 @@ export function savePaperSession(session: PaperSessionState): { ok: boolean; iss
 
 /** 列出所有本地 PaperSession（按 startedAt 降序）。坏记录跳过并记录 issue。 */
 export function listPaperSessions(ownerNamespace?: string): { sessions: PaperSessionState[]; issues: PaperStorageIssue[] } {
-  const storage = getStorage();
+  const storage = resolveStorage(ownerNamespace);
   if (!storage) return { sessions: [], issues: [{ message: "浏览器无法访问本地存储。" }] };
   const sessions: PaperSessionState[] = [];
   const issues: PaperStorageIssue[] = [];
@@ -80,7 +99,9 @@ export function listPaperSessions(ownerNamespace?: string): { sessions: PaperSes
           issues.push({ message: `Paper session 数据已损坏，已隔离。`, sessionId });
           continue;
         }
-        if (ownerNamespace && parsed.ownerNamespace !== ownerNamespace) continue;
+        // When using scoped storage, keys are already filtered by namespace.
+        // The ownerNamespace filter below is a safety net for guest/flat storage.
+        if (ownerNamespace && ownerNamespace !== "guest" && parsed.ownerNamespace !== ownerNamespace) continue;
         sessions.push(parsed);
       } catch {
         issues.push({ message: `Paper session 读取失败，已隔离。`, sessionId });
@@ -106,8 +127,8 @@ export function findLatestCompletedSession(paperId: string, ownerNamespace: stri
 }
 
 /** 删除单个 PaperSession（本地）。 */
-export function removePaperSession(sessionId: string): void {
-  const storage = getStorage();
+export function removePaperSession(sessionId: string, ownerNamespace?: string): void {
+  const storage = resolveStorage(ownerNamespace);
   if (!storage) return;
   try {
     storage.removeItem(sessionKey(sessionId));
