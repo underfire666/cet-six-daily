@@ -1,8 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resetRegistry, getPaperById, getPapers, getPublishableItems } from "../src/content/registry";
+import { resetRegistry, getPaperById, getPublishableItems } from "../src/content/registry";
 import { registerBuiltinPacks } from "../src/content/packs";
-import { registerQaPapers } from "../src/content/qaPacks";
 import { registerSyntheticPaperFixture, SYNTHETIC_PAPER_ID } from "../src/content/fixture/cet6-2025-12-synthetic";
 import { replayReviewItem, replayReviewItemQa } from "../src/lib/review/replay";
 import { MOCK_PAPER_001_ID } from "../src/content/papers/cet6-mock-paper-001";

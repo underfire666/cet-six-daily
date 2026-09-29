@@ -1,6 +1,16 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V11 Profile & Study Center（2026-09-23 已验收并发布 v11.0）
+## 当前工作版本：V13 Content 1.0（V13.0.1 发布收尾，2026-09-29）
+
+### V13.0.1 发布收尾
+
+- V13 Final Acceptance 已通过；Paper 001 为原创模拟卷，非官方 CET6 真题，ID 为 `cet6:mock:paper-001`，status=active（canonical lifecycle=published），contentVersion=1.1.0。
+- 已有 V13 合并提交 `947f84649abdc8ae980fca5b05d674c5d61e3249`；原 `v13.0` 保留在 `fd70023f74c6ac3fd2609a291d1a7f59439f0c99`。
+- 2026-09-29 收尾实测发现两个未使用导入的 lint warning。用户选择保留 `v13.0` 并发布 `v13.0.1` 修补版；仅修复这两个测试导入，并统一 package.json / package-lock.json 根版本为 13.0.1。
+- 主分支发布门禁 8/8 PASS：506/506 tests、typecheck、lint 0 errors / 0 warnings、build、content:validate、content:stats、content:rights、content:audio-validate。音频校验仅有允许的 synthetic fixture placeholder warning，生产音频无错误。
+- 生产 selector 仅包含 Paper 001（count=1），fixture / staging / 未授权 real 内容均为 0。
+- 发布说明沿用并更新 `V13_RELEASE_NOTES.md`，不另建一套说明。完整 Git SHA、生产浏览器 smoke 证据和最终发布状态记录在 `output/release-closure/V13_RELEASE_CLOSURE_REPORT.md`（本地生成报告，不进入发布提交以避免报告内提交哈希自引用）。
+- `v12.0` 保持 `697772d9412d9d1a4253e099a001734a5230e264`。未新增 Paper 002，未导入真实真题或官方音频，未开始 V14 或 AI 功能。完成本次收尾后停止。
 
 ### v11.0 发布（2026-09-23）
 
