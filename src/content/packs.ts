@@ -1,4 +1,4 @@
-﻿import { mockVocabulary } from "@/data/mockVocabulary";
+import { mockVocabulary } from "@/data/mockVocabulary";
 import { mockReadingArticles } from "@/data/mockReading";
 import { mockListeningMaterials } from "@/data/mockListening";
 import { mockTranslationTasks } from "@/data/mockTranslation";
@@ -6,9 +6,13 @@ import { mockWritingTasks } from "@/data/mockWriting";
 import { registerContentPack, getContentPack } from "./registry";
 import { MOCK_SOURCE } from "./sources";
 import type { ContentPack } from "./types";
+import { registerMockPaper001 } from "./papers/cet6-mock-paper-001";
 
 /** 把现有 Mock 数据注册为 ContentPack。source.type=mock, license=unknown。 */
 export function registerBuiltinPacks(): void {
+  // V13: 先注册 staging Paper 001（Review/Wrongbook 需按 ID 解析原题）。
+  // status=staging，不会出现在 production selector。必须在 early return 之前执行。
+  try { registerMockPaper001(); } catch { /* 已注册则忽略 */ }
   if (["vocabulary","reading","listening","translation","writing"].every(type => getContentPack(`pack-${type}-mock`))) return;
   const now = "2026-09-21T00:00:00.000Z";
 

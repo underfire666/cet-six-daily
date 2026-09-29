@@ -171,7 +171,7 @@ export function PaperProvider({ paper, ownerNamespace, isLoggedIn, onIssue, chil
 
     try {
       const xp = calculatePaperXp(result);
-      if (isLoggedIn && xp > 0) {
+      if (xp > 0) {
         enqueuePaperXpSync(paper.paperId, session.sessionId, xp);
       }
       dispatch({ type: "mark_xp_settled", now });

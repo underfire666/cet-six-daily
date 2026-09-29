@@ -11,6 +11,9 @@ import {
 } from "@/content/learning";
 import { vocabularyQuestion } from "@/lib/vocabulary/questions";
 import { vocabularyRepository } from "@/content/repositories";
+import { getPaperById } from "@/content/registry";
+import { flattenPaperQuestions } from "@/lib/paper/content";
+import type { CET6Paper } from "@/content/papers";
 
 export interface ReviewReplay {
   sourceModule: "reading" | "listening" | "vocabulary";
@@ -31,6 +34,30 @@ export interface ReviewReplay {
 
 /** 根据 ReviewItem 通过 Content Repository 找回原题；找不到返回 null（页面优雅降级）。 */
 export function replayReviewItem(item: ReviewItem): ReviewReplay | null {
+  // V13: Paper 题目解析（staging Paper 001）。sourceActivityId 对应 Paper ID。
+  const paper = getPaperById<CET6Paper>(item.sourceActivityId);
+  if (paper) {
+    const flat = flattenPaperQuestions(paper);
+    const found = flat.find(f => f.question.questionId === item.questionId);
+    if (found) {
+      const q = found.question;
+      const isListening = found.sectionType === "listening";
+      return {
+        sourceModule: isListening ? "listening" : "reading",
+        activityId: paper.paperId,
+        activityTitle: paper.title ?? paper.paperId,
+        questionId: q.questionId,
+        prompt: q.prompt ?? "",
+        options: (q.options ?? []).map(o => ({ id: o.id, text: o.text ?? o.id })),
+        correctOptionId: q.answerId ?? "",
+        shortExplanation: q.shortExplanation ?? "",
+        wrongOptionId: item.lastWrongOptionId,
+        ...(found.groupMaterial?.passage ? { articlePassage: found.groupMaterial.passage } : {}),
+        ...(found.groupMaterial?.transcript ? { transcript: found.groupMaterial.transcript } : {}),
+      };
+    }
+    return null;
+  }
   if (item.sourceModule === "reading") {
     const article = readingArticleById(item.sourceActivityId);
     if (!article) return null;

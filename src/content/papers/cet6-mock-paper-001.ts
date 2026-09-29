@@ -37,7 +37,7 @@
  *
  * 稳定 ID 全部由 cet6:mock:paper-001 确定性派生（extendStableId），无随机/索引 ID。
  */
-import { registerContentPack } from "../registry";
+import { registerContentPack, getContentPack } from "../registry";
 import { MOCK_PAPER_001_SOURCE } from "../sources";
 import type { ContentPack, ContentRights } from "../types";
 import type { CET6Paper, PaperQuestion } from "../papers";
@@ -1311,6 +1311,7 @@ export const mockPaper001: CET6Paper = {
 
 /** 注册 Paper 001（幂等；内容脚本与测试调用；不进入运行时 bootstrap，不暴露给学习页 Selector）。 */
 export function registerMockPaper001(): void {
+  if (getContentPack(MOCK_PAPER_001_PACK_ID)) return;
   registerContentPack({
     id: MOCK_PAPER_001_PACK_ID,
     name: "CET6 Original Mock Paper 001",
