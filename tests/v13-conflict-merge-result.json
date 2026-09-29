@@ -1,0 +1,28 @@
+{
+  "baselineSessionId": "4d7fed6d-7e62-4279-838c-2da9193da77d",
+  "baselineAnswersCount": 5,
+  "deviceAFinalAnswers": 0,
+  "deviceBFinalAnswers": 2,
+  "deviceASession": {
+    "sessionId": "c89c6712-d011-4b6f-a10e-ab3a4a0a1e6f",
+    "answersCount": 0,
+    "answers": [],
+    "phase": "in_progress",
+    "currentSectionIndex": 0,
+    "currentGroupIndex": 0,
+    "currentQuestionIndex": 0
+  },
+  "deviceBSession": {
+    "sessionId": "c89c6712-d011-4b6f-a10e-ab3a4a0a1e6f",
+    "answersCount": 2,
+    "answers": [
+      "cet6:mock:paper-001:listening:long_conversation:g2:q1",
+      "cet6:mock:paper-001:listening:long_conversation:g2:q2"
+    ],
+    "phase": "in_progress",
+    "currentSectionIndex": 1,
+    "currentGroupIndex": 1,
+    "currentQuestionIndex": 1
+  },
+  "conflictMergePass": false
+}
