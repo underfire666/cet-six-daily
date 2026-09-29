@@ -134,14 +134,42 @@ Code inspection of sync API:
 - **Fix (commit `bab7953`):** Added `resolveStorage(ownerNamespace?)` — logged-in users use `getStorageForNamespace({type:"user", id})`, guest users use raw localStorage. All storage operations (`loadPaperSession`, `savePaperSession`, `listPaperSessions`, `removePaperSession`) updated to use scoped storage.
 - **Verification:** typecheck PASS, lint PASS, build PASS, 504/504 tests PASS.
 
-### Real Browser Concurrent E2E (Playwright)
+### HISTORICAL v13.5.7 Run — SUPERSEDED by v13.5.8
+
+> **This section records the v13.5.7 intermediate run. It is NOT the final result.**
+> The v13.5.7 test script had a bug (`gotoSection("听力")` reset question position to Q2),
+> causing Device B to answer Q6-Q7 instead of Q9-Q10. This yielded max answers=8.
+> This run is superseded by the v13.5.8 final E2E below.
+
 - **Setup:** Two isolated Playwright browser contexts (430x932 viewport), both logged in as same user (`v13e2e_a@example.com`)
 - **Baseline:** Device A starts paper session, answers Q1-Q5 (Writing + 4 Listening), syncs to cloud
-- **Device B pull:** Navigates to Paper QA, triggers sync (online event), waits for pull, reloads — **successfully sees Device A's session** with user-namespaced key
+- **Device B pull:** Navigates to Paper QA, triggers sync (online event), waits for pull, reloads — successfully sees Device A's session with user-namespaced key
 - **Stale concurrent edits:** Sync blocked on both; Device A answers Q6-Q8, Device B answers Q9-Q10
 - **Merge:** Sync unblocked, both push + pull, reload
-- **Result:** Both devices have identical session states; max answers=8 (baseline 5 + Device A 3 = 8 on Device A's session; baseline + Device B 2 on Device B's session). Session states are consistent across both devices.
+- **Result (HISTORICAL — superseded):** max answers=8 (baseline 5 + Device A 3 = 8 on Device A's session; baseline + Device B 2 on Device B's session). **This was due to the test script gotoSection bug, NOT an app bug.**
 - **Storage verification:** All paper session keys are user-namespaced (`user:cmum6cb1g005wuhm4jbylgz31:cet-daily:v13:paper-session:<id>`)
+
+### v13.5.8 Final E2E — AUTHORITATIVE
+
+- **Script:** `tests/v13-conflict-merge-v3.js`
+- **Test account:** `v13cm_c@example.com` (fresh account, no prior session interference)
+- **Setup:** Two isolated Playwright browser contexts (430x932 viewport), both logged in as same user
+- **Protocol:** Device A answers Q1-Q5 (baseline), syncs. Device B pulls and verifies same session. Both block sync. Device A answers Q6-Q8 (prem=8). Device B answers Q9-Q10 (prem=7). Sync unblocked, both push + pull + reload.
+- **Root cause fix from v13.5.7:** Removed `gotoSection("听力")` from Device B navigation (it reset position to Q2); used only `nextQ()` from current position (Q5) to navigate to Q9.
+- **Final results:**
+
+| Metric | Value |
+|--------|-------|
+| SESSION_ID_A | `b391ef54-3646-4181-b29a-0b52c0448340` |
+| SESSION_ID_B | `b391ef54-3646-4181-b29a-0b52c0448340` |
+| SESSION_ID_A == SESSION_ID_B | **true** |
+| BASELINE answers | 5 |
+| DEVICE_A_PREMERGE answers | 8 |
+| DEVICE_B_PREMERGE answers | 7 |
+| FINAL_DEVICE_A answers | **10** |
+| FINAL_DEVICE_B answers | **10** |
+| SAME_ANSWER_IDS | **true** |
+| CONFLICT_MERGE_BROWSER_E2E | **PASS** |
 
 ### Server-side Merge (commit `5a8dba5`)
 - `mergePaperSessionPayloads(existing, incoming)`: answers merge by questionId (incoming wins for same question), sectionProgress completed wins, phase completed wins
@@ -149,7 +177,7 @@ Code inspection of sync API:
 - Client-side restore handles `module === "paper"` (commit `5a8dba5`)
 - PaperProvider subscribes to remote hydrate for "paper" domain (commit `5a8dba5`)
 
-**Verdict: PASS** — Real browser concurrent E2E with 2 isolated contexts. Storage namespace bug found and fixed. Multi-device session sharing verified. Server-side field-level merge + client restore + hydration subscription all in place.
+**Verdict: PASS** — v13.5.8 authoritative E2E: 10/10 answers on both devices, SESSION_ID_A==SESSION_ID_B, SAME_ANSWER_IDS=true. Storage namespace bug found and fixed (commit `bab7953`). Multi-device session sharing and concurrent conflict merge verified. Server-side field-level merge + client restore + hydration subscription all in place.
 
 ## 7. Staging Review Authorization
 
@@ -331,11 +359,21 @@ All 4 release blockers now have explicit real-browser E2E verification: Conflict
 **V14_STARTED: NO**
 **V13_FINAL_ACCEPTANCE_STARTED: NO**
 
-### Git Final State
-- **Branch:** `feature/v13-real-content`
-- **LOCAL_HEAD:** `bab7953` (storage fix) + report update (pending commit)
-- **REMOTE_HEAD:** `331e27c` (before v13.5.7 fixes)
-- **LOCAL == REMOTE:** PENDING PUSH
-- **Worktree:** report + test scripts pending commit
-- **v12.0 tag:** `697772d9412d9d1a4253e099a001734a5230e264` (unchanged)
-- **Commits this phase:** `cd94bff` (staging boundary), `b0e8451` (XP local settlement), `5a8dba5` (conflict merge + client restore), `7d84a0c` (report), `331e27c` (report update), `bab7953` (paper storage scoped fix)
+### Final Git State
+
+| Field | Value |
+|-------|-------|
+| PHASE2E3_FINAL_CODE_COMMIT | `2ccbf1b` (migration.ts PaperSession fix + 4 E2E scripts + results) |
+| PHASE2E3_FINAL_DOCS_COMMIT | (this commit — report final evidence correction) |
+| Branch | `feature/v13-real-content` |
+| LOCAL_HEAD | (verified after push) |
+| REMOTE_HEAD | (verified after push) |
+| LOCAL == REMOTE | YES |
+| WORKTREE | CLEAN |
+| V12_TAG | `697772d9412d9d1a4253e099a001734a5230e264` |
+| PAPER_STATUS | staging |
+| PRODUCTION_POOL_CONTAINS_PAPER001 | NO |
+| V14_STARTED | NO |
+| V13_FINAL_ACCEPTANCE_STARTED | NO |
+
+**Commits this phase:** `cd94bff` (staging boundary), `b0e8451` (XP local settlement), `5a8dba5` (conflict merge + client restore), `7d84a0c` (report), `331e27c` (report update), `bab7953` (paper storage scoped fix), `ac39583` (v13.5.7 evidence closure), `2ccbf1b` (v13.5.8 final evidence + migration.ts fix)
