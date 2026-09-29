@@ -279,3 +279,28 @@ Content Identity + Rights Hardening：进入第一批真实内容之前的小型
 ### 未做（保持 Phase 2C.1 边界）
 
 未开始 Phase 2D；未生成正式音频；Paper 001 保持 staging；未开始 V14；未 merge main / 打 tag / 建 Release。
+
+## V13 Final Acceptance（2026-09-29，Content 1.0 → Production Release）
+
+### 状态
+- **V13 FINAL ACCEPTANCE: PASS**
+- **Paper 001: PUBLISHED**（status=active → lifecycle=published）
+- **分支**: feature/v13-real-content → main
+- **Tag**: v13.0
+
+### 核心交付
+- 原创高仿真模拟卷 Paper 001（cet6:mock:paper-001，57 题/任务，7 个 AI 合成语音 MP3）
+- Production entry：/practice/paper（列表）+ /practice/paper/[paperId]（答题）
+- Rights-aware content architecture + namespace isolation + lifecycle management
+- 完整 PaperSession / Result / Review / Wrongbook / XP / Cloud Sync / Multi-device conflict merge
+
+### 验证
+- 8/8 gates PASS（test 504/504, typecheck, lint 0/0, build, content 4/4）
+- 浏览器 production smoke：Writing/Listening(audio)/Reading/Translation 全部通过
+- 14/14 publication eligibility PASS
+- v12.0 tag 未动（697772d）
+- 无 Prisma 变更，无真实真题/音频导入
+
+### 边界
+- 未开始 V14；未开始 V15 AI；未新增 Paper 002
+- Paper 001 为原创模拟卷，非官方 CET6 真题
