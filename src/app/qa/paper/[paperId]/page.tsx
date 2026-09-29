@@ -7,14 +7,15 @@
  * 保护：仅 development 环境可用；production build 显示"QA route not available"。
  * 普通用户入口（首页/每日计划/普通练习列表）看不到 staging Paper。
  *
+ * Staging Paper 注册使用 dynamic import，确保 Next.js code-split
+ * Paper 001 正文到独立 chunk，production build 主 bundle 不包含。
+ *
  * 这是显式 opt-in 的 QA 路径，不是 production 功能。
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { getPaperById } from "@/content/registry";
-import { registerBuiltinPacks } from "@/content/packs";
-import { registerMockPaper001 } from "@/content/papers/cet6-mock-paper-001";
 import type { CET6Paper } from "@/content/papers";
 import { PaperProvider } from "@/components/paper/PaperProvider";
 import { PaperStartPage } from "@/components/paper/PaperStartPage";
@@ -44,32 +45,41 @@ function PaperRouter() {
   return <PaperExamFlow />;
 }
 
-function resolvePaper(paperId: string): { paper: CET6Paper | null; error: string | null } {
-  if (process.env.NODE_ENV !== "development") {
-    return { paper: null, error: "QA route 仅在开发环境可用。" };
-  }
-  try {
-    registerBuiltinPacks();
-    registerMockPaper001();
-  } catch {
-    // 可能已注册
-  }
-  const found = getPaperById<CET6Paper>(paperId);
-  if (!found) {
-    return { paper: null, error: `Paper 未找到: ${paperId}` };
-  }
-  if (found.status !== "staging" && found.status !== "draft" && found.status !== "raw") {
-    return { paper: null, error: `此 QA route 仅用于 staging/draft 内容。当前 Paper status=${found.status}。` };
-  }
-  return { paper: found, error: null };
-}
-
 export default function QaPaperPage() {
   const params = useParams();
   const rawPaperId = Array.isArray(params?.paperId) ? params.paperId[0] : params?.paperId ?? "";
   const paperId = decodeURIComponent(rawPaperId);
 
-  const { paper, error } = useMemo(() => resolvePaper(paperId), [paperId]);
+  // Dev-only: dynamically import and register staging Paper 001.
+  // Dynamic import ensures Paper 001 content is code-split into a separate
+  // chunk that is never loaded in production (NODE_ENV check is build-time).
+  const [qaRegistered, setQaRegistered] = useState(() => process.env.NODE_ENV !== "development");
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    import("@/content/qaPacks")
+      .then(({ registerQaPapers }) => {
+        registerQaPapers();
+        setQaRegistered(true);
+      })
+      .catch(() => setQaRegistered(true));
+  }, []);
+
+  const { paper, error } = useMemo(() => {
+    if (process.env.NODE_ENV !== "development") {
+      return { paper: null, error: "QA route 仅在开发环境可用。" };
+    }
+    if (!qaRegistered) {
+      return { paper: null, error: null }; // still loading QA papers
+    }
+    const found = getPaperById<CET6Paper>(paperId);
+    if (!found) {
+      return { paper: null, error: `Paper 未找到: ${paperId}` };
+    }
+    if (found.status !== "staging" && found.status !== "draft" && found.status !== "raw") {
+      return { paper: null, error: `此 QA route 仅用于 staging/draft 内容。当前 Paper status=${found.status}。` };
+    }
+    return { paper: found, error: null };
+  }, [paperId, qaRegistered]);
 
   // ownerNamespace：从 V12 sync 全局变量读取（client-only）
   const [ownerNamespace] = useState<string>(() => {
