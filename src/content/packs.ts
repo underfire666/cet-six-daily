@@ -6,6 +6,7 @@ import { mockWritingTasks } from "@/data/mockWriting";
 import { registerContentPack, getContentPack } from "./registry";
 import { MOCK_SOURCE } from "./sources";
 import type { ContentPack } from "./types";
+import { registerMockPaper001 } from "./papers/cet6-mock-paper-001";
 
 /** 把现有 Mock 数据注册为 ContentPack。source.type=mock, license=unknown。 */
 export function registerBuiltinPacks(): void {
@@ -81,4 +82,8 @@ export function registerBuiltinPacks(): void {
     }));
     registerContentPack(pack);
   }
+
+  // V13 Production: 注册原创模拟卷 Paper 001（status=active，进入 production 池）
+  registerMockPaper001();
+
 }

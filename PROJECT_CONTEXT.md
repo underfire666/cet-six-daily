@@ -170,3 +170,137 @@ V5 已正式开放并验收通过“阅读”专项：每日固定 3 篇阅读�
 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run content:validate`、`npm run content:stats`。
 
 重点验收：每日 20→额外 10→再额外 20，仍保持每日 20/20、额外累计 30；刷新恢复、收藏、XP 去重、跨日、375/390/430px 与桌面布局，以及原每日关卡回归。阅读：每日 3 篇进度与完成态、阅读→答题→复测全流程、生词点击查义加入统一生词本且与词汇生词去重、XP 首次/跨日/同日重复规则、刷新恢复、`/practice/reading` 系列路由 200。V10：错题复习页回放原题（题干/选项/用户作答/答案/解析）、阅读/听力原文关联、缺失内容降级、Importer 拒绝坏 JSON、content:stats 无 unspecified。
+
+## V13 Phase 1（2026-09-26，分支 feature/v13-real-content，尚未 merge main）
+
+### 状态
+
+- **已完成并验证**（本轮真实实现 + 10 项 gates + 浏览器 smoke 全部通过）：
+  - Paper 领域模型 `src/content/papers.ts`：Exam → Paper → Section → Group → Question 完整层级，兼容 V10 旧 paper schema（legacy 结构级校验路径），V13 新 schema 完整校验（稳定 ID、rights、schemaVersion、isPartial/fixture、section/group/question/asset 结构）。
+  - Stable ID `src/content/stable-id.ts`：`cet6:2025-12:set1[:reading[:careful:g1[:q1]]]` 分层 ID 生成 + 格式校验；现有 mock ID（word_/r-/l-/t-/w-）不批量重命名。
+  - Rights/License `src/content/rights.ts`：owned/official_public_material → allowed；licensed+evidence → allowed(warning)；licensed 无证据 / permission_required / unknown → blocked/unknown（禁进 production）。
+  - Content Lifecycle `src/content/lifecycle.ts`：raw→normalized→validated→reviewed→publishable→published→deprecated 状态机 + V10 status 映射。
+  - Import Batch `src/content/import-batch.ts` + `importer.ts` 扩展：inputFingerprint/batchId deterministic，同源同输入幂等（不重复注册）。
+  - Duplicate Detection（validator.ts）：跨 pack id 去重、paper identity（exam:year-session:set）重复 → error、同 normalized 文本 hash 跨 pack → warning。
+  - Staging vs Published 隔离：`getPublishableItems()`（production pool）只含 allowed + active/published；synthetic fixture 注册为 staging，学习页 Selector/Repository 绝不暴露；`resolveContentById/getPaperById` 仅开发/测试 resolve。
+  - 首份原创 synthetic CET6 Paper fixture `src/content/fixture/cet6-2025-12-synthetic.ts`：isPartial=true、fixture=true、status=staging、rights=owned；4 section / 7 group / 10 题 / 1 音频 asset（占位）；全部内容原创，不含真实真题与真实音频。
+  - 新增 `npm run content:rights`；content:validate / content:stats 扩展（paper counts、rights bucket、section/group/question 统计）。
+  - 新增测试 `tests/v13-content.test.ts`（29 项：paper 模型、stable ID、rights、lifecycle、import batch、duplicate、隔离、59 mock 回归、deprecated ID alias、exam spec、importer 拒收）。
+  - Deprecated ID 兼容：`aliases.ts` 增加运行时 `registerAlias`，旧 ID → Registry resolve → replay 测试通过。
+  - Exam Specification `src/content/exam-spec.ts`：CET6 官方公开结构元数据（official_public_material），validator 参考，不硬编码在 UI。
+
+- **未做（V13 Phase 1 边界内明确不做）**：不导入网上 CET-6 历年真题全文、不引入真实真题音频、不引入培训机构 PDF；不建立第二套平行 Content System；不改任何学习 UI/首页/账号；不改 V12 tag/Release；不 merge main、不开始 V13 Phase 2。
+
+### Gates（全部通过）
+
+`npm test` 399/399（新增 29 + 既有 370）｜`npm run typecheck` PASS｜`npm run lint` 0 errors｜`npm run build` PASS｜`npm run content:validate` 0 errors（59 mock + 1 paper）｜`npm run content:stats` PASS（vocabulary 30/reading 6/listening 7/translation 8/writing 8/paper 1；rights: unknown 5 / owned 1；paper sections 4/groups 7/questions 10）｜`npm run content:rights` PASS（production pool 为空，仅 allowed 可进入）｜`npx prisma validate` PASS｜`npx prisma generate` PASS｜`npx prisma migrate status` 2 migrations up to date。
+
+### 浏览器 smoke（真实浏览器）
+
+- `/practice/vocabulary` 词汇首页渲染正常（今日 0/20、开始学习、生词本），点击"开始学习"真实进入会话（sustain → feasible 推进）。
+- `/practice/reading` 阅读首页渲染正常（今日 0/3）。
+- `/review`、`/me`、`/plan/settings`、听力/翻译/写作路由均 200。
+- 学习页面无任何 paper/真题入口；fixture 仅开发/测试 resolve。
+- 无 runtime console error（仅有 Next dev data-inspector-id hydration 差异 warning，非产品缺陷）。
+
+### 检查命令（新增 content:rights）
+
+`npm test`、`npm run typecheck`、`npm run lint`、`npm run build`、`npm run content:validate`、`npm run content:stats`、`npm run content:rights`、`npx prisma validate`、`npx prisma generate`、`npx prisma migrate status`。
+
+## V13 Phase 1.1（2026-09-26，分支 feature/v13-real-content，尚未 merge main）
+
+### 目标
+
+Content Identity + Rights Hardening：进入第一批真实内容之前的小型架构硬化。不扩大范围、不导入真实真题/音频、不改学习 UI。
+
+### 已完成并验证
+
+- **Fixture 命名空间隔离（Identity）**：synthetic fixture 从 `cet6:2025-12:set1` 迁移到独立 FIXTURE namespace `cet6:fixture:synthetic-001`（`fixturePaperStableId`/`extendStableId`，`stableIdNamespace` 判别 real/fixture/invalid）。REAL（`cet6:<year>-<session>:set<N>`）与 FIXTURE namespace 结构上可区分，未来导入真实 2025-12 set1 与 fixture 无 stable-ID / identity / duplicate-detector / alias 冲突。
+- **交叉校验（papers.ts validatePaper）**：fixture=true 必须使用 fixture namespace；real/past_exam 禁止使用 fixture namespace；section/group/question/asset ID 必须与 paperId 同 namespace。
+- **Rights fail-closed（rights.ts）**：official_public_material 不再无条件 allowed——必须有明确再利用依据（permissionEvidence/licenseName/licenseUrl）且 `redistributionAllowed=true` 才 allowed；无依据/未确认 → unknown；redistributionAllowed=false → blocked。owned 显式禁再分发 → blocked；licensed 需 evidence + redistribution=true；commercialUseAllowed 未确认在 rights report 明确显示限制。
+- **Validator 分层（validator.ts）**：validatePack 只做结构校验（schema validity）；production 发布权由 rightsVerdict / rightsIssues(scope=production) / getPublishableItems 把关；unknown/permission_required 允许进入 staging/raw/audit 人工审查，但绝不进入生产 Selector。
+- **Duplicate 检测修正**：paper identity duplicate 仅对 REAL namespace 生效；fixture 与 real 可共存于 Registry 无冲突；两个真实同 identity paper 仍 duplicate ERROR。
+- **59 mock 不受影响**：demo pool 与 production pool 继续明确区分，mock 保持可学习。
+- **测试新增 14 项**（v13-content.test.ts 29 → 43）：fixture namespace 生成/判别、real/fixture 交叉校验、official 四场景、production pool fail-closed matrix（7 场景）、fixture+real 共存、两个 real 冲突、staging 可导入 + production 隔离、licensed 无 redistribution → unknown。
+
+### Gates（全部通过）
+
+`npm test` 413/413（新增 14 + 既有 399）｜`npm run typecheck` PASS｜`npm run lint` 0 errors｜`npm run build` PASS｜`npm run content:validate` 0 errors（59 mock + 1 paper，fixture=cet6:fixture:synthetic-001）｜`npm run content:stats` PASS｜`npm run content:rights` PASS（PUBLISHABLE 1 / BLOCKED 0 / UNKNOWN 5；production pool 空）｜`npx prisma validate` PASS｜`npx prisma generate` PASS｜`npx prisma migrate status` 2 migrations up to date。
+
+### 浏览器 smoke（真实浏览器）
+
+- Vocabulary/Reading/Listening/Translation/Writing/Review 六模块全部正常渲染，mock 内容可学习（词汇会话真实推进 feasible → significant）。
+- 学习页面无任何 paper/真题/fixture 入口（fixture/blocked/unknown-rights 不出现在学习 Selector）。
+- 无 runtime console error（仅有 Next dev data-inspector-id hydration 差异 warning，非产品缺陷）。
+
+### 未做（保持 Phase 1.1 边界）
+
+不导入真实真题/音频/培训机构材料；不改学习 UI/首页/账号；不改 V12 tag/Release；不开始 V13 Phase 2。
+
+## V13 Phase 2B / 2B.1（2026-09-28，分支 feature/v13-real-content）
+
+- **Phase 2B**（commit b048ae4 / 6a17579 / 0844ada）：Paper 内容契约（V13_PAPER_CONTENT_CONTRACT.md）+ Content Specification 的 Paper 001 生产规范（V13_CONTENT_SPECIFICATION.md）+ Phase 2B 报告。
+- **Phase 2B.1**（commit 91f4567 code + 2a190b2 docs）：三 namespace（real/fixture/mock）结构隔离；production Paper 显式 examSpecId 强绑定（KNOWN_EXAM_SPEC_IDS 历史列表稳定）；Paper 001 正式 ID 定为 `cet6:mock:paper-001`（弃用 `cet6:2026-6:set1`，不建 alias）；public_domain 必须有 evidence。
+- **验证**：npm test 435/435、typecheck/lint/build PASS、content:validate/stats/rights PASS、production pool 空。PHASE2B1 FINAL HEAD = `2a190b2`（Local == Remote）。
+
+## V13 Phase 2C（2026-09-28，分支 feature/v13-real-content）
+
+### 目标
+
+生产第一套完整原创高仿真模拟卷 Paper 001（`cet6:mock:paper-001`，57 题/任务，`cet6-current-2026` 显式绑定），全部内容原创、不导入真实真题/音频/第三方解析，status=staging 保持生产隔离。
+
+### 已完成并验证
+
+- **Paper 001 完整落盘**：`src/content/papers/cet6-mock-paper-001.ts`（Writing 1 / Listening 25（长对话 8+篇章 7+讲话·报道·讲座 10）/ Reading 30（cloze 10+matching 10+careful 10）/ Translation 1；每题 short+detailed 解析，听力 4 组全 transcript，3 个音频为明确 staging placeholder（未生成真实音频））；`sources.ts` 新增 `MOCK_PAPER_001_SOURCE`（original/owned）；三个内容脚本注册 + content-validate 断言。
+- **身份**：authenticity=original、fixture=false、isPartial=false、status=staging、rights=owned、namespace=MOCK（section/group/question/asset 全部由 `cet6:mock:paper-001` 确定性派生）。
+- **专项测试 12 项**（v13-content.test.ts 435 → 447）：身份/57 题 conformance/section 结构/listening 25/reading 30/答案完整/解析完整/transcript+audio placeholder/asset 无 orphan/rights+provenance/staging 不进 production/全库 duplicate=0。
+- **Gates**：npm test 447/447、typecheck PASS、lint 0 errors 0 warnings、build PASS、content:validate 0 errors 0 warnings、content:stats PASS、content:rights PASS（owned 2 / unknown 5；production pool 空）。
+- **Whole-paper editorial QA（§15/§16）**：结构 conformance PASS、每题答案+解析 PASS、transcript+asset 引用 PASS、stable ID 唯一 PASS；答案分布 choice 45 → a=13/b=21/c=9/d=2，matching → E,F,A,G,D,I,J,C,H,B（b 略多，如实记录）。
+- **提交**：`feat: add V13 original mock paper 001`（+ docs 独立 commit），已 push `feature/v13-real-content`；v12.0 tag 未动。
+
+### 未做（保持 Phase 2C 边界）
+
+未开始 Phase 2D；未生成正式音频；Paper 001 保持 staging 未转 active/published；未开始 V14；未 merge main / 打 tag / 建 Release。
+## V13 Phase 2C.1（2026-09-28，分支 feature/v13-real-content）
+
+### 目标
+
+对 Paper 001 做真正的内容级独立 Editorial Acceptance（57 题逐题语义审查）、清理 "TEST FIXTURE" 文档残留、核查 fixture 目录语义、修正答案分布生成偏差，并做 Git 收尾。
+
+### 已完成并验证
+
+- **独立 Editorial Review**：Writing / Listening / Reading / Translation / Explanation / Language / Difficulty 七项全部 PASS（难度口径为 "editorially calibrated to CET6 specification"，不宣称与官方真实难度等值）。
+- **修复内容缺陷**：cloze q5 双解（选项 B close→cross，消除 bridge/close 双解，讲解同步）；答案位置分布偏差（修订前 a13/b21/c9/d2 → 修订后 a14/b10/c11/d10，重排 15 题选项顺序，题目内容与干扰项语义不变，讲解字母引用同步）。
+- **TEST FIXTURE 文档残留**："V13_CONTENT_SPECIFICATION.md" 两处旧表述修正为 self-authored/original/owned/staging/complete provenance（L104/L114 正确语义保留）。
+- **fixture 目录语义**：Paper 001 自 "src/content/fixture/" 迁移至 "src/content/papers/cet6-mock-paper-001.ts"（fixture/ 仅保留 TEST FIXTURE），脚本/测试/文档 import 路径同步；contentVersion 1.0.0 → 1.0.1。
+- **Gates**：npm test 447/447、typecheck PASS、lint 0 errors 0 warnings、build PASS、content:validate 0 errors 0 warnings（Paper 001 仍 staging）、content:stats PASS、content:rights PASS（production pool 空）。
+- **提交**："fix: refine V13 mock paper 001 editorial quality" + docs commit，已 push "feature/v13-real-content"；v12.0 tag 未动。
+
+### 未做（保持 Phase 2C.1 边界）
+
+未开始 Phase 2D；未生成正式音频；Paper 001 保持 staging；未开始 V14；未 merge main / 打 tag / 建 Release。
+
+## V13 Final Acceptance（2026-09-29，Content 1.0 → Production Release）
+
+### 状态
+- **V13 FINAL ACCEPTANCE: PASS**
+- **Paper 001: PUBLISHED**（status=active → lifecycle=published）
+- **分支**: feature/v13-real-content → main
+- **Tag**: v13.0
+
+### 核心交付
+- 原创高仿真模拟卷 Paper 001（cet6:mock:paper-001，57 题/任务，7 个 AI 合成语音 MP3）
+- Production entry：/practice/paper（列表）+ /practice/paper/[paperId]（答题）
+- Rights-aware content architecture + namespace isolation + lifecycle management
+- 完整 PaperSession / Result / Review / Wrongbook / XP / Cloud Sync / Multi-device conflict merge
+
+### 验证
+- 8/8 gates PASS（test 504/504, typecheck, lint 0/0, build, content 4/4）
+- 浏览器 production smoke：Writing/Listening(audio)/Reading/Translation 全部通过
+- 14/14 publication eligibility PASS
+- v12.0 tag 未动（697772d）
+- 无 Prisma 变更，无真实真题/音频导入
+
+### 边界
+- 未开始 V14；未开始 V15 AI；未新增 Paper 002
+- Paper 001 为原创模拟卷，非官方 CET6 真题

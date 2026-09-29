@@ -1,0 +1,35 @@
+{
+  "guestSessionId": "e99054d5-3292-4fd2-9299-0e34ee125e37",
+  "guestAnswers": 7,
+  "guestAnswerIds": [
+    "cet6:mock:paper-001:writing:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q3",
+    "cet6:mock:paper-001:reading:cloze:g1:q1",
+    "cet6:mock:paper-001:reading:cloze:g1:q2",
+    "cet6:mock:paper-001:reading:cloze:g1:q3"
+  ],
+  "guestDraft": "Guest migration v2 test essay. The quick brown fox jumps over the lazy dog. Migration verification draft.",
+  "guestPhase": "in_progress",
+  "migratedSessionId": "e99054d5-3292-4fd2-9299-0e34ee125e37",
+  "migratedAnswers": 7,
+  "migratedAnswerIds": [
+    "cet6:mock:paper-001:writing:g1:q1",
+    "cet6:mock:paper-001:reading:cloze:g1:q1",
+    "cet6:mock:paper-001:reading:cloze:g1:q2",
+    "cet6:mock:paper-001:reading:cloze:g1:q3",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q3"
+  ],
+  "migratedDraft": "Guest migration v2 test essay. The quick brown fox jumps over the lazy dog. Migration verification draft.",
+  "migratedPhase": "in_progress",
+  "sessionMatch": true,
+  "answersMatch": true,
+  "countMatch": true,
+  "draftMatch": true,
+  "phaseMatch": true,
+  "duplicateCount": 1,
+  "pass": true
+}

@@ -11,6 +11,9 @@ import {
 } from "@/content/learning";
 import { vocabularyQuestion } from "@/lib/vocabulary/questions";
 import { vocabularyRepository } from "@/content/repositories";
+import { getPaperById } from "@/content/registry";
+import { flattenPaperQuestions } from "@/lib/paper/content";
+import type { CET6Paper } from "@/content/papers";
 
 export interface ReviewReplay {
   sourceModule: "reading" | "listening" | "vocabulary";
@@ -29,8 +32,46 @@ export interface ReviewReplay {
   transcript?: string;
 }
 
-/** 根据 ReviewItem 通过 Content Repository 找回原题；找不到返回 null（页面优雅降级）。 */
+/** Internal: resolve a Paper review item. allowStaging bypasses production boundary. */
+function replayPaperItem(item: ReviewItem, allowStaging: boolean): ReviewReplay | null {
+  const paper = getPaperById<CET6Paper>(item.sourceActivityId);
+  if (!paper) return null;
+  // Production content boundary: only active/published papers can be replayed
+  // through the normal review flow. Staging/draft/raw papers return null,
+  // preventing crafted localStorage ReviewItems from resolving staging content.
+  if (!allowStaging && paper.status !== "active" && paper.status !== "published") {
+    return null;
+  }
+  const flat = flattenPaperQuestions(paper);
+  const found = flat.find(f => f.question.questionId === item.questionId);
+  if (!found) return null;
+  const q = found.question;
+  const isListening = found.sectionType === "listening";
+  return {
+    sourceModule: isListening ? "listening" : "reading",
+    activityId: paper.paperId,
+    activityTitle: paper.title ?? paper.paperId,
+    questionId: q.questionId,
+    prompt: q.prompt ?? "",
+    options: (q.options ?? []).map(o => ({ id: o.id, text: o.text ?? o.id })),
+    correctOptionId: q.answerId ?? "",
+    shortExplanation: q.shortExplanation ?? "",
+    wrongOptionId: item.lastWrongOptionId,
+    ...(found.groupMaterial?.passage ? { articlePassage: found.groupMaterial.passage } : {}),
+    ...(found.groupMaterial?.transcript ? { transcript: found.groupMaterial.transcript } : {}),
+  };
+}
+
+/** 根据 ReviewItem 通过 Content Repository 找回原题；找不到返回 null（页面优雅降级）。
+ *  Production-safe: staging/draft/raw papers are NOT resolvable.
+ *  QA/dev code should use replayReviewItemQa() instead.
+ */
 export function replayReviewItem(item: ReviewItem): ReviewReplay | null {
+  // V13: Paper 题目解析（production boundary enforced）
+  const paperReplay = replayPaperItem(item, false);
+  if (paperReplay) return paperReplay;
+  // If a paper was found but rejected (staging), don't fall through to other modules
+  if (getPaperById(item.sourceActivityId)) return null;
   if (item.sourceModule === "reading") {
     const article = readingArticleById(item.sourceActivityId);
     if (!article) return null;
@@ -86,4 +127,16 @@ export function replayReviewItem(item: ReviewItem): ReviewReplay | null {
     };
   }
   return null;
+}
+
+/**
+ * QA/dev-only review replay that CAN resolve staging/draft/raw papers.
+ * Must NOT be imported by production review/wrongbook pages.
+ * Production uses replayReviewItem() which enforces the staging boundary.
+ */
+export function replayReviewItemQa(item: ReviewItem): ReviewReplay | null {
+  const paperReplay = replayPaperItem(item, true);
+  if (paperReplay) return paperReplay;
+  // Fall through to non-paper modules (same as production)
+  return replayReviewItem(item);
 }

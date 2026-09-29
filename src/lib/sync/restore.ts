@@ -21,6 +21,7 @@ import { loadReviewStore, saveReviewStore, validReviewSession } from "@/lib/revi
 import { recordWrong, reviewItemId } from "@/lib/review/scheduler";
 import { generatePlan } from "@/lib/dailyPlan/generator";
 import { isValidStudyPreferences, loadDailyPlanStore, saveDailyPlanStore } from "@/lib/dailyPlan/storage";
+import { isValidPaperSession } from "@/lib/paper/session";
 import { dateOnly, iso, mapRemoteProfile, mapRemoteReviewItem, mapRemoteTranslationHistory, mapRemoteWordbookState, mapRemoteWritingHistory, record, type RemoteRecord } from "./domain-mappers";
 import type { HydratedDomain } from "@/lib/storage/hydration-events";
 import type { AnswerRecord, LessonSession } from "@/types/session";
@@ -165,6 +166,20 @@ export function applyPullToDomainStores(storage: KeyStorage, data: PullResponse)
 
   for (const row of rows(data.sessions)) {
     if (typeof row.id !== "string") continue;
+    // Paper sessions (V13): payload is the full PaperSessionState, no schemaVersion.
+    // Write directly to paper session storage so multi-device sync restores paper progress.
+    if (row.module === "paper") {
+      const payload = record(row.payload);
+      if (payload && isValidPaperSession(payload)) {
+        try {
+          storage.setItem(`cet-daily:v13:paper-session:${row.id}`, JSON.stringify(payload));
+          changed.add("paper");
+        } catch {
+          // storage write failed; skip this session without crashing the restore
+        }
+      }
+      continue;
+    }
     const snapshot = isSessionSnapshot(row);
     if (!snapshot) continue;
     const id = row.id;

@@ -1,0 +1,1419 @@
+/**
+ * V13 Phase 1: 真实内容系统 / 真题导入基础设施 测试
+ * 覆盖：
+ *  - Paper 领域模型（Exam→Paper→Section→Group→Question）校验
+ *  - Stable ID 确定性
+ *  - Content Provenance / Rights（unknown→blocked、permission_required→blocked、owned→allowed、licensed+evidence→allowed）
+ *  - Content Lifecycle
+ *  - Import Batch（deterministic + idempotent）
+ *  - Duplicate Detection
+ *  - Staging vs Published 隔离（学习页/Selector 不暴露 staging/blocked）
+ *  - 59 Mock 回归
+ *  - Deprecated ID → Registry resolve → replay
+ */
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  paperStableId,
+  sectionStableId,
+  groupStableId,
+  questionStableId,
+  assetStableId,
+  fixturePaperStableId,
+  mockPaperStableId,
+  extendStableId,
+  isValidStableId,
+  stableIdNamespace,
+  isRealStableId,
+  isFixtureStableId,
+  isMockStableId,
+  FIXTURE_PREFIX,
+  MOCK_PREFIX,
+  type PaperIdentity,
+} from "../src/content/stable-id";
+import { validatePaper, type CET6Paper, type PaperSection, type PaperQuestion } from "../src/content/papers";
+import { rightsVerdict, rightsIssues, isPublishable } from "../src/content/rights";
+import { canTransition, advanceLifecycle, lifecycleFromStatus, isLearningVisible } from "../src/content/lifecycle";
+import {
+  createImportBatch,
+  inputFingerprint,
+  buildBatchId,
+  wasImported,
+  resetImportBatches,
+} from "../src/content/import-batch";
+import { importContentPackWithBatch, importContentPackFromJson } from "../src/content/importer";
+import { resetRegistry, getContentPack, getItems, getPublishableItems, getPaperById, resolveContentById, registerContentPack } from "../src/content/registry";
+import { registerBuiltinPacks } from "../src/content/packs";
+import { validateAll } from "../src/content/validator";
+import { registerSyntheticPaperFixture, syntheticCet6Paper, SYNTHETIC_PAPER_ID, SYNTHETIC_FIXTURE_ID } from "../src/content/fixture/cet6-2025-12-synthetic";
+import { registerMockPaper001, mockPaper001, MOCK_PAPER_001_ID } from "../src/content/papers/cet6-mock-paper-001";
+import { registerAlias, resolveAlias } from "../src/content/aliases";
+import { CET6_EXAM_SPEC, KNOWN_EXAM_SPEC_IDS, allowedSubsections, isKnownExamSpecId } from "../src/content/exam-spec";
+import { vocabularyRepository } from "../src/content/repositories";
+import { MOCK_SOURCE, SYNTHETIC_PAPER_SOURCE } from "../src/content/sources";
+import type { ContentRights } from "../src/content/types";
+
+function setup() {
+  resetRegistry();
+  resetImportBatches();
+  registerBuiltinPacks();
+  registerSyntheticPaperFixture();
+}
+
+function registeredPacks() {
+  return [
+    "pack-vocabulary-mock",
+    "pack-reading-mock",
+    "pack-listening-mock",
+    "pack-translation-mock",
+    "pack-writing-mock",
+    "pack-paper-cet6-2025-12-synthetic",
+  ].map((id) => getContentPack(id)!);
+}
+
+/** 构造最小合法 REAL paper（past_exam 语义；fixture=false）。 */
+function makeRealPaper(identity: PaperIdentity, rights: ContentRights, status: CET6Paper["status"]): CET6Paper {
+  const paperId = paperStableId(identity);
+  const secId = sectionStableId({ ...identity, section: "writing" });
+  const gId = groupStableId({ ...identity, section: "writing", group: "g1" });
+  const qId = questionStableId({ ...identity, section: "writing", group: "g1", question: "q1" });
+  return {
+    paperId,
+    type: "paper",
+    tags: [],
+    examSpecId: CET6_EXAM_SPEC.examSpecId,
+    exam: "CET6",
+    level: "CET6",
+    year: identity.year,
+    session: identity.session,
+    set: identity.set,
+    title: `Real Paper ${paperId}`,
+    sourceId: SYNTHETIC_PAPER_SOURCE.id,
+    rights,
+    sections: [
+      {
+        sectionId: secId,
+        type: "writing",
+        order: 1,
+        groups: [
+          {
+            groupId: gId,
+            type: "writing",
+            order: 1,
+            prompt: "Write a short essay.",
+            questions: [
+              {
+                questionId: qId,
+                order: 1,
+                prompt: "Write a short essay.",
+                type: "subjective_writing",
+                answerText: "Model answer.",
+                answerKey: { value: "Model answer.", source: "test" },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    schemaVersion: "1.0.0",
+    contentVersion: "1.0.0",
+    isPartial: true,
+    fixture: false,
+    status,
+    authenticity: "past_exam",
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  };
+}
+
+/** 以独立 pack 注册一个 paper（用于 production pool / duplicate 场景测试）。 */
+function registerPaperPack(packId: string, paper: CET6Paper): void {
+  registerContentPack({
+    id: packId,
+    name: "Test Paper Pack",
+    version: "1.0.0",
+    contentType: "paper",
+    sourceId: SYNTHETIC_PAPER_SOURCE.id,
+    items: [paper],
+    schemaVersion: "1.0.0",
+    rights: paper.rights,
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  } as never);
+}
+
+// ---------------------------------------------------------------- V13 Phase 2B helpers
+
+/** 生成 n 道内联 choice 题（Paper 作用域 stable ID）。 */
+function makeQuestions(base: string, n: number, type: PaperQuestion["type"] = "choice"): PaperQuestion[] {
+  const out: PaperQuestion[] = [];
+  for (let i = 1; i <= n; i++) {
+    const q: PaperQuestion = {
+      questionId: extendStableId(base, `q${i}`),
+      order: i,
+      prompt: `Test question ${i} (Phase 2B fixture)`,
+      type,
+      options: [
+        { id: "a", text: "Option A" },
+        { id: "b", text: "Option B" },
+      ],
+      answerId: "a",
+      answerText: "Answer.",
+      shortExplanation: "Short.",
+      detailedExplanation: "Detailed.",
+    };
+    out.push(q);
+  }
+  return out;
+}
+
+/**
+ * 构造符合当前官方 CET6 结构的完整卷（非 partial，authenticity=original）：
+ * writing 1 / listening 25（长对话 8 + 篇章 7 + 讲话·报道·讲座 10）/ reading 30（10+10+10）/ translation 1。
+ * 使用 ORIGINAL MOCK namespace（cet6:mock:<mockId>）——original/practice mock 不得占用 REAL date namespace。
+ * 用于 spec conformance / listening 结构测试（内容全部为 TEST FIXTURE 标记，不进入 production）。
+ */
+function makeCompletePaper(mockId: string, rights: ContentRights, status: CET6Paper["status"]): CET6Paper {
+  const paperId = mockPaperStableId(mockId);
+  const sec = (type: PaperSection["type"]) => extendStableId(paperId, type);
+  const grp = (section: string, sub: string | undefined, g: string) =>
+    sub ? extendStableId(extendStableId(sec(section as PaperSection["type"]), sub), g) : extendStableId(sec(section as PaperSection["type"]), g);
+
+  const listeningGroups: PaperSection["groups"] = [
+    { groupId: grp("listening", "long_conversation", "g1"), type: "long_conversation", order: 1, transcript: "TEST FIXTURE: long conversation script 1.", questions: makeQuestions(grp("listening", "long_conversation", "g1"), 4) },
+    { groupId: grp("listening", "long_conversation", "g2"), type: "long_conversation", order: 2, transcript: "TEST FIXTURE: long conversation script 2.", questions: makeQuestions(grp("listening", "long_conversation", "g2"), 4) },
+    { groupId: grp("listening", "passage", "g1"), type: "passage", order: 3, transcript: "TEST FIXTURE: passage script 1.", questions: makeQuestions(grp("listening", "passage", "g1"), 3) },
+    { groupId: grp("listening", "passage", "g2"), type: "passage", order: 4, transcript: "TEST FIXTURE: passage script 2.", questions: makeQuestions(grp("listening", "passage", "g2"), 4) },
+    { groupId: grp("listening", "lecture", "g1"), type: "lecture", order: 5, transcript: "TEST FIXTURE: lecture script 1.", questions: makeQuestions(grp("listening", "lecture", "g1"), 4) },
+    { groupId: grp("listening", "lecture", "g2"), type: "lecture", order: 6, transcript: "TEST FIXTURE: lecture script 2.", questions: makeQuestions(grp("listening", "lecture", "g2"), 3) },
+    { groupId: grp("listening", "lecture", "g3"), type: "lecture", order: 7, transcript: "TEST FIXTURE: lecture script 3.", questions: makeQuestions(grp("listening", "lecture", "g3"), 3) },
+  ];
+  const readingGroups: PaperSection["groups"] = [
+    { groupId: grp("reading", "cloze", "g1"), type: "cloze", order: 1, passage: "TEST FIXTURE: cloze passage.", questions: makeQuestions(grp("reading", "cloze", "g1"), 10) },
+    { groupId: grp("reading", "matching", "g2"), type: "matching", order: 2, passage: "TEST FIXTURE: matching passage.", questions: makeQuestions(grp("reading", "matching", "g2"), 10, "matching") },
+    { groupId: grp("reading", "careful_reading", "g3"), type: "careful_reading", order: 3, passage: "TEST FIXTURE: careful reading passage.", questions: makeQuestions(grp("reading", "careful_reading", "g3"), 10) },
+  ];
+
+  return {
+    paperId,
+    type: "paper",
+    tags: [],
+    examSpecId: CET6_EXAM_SPEC.examSpecId,
+    exam: "CET6",
+    level: "CET6",
+    year: 2026,
+    session: 6,
+    set: 1,
+    title: `Complete Paper ${paperId}`,
+    sourceId: SYNTHETIC_PAPER_SOURCE.id,
+    rights,
+    sections: [
+      { sectionId: sec("writing"), type: "writing", order: 1, groups: [{ groupId: grp("writing", undefined, "g1"), type: "writing", order: 1, prompt: "TEST FIXTURE: writing prompt.", questions: makeQuestions(grp("writing", undefined, "g1"), 1, "subjective_writing") }] },
+      { sectionId: sec("listening"), type: "listening", order: 2, groups: listeningGroups },
+      { sectionId: sec("reading"), type: "reading", order: 3, groups: readingGroups },
+      { sectionId: sec("translation"), type: "translation", order: 4, groups: [{ groupId: grp("translation", undefined, "g1"), type: "translation", order: 1, prompt: "TEST FIXTURE: translation prompt.", questions: makeQuestions(grp("translation", undefined, "g1"), 1, "subjective_translation") }] },
+    ],
+    schemaVersion: "1.0.0",
+    contentVersion: "1.0.0",
+    isPartial: false,
+    fixture: false,
+    status,
+    authenticity: "original",
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  };
+}
+
+// ---------------------------------------------------------------- V13 Phase 2B: Exam Spec（当前官方结构）
+
+test("exam spec: current official CET6 structure is versioned (examSpecId)", () => {
+  assert.equal(CET6_EXAM_SPEC.examSpecId, "cet6-current-2026");
+  assert.ok(isKnownExamSpecId("cet6-current-2026"));
+  assert.ok(isKnownExamSpecId(undefined), "missing examSpecId defaults to current spec");
+  assert.ok(!isKnownExamSpecId("cet6-1999"), "unknown spec id must be rejected");
+  // listening 当前官方结构：25 题 / 30 分钟，子节 8 + 7 + 10 = 25
+  const listening = CET6_EXAM_SPEC.sections.find((s) => s.kind === "listening")!;
+  assert.equal(listening.questionCount, 25);
+  assert.equal(listening.timeMinutes, 30);
+  assert.equal(listening.scoreRatio, "35%");
+  const sub = CET6_EXAM_SPEC.listeningSubsections;
+  assert.equal(sub.length, 3);
+  assert.deepEqual(sub.map((s) => s.kind), ["long_conversation", "passage", "lecture"]);
+  assert.deepEqual(sub.map((s) => s.questionCount), [8, 7, 10]);
+  assert.deepEqual(sub.map((s) => s.scoreRatio), ["8%", "7%", "20%"]);
+  assert.equal(sub.reduce((n, s) => n + s.questionCount, 0), 25);
+  // 旧结构不得重新出现
+  const text = JSON.stringify(CET6_EXAM_SPEC);
+  assert.ok(!/short conversation/i.test(text), "old 'short conversation' structure must not reappear");
+  assert.ok(!/8 short conversations/i.test(text));
+  assert.ok(!/2 long conversations/i.test(text));
+  assert.ok(!/3 passages/i.test(text));
+  // reading 子节：10+10+10 = 30
+  const reading = CET6_EXAM_SPEC.readingSubsections;
+  assert.deepEqual(reading.map((s) => s.questionCount), [10, 10, 10]);
+  assert.equal(reading.reduce((n, s) => n + s.questionCount, 0), 30);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2B: Paper spec conformance
+
+test("paper spec: complete paper conforming to current official structure passes", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
+  const errors = validatePaper(complete);
+  assert.deepEqual(errors, [], `complete paper must pass conformance: ${errors.join("; ")}`);
+});
+
+test("paper spec: unknown examSpecId rejected", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  bad.examSpecId = "cet6-1999";
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("unknown examSpecId")), `expected unknown spec error: ${errors.join("; ")}`);
+});
+
+test("paper spec: listening subsection counts must match current official structure (8/7/10)", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
+  // 长对话 8 → 9：违反当前官方结构
+  const bad = structuredClone(complete) as CET6Paper;
+  const lc = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "long_conversation")!;
+  (lc.questions as PaperQuestion[]).push({
+    questionId: extendStableId(lc.groupId, "q9"),
+    order: 9,
+    prompt: "Extra question.",
+    type: "choice",
+    options: [{ id: "a", text: "A" }, { id: "b", text: "B" }],
+    answerId: "a",
+  });
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("long_conversation") && e.includes("9 != spec 8")),
+    `expected subsection count error: ${errors.join("; ")}`,
+  );
+});
+
+test("paper spec: listening total must be 25 for complete paper", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  const passage = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "passage")!;
+  (passage.questions as PaperQuestion[]).pop(); // 7 → 6
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("listening subsection passage") && e.includes("6 != spec 7")),
+    `expected passage count error: ${errors.join("; ")}`,
+  );
+  assert.ok(errors.some((e) => e.includes("section") && e.includes("question count 24 != spec 25")), `expected section total error: ${errors.join("; ")}`);
+});
+
+test("paper spec: partial paper is exempt from full question-count conformance", () => {
+  setup();
+  // fixture 是 partial（结构合法即可，不强制 25 题）
+  assert.equal(syntheticCet6Paper.isPartial, true);
+  const errors = validatePaper(syntheticCet6Paper);
+  assert.deepEqual(errors, [], `fixture must still pass: ${errors.join("; ")}`);
+});
+
+test("paper spec: listening group must carry a transcript (script)", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  const lc = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "long_conversation")!;
+  delete (lc as Partial<typeof lc>).transcript;
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("missing transcript")), `expected transcript error: ${errors.join("; ")}`);
+});
+
+test("paper spec: assetIds must cross-reference paper.assets (orphan rejected)", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  const lecture = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "lecture")!;
+  lecture.assetIds = ["cet6:2026-6:set1:listening:lecture:g3:audio1"]; // 不在 assets 中
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("orphan asset")), `expected orphan asset error: ${errors.join("; ")}`);
+});
+
+test("paper spec: audio asset must carry rights metadata", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set1", owned, "staging");
+  const bad = structuredClone(complete) as CET6Paper;
+  const audioId = extendStableId("cet6:mock:complete-2026-6-set1", "listening", "lecture", "g3", "audio1");
+  bad.assets = [
+    { assetId: audioId, type: "audio", source: "mock://test/audio.mp3", mimeType: "audio/mpeg" },
+  ];
+  const lecture = bad.sections.find((s) => s.type === "listening")!.groups.find((g) => g.type === "lecture")!;
+  lecture.assetIds = [audioId];
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("audio asset") && e.includes("missing rights")), `expected audio rights error: ${errors.join("; ")}`);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2B.1: public_domain rights（收紧：必须 evidence）
+
+const publicDomainNoEvidence: ContentRights = { licenseStatus: "public_domain", redistributionAllowed: true };
+const publicDomainOk: ContentRights = {
+  licenseStatus: "public_domain",
+  permissionEvidence: "CC0 dedication recorded in source provenance",
+  redistributionAllowed: true,
+};
+
+test("rights: public_domain + redistribution=true + no evidence → unknown (NOT production)", () => {
+  assert.equal(rightsVerdict(publicDomainNoEvidence), "unknown");
+  assert.ok(!isPublishable(publicDomainNoEvidence));
+  assert.ok(rightsIssues(publicDomainNoEvidence, { scope: "production" }).some((i) => i.level === "error" && i.message.includes("unknown")));
+});
+
+test("rights: public_domain + valid evidence + redistribution=true → allowed (with warning)", () => {
+  assert.equal(rightsVerdict(publicDomainOk), "allowed");
+  assert.ok(isPublishable(publicDomainOk));
+  const issues = rightsIssues(publicDomainOk, { scope: "production" });
+  assert.ok(issues.some((i) => i.level === "warning" && i.message.includes("public_domain")), "public_domain should carry verify-before-publish warning");
+});
+
+test("rights: public_domain unconfirmed → unknown (not publishable)", () => {
+  const pd: ContentRights = { licenseStatus: "public_domain" };
+  assert.equal(rightsVerdict(pd), "unknown");
+  assert.ok(!isPublishable(pd));
+});
+
+test("rights: public_domain + redistributionAllowed=false → blocked", () => {
+  const pd: ContentRights = { licenseStatus: "public_domain", redistributionAllowed: false };
+  assert.equal(rightsVerdict(pd), "blocked");
+  assert.ok(!isPublishable(pd));
+});
+
+// ---------------------------------------------------------------- Paper 模型
+
+test("paper model: synthetic fixture passes validation", () => {
+  setup();
+  const errors = validatePaper(syntheticCet6Paper);
+  assert.deepEqual(errors, [], `expected no paper errors, got: ${errors.join("; ")}`);
+  // registry 整体校验也无 error
+  const rep = validateAll(registeredPacks() as never);
+  assert.ok(rep.counts.paper >= 1, "paper pack should be registered");
+  assert.equal(rep.errors.length, 0, `synthetic pack should validate clean: ${rep.errors.map(e => e.message).join("; ")}`);
+});
+
+test("paper model: section order must be 1..N", () => {
+  setup();
+  const bad = structuredClone(syntheticCet6Paper) as CET6Paper;
+  bad.sections[0] = { ...bad.sections[0], order: 9 } as PaperSection;
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("orders must be 1..N")), `expected order error: ${errors.join("; ")}`);
+});
+
+test("paper model: duplicate questionId in group rejected", () => {
+  setup();
+  const bad = structuredClone(syntheticCet6Paper) as CET6Paper;
+  const g = bad.sections.find((s) => s.type === "reading")!.groups.find((g) => g.type === "cloze")!;
+  g.questions!.push(structuredClone(g.questions![0]));
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("duplicate questionId")), `expected duplicate error: ${errors.join("; ")}`);
+});
+
+test("paper model: choice question must have valid answerId", () => {
+  setup();
+  const bad = structuredClone(syntheticCet6Paper) as CET6Paper;
+  const g = bad.sections.find((s) => s.type === "listening")!.groups[0]!;
+  g.questions![0].answerId = "zz";
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("invalid answerId")), `expected answerId error: ${errors.join("; ")}`);
+});
+
+test("paper model: fixture=true must use fixture namespace (cross-check)", () => {
+  setup();
+  const bad = structuredClone(syntheticCet6Paper) as CET6Paper;
+  bad.paperId = "cet6:2024-6:set1";
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("fixture=true must use fixture namespace")),
+    `expected fixture namespace error: ${errors.join("; ")}`,
+  );
+});
+
+test("paper model: real/past_exam paper must not use fixture namespace (cross-check)", () => {
+  setup();
+  const bad = structuredClone(syntheticCet6Paper) as CET6Paper;
+  bad.fixture = false;
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("must not use fixture namespace")),
+    `expected real-namespace guard error: ${errors.join("; ")}`,
+  );
+});
+
+test("paper model: real paper paperId must match identity and format", () => {
+  setup();
+  const real = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  let bad = structuredClone(real) as CET6Paper;
+  bad.paperId = "cet6:2025-6:set1";
+  let errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("mismatch identity")), `expected mismatch: ${errors.join("; ")}`);
+  bad = structuredClone(real) as CET6Paper;
+  bad.paperId = "not-a-paper-id";
+  errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("invalid paperId format")), `expected format error: ${errors.join("; ")}`);
+});
+
+test("paper model: empty sections rejected", () => {
+  setup();
+  const bad = structuredClone(syntheticCet6Paper) as CET6Paper;
+  bad.sections = [];
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("no sections")), `expected sections error: ${errors.join("; ")}`);
+});
+
+test("paper model: fixture must be explicit isPartial/fixture flags", () => {
+  setup();
+  assert.equal(syntheticCet6Paper.isPartial, true, "partial paper must be explicitly marked");
+  assert.equal(syntheticCet6Paper.fixture, true, "synthetic fixture must be explicitly marked");
+});
+
+// ---------------------------------------------------------------- Stable ID
+
+test("stable id: deterministic and well-formed", () => {
+  const p1 = paperStableId({ exam: "CET6", year: 2025, session: 12, set: 1 });
+  const p2 = paperStableId({ exam: "CET6", year: 2025, session: 12, set: 1 });
+  assert.equal(p1, "cet6:2025-12:set1");
+  assert.equal(p1, p2, "same identity must produce same id");
+  assert.ok(isValidStableId(p1, "paper"));
+  const s = sectionStableId({ exam: "CET6", year: 2025, session: 12, set: 1, section: "reading" });
+  assert.equal(s, "cet6:2025-12:set1:reading");
+  assert.ok(isValidStableId(s, "section"));
+  const g = groupStableId({ exam: "CET6", year: 2025, session: 12, set: 1, section: "reading", subsection: "careful", group: "g3" });
+  assert.equal(g, "cet6:2025-12:set1:reading:careful:g3");
+  assert.ok(isValidStableId(g, "group"));
+  const q = questionStableId({ exam: "CET6", year: 2025, session: 12, set: 1, section: "reading", subsection: "careful", group: "g3", question: "q2" });
+  assert.equal(q, "cet6:2025-12:set1:reading:careful:g3:q2");
+  assert.ok(isValidStableId(q, "question"));
+  const a = assetStableId({ exam: "CET6", year: 2025, session: 12, set: 1, section: "listening", subsection: "lecture", group: "g2", asset: "audio1" });
+  assert.ok(isValidStableId(a, "asset"));
+  assert.ok(!isValidStableId("word_sustain", "paper"));
+  assert.ok(!isValidStableId("cet6:2025-12:set1", "section"));
+});
+
+// V13 Phase 1.1：FIXTURE namespace 与 REAL namespace 结构上可区分
+test("stable id: fixture namespace is structurally distinct from real namespace", () => {
+  const fp = fixturePaperStableId(SYNTHETIC_FIXTURE_ID);
+  assert.equal(fp, "cet6:fixture:synthetic-001");
+  assert.equal(fp, `${FIXTURE_PREFIX}:${SYNTHETIC_FIXTURE_ID}`);
+  assert.ok(isValidStableId(fp, "paper"));
+  const fs = extendStableId(fp, "reading");
+  assert.equal(fs, "cet6:fixture:synthetic-001:reading");
+  assert.ok(isValidStableId(fs, "section"));
+  const fg = extendStableId(fs, "careful", "g3");
+  assert.equal(fg, "cet6:fixture:synthetic-001:reading:careful:g3");
+  assert.ok(isValidStableId(fg, "group"));
+  const fq = extendStableId(fg, "q2");
+  assert.ok(isValidStableId(fq, "question"));
+  const fa = extendStableId(extendStableId(fp, "listening"), "lecture", "g2", "audio1");
+  assert.ok(isValidStableId(fa, "asset"));
+  // namespace 判别
+  assert.equal(stableIdNamespace("cet6:2025-12:set1"), "real");
+  assert.equal(stableIdNamespace("cet6:2025-12:set1:reading:careful:g3:q1"), "real");
+  assert.equal(stableIdNamespace("cet6:fixture:synthetic-001"), "fixture");
+  assert.equal(stableIdNamespace("cet6:fixture:synthetic-001:listening:lecture:g2:audio1"), "fixture");
+  assert.equal(stableIdNamespace("word_sustain"), "invalid");
+  assert.ok(isRealStableId("cet6:2025-12:set1"));
+  assert.ok(!isRealStableId("cet6:fixture:synthetic-001"));
+  assert.ok(isFixtureStableId("cet6:fixture:synthetic-001"));
+  assert.ok(!isFixtureStableId("cet6:2025-12:set1"));
+  // REAL 与 FIXTURE 永远不会生成相同 ID
+  const realId = paperStableId({ exam: "CET6", year: 2025, session: 12, set: 1 });
+  assert.notEqual(realId, fp, "real and fixture namespaces must never collide");
+  assert.ok(!isValidStableId("cet6:fixture:2025-12:set1", "paper"), "fixture id must be <fixtureId>, not year-session-set");
+  assert.ok(!isValidStableId("cet6:fixture:", "paper"));
+});
+
+// ---------------------------------------------------------------- Rights
+
+const owned: ContentRights = { licenseStatus: "owned", rightsHolder: "P" };
+const licensedOk: ContentRights = {
+  licenseStatus: "licensed",
+  licenseName: "CC BY 4.0",
+  licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+  redistributionAllowed: true,
+};
+const licensedNoEvidence: ContentRights = { licenseStatus: "licensed" };
+const licensedNoRedistribution: ContentRights = { licenseStatus: "licensed", licenseName: "CC BY 4.0" };
+const officialNoEvidence: ContentRights = { licenseStatus: "official_public_material" };
+const officialNoRedistribution: ContentRights = { licenseStatus: "official_public_material", permissionEvidence: "published on official exam site" };
+const officialBlocked: ContentRights = { licenseStatus: "official_public_material", permissionEvidence: "x", redistributionAllowed: false };
+const officialOk: ContentRights = {
+  licenseStatus: "official_public_material",
+  permissionEvidence: "official exam authority granted reuse for educational product",
+  redistributionAllowed: true,
+};
+const permission: ContentRights = { licenseStatus: "permission_required" };
+const unknown: ContentRights = { licenseStatus: "unknown" };
+
+test("rights: owned → allowed", () => {
+  assert.equal(rightsVerdict(owned), "allowed");
+  assert.ok(isPublishable(owned));
+});
+
+test("rights: owned with redistributionAllowed=false → blocked", () => {
+  assert.equal(rightsVerdict({ ...owned, redistributionAllowed: false }), "blocked");
+  assert.ok(!isPublishable({ ...owned, redistributionAllowed: false }));
+});
+
+test("rights: licensed + evidence + redistribution=true → allowed (with warning)", () => {
+  assert.equal(rightsVerdict(licensedOk), "allowed");
+  const issues = rightsIssues(licensedOk, { scope: "production" });
+  assert.ok(issues.some((i) => i.level === "warning"), "licensed should carry a verify-before-publish warning");
+});
+
+test("rights: licensed with evidence but redistribution unconfirmed → unknown (not publishable)", () => {
+  assert.equal(rightsVerdict(licensedNoRedistribution), "unknown");
+  assert.ok(!isPublishable(licensedNoRedistribution));
+});
+
+test("rights: licensed without evidence → blocked", () => {
+  assert.equal(rightsVerdict(licensedNoEvidence), "blocked");
+  assert.ok(!isPublishable(licensedNoEvidence));
+  const issues = rightsIssues(licensedNoEvidence, { scope: "production" });
+  assert.ok(issues.some((i) => i.level === "error" && i.message.includes("blocked")));
+});
+
+test("rights: permission_required → blocked", () => {
+  assert.equal(rightsVerdict(permission), "blocked");
+  const issues = rightsIssues(permission, { scope: "production" });
+  assert.ok(issues.some((i) => i.level === "error" && i.message.includes("permission_required")));
+});
+
+test("rights: unknown → blocked for production", () => {
+  assert.equal(rightsVerdict(unknown), "unknown");
+  const issues = rightsIssues(unknown, { scope: "production" });
+  assert.ok(issues.some((i) => i.level === "error" && i.message.includes("unknown")));
+  // mock source（licenseType=unknown）不能进 production pool（现有行为保留）
+  setup();
+  const prod = getPublishableItems();
+  assert.ok(!prod.some((it) => (it as { sourceId?: string }).sourceId === MOCK_SOURCE.id), "mock must not enter production pool");
+});
+
+// V13 Phase 1.1：official_public_material 不再无条件 allowed
+test("rights: official_public_material + no evidence → NOT production publishable (unknown)", () => {
+  assert.equal(rightsVerdict(officialNoEvidence), "unknown");
+  assert.ok(!isPublishable(officialNoEvidence));
+  assert.ok(rightsIssues(officialNoEvidence, { scope: "production" }).some((i) => i.level === "error"));
+});
+
+test("rights: official_public_material + redistribution undefined → NOT production publishable (unknown)", () => {
+  assert.equal(rightsVerdict(officialNoRedistribution), "unknown");
+  assert.ok(!isPublishable(officialNoRedistribution));
+});
+
+test("rights: official_public_material + redistributionAllowed=false → BLOCKED", () => {
+  assert.equal(rightsVerdict(officialBlocked), "blocked");
+  assert.ok(!isPublishable(officialBlocked));
+  assert.ok(rightsIssues(officialBlocked, { scope: "production" }).some((i) => i.level === "error" && i.message.includes("blocked")));
+});
+
+test("rights: official_public_material + explicit evidence + redistribution=true → allowed (next-layer verdict)", () => {
+  assert.equal(rightsVerdict(officialOk), "allowed");
+  assert.ok(isPublishable(officialOk));
+  const issues = rightsIssues(officialOk, { scope: "production" });
+  assert.ok(issues.some((i) => i.level === "warning"), "official-allowed should carry verify-before-publish warning");
+});
+
+test("rights: commercialUseAllowed unconfirmed → rights report must flag the restriction", () => {
+  const issues = rightsIssues(licensedOk, { scope: "production" });
+  assert.ok(
+    issues.some((i) => i.level === "warning" && i.message.includes("commercialUseAllowed")),
+    "unconfirmed commercial use must be surfaced, never silently unrestricted",
+  );
+});
+
+test("rights: missing metadata → unknown", () => {
+  assert.equal(rightsVerdict(undefined), "unknown");
+  assert.equal(rightsVerdict(null), "unknown");
+});
+
+// ---------------------------------------------------------------- Lifecycle
+
+test("lifecycle: transitions are strict and monotonic", () => {
+  assert.ok(canTransition("raw", "normalized"));
+  assert.ok(canTransition("validated", "reviewed"));
+  assert.ok(canTransition("publishable", "published"));
+  assert.ok(canTransition("published", "deprecated"));
+  assert.ok(!canTransition("raw", "published"), "cannot skip stages");
+  assert.ok(!canTransition("published", "raw"), "cannot go backwards");
+  assert.ok(!canTransition("raw", "raw"));
+  assert.equal(advanceLifecycle("raw"), "normalized");
+  assert.equal(advanceLifecycle("publishable"), "published");
+  assert.equal(advanceLifecycle("published"), "deprecated");
+  assert.equal(advanceLifecycle("deprecated"), null);
+});
+
+test("lifecycle: V10 status mapping", () => {
+  assert.equal(lifecycleFromStatus("active"), "published");
+  assert.equal(lifecycleFromStatus("draft"), "raw");
+  assert.equal(lifecycleFromStatus("published"), "published");
+  assert.equal(lifecycleFromStatus("staging"), "reviewed");
+  assert.ok(isLearningVisible("published"));
+  assert.ok(!isLearningVisible(lifecycleFromStatus("staging")));
+  assert.ok(!isLearningVisible("raw"));
+});
+
+// ---------------------------------------------------------------- Import Batch
+
+test("import batch: deterministic fingerprint and batchId", () => {
+  const raw = JSON.stringify({ a: 1 });
+  const raw2 = JSON.stringify({ a: 2 });
+  assert.equal(inputFingerprint(raw), inputFingerprint(raw), "same input → same fingerprint");
+  assert.notEqual(inputFingerprint(raw), inputFingerprint(raw2), "different input → different fingerprint");
+  const b = createImportBatch({ sourceId: "src-x", raw, itemCount: 3 });
+  assert.ok(b.batchId.startsWith("import-src-x-"));
+  assert.equal(b.importedAt.length > 0, true);
+  assert.equal(b.importerVersion, "v13.0.0");
+  assert.equal(b.itemCount, 3);
+  assert.equal(buildBatchId("src-x", inputFingerprint(raw)), b.batchId, "batchId derived deterministically");
+});
+
+test("import batch: same source + same input → idempotent (no re-registration)", () => {
+  setup();
+  const raw = JSON.stringify({
+    id: "pb-idem-test",
+    name: "Idempotent Pack",
+    version: "1.0.0",
+    contentType: "vocabulary",
+    sourceId: MOCK_SOURCE.id,
+    items: [
+      {
+        id: "pb_idem_word",
+        type: "vocabulary",
+        word: "idempotent",
+        phonetic: "/ˌaɪdəmˈpoʊtənt/",
+        partOfSpeech: "adj.",
+        meaning: "幂等的",
+        example: "An idempotent import never duplicates records.",
+        exampleTranslation: "幂等导入不会重复记录。",
+        difficulty: 3,
+        tags: [],
+        authenticity: "practice",
+        status: "active",
+        version: "1.0.0",
+        sourceId: MOCK_SOURCE.id,
+        createdAt: "2026-09-01T00:00:00.000Z",
+        updatedAt: "2026-09-01T00:00:00.000Z",
+      },
+    ],
+  });
+  const first = importContentPackWithBatch(raw);
+  assert.equal(first.imported, true, "first import registers");
+  assert.ok(wasImported(MOCK_SOURCE.id, raw));
+  const second = importContentPackWithBatch(raw);
+  assert.equal(second.imported, false, "repeat import is idempotent");
+  assert.equal(second.batch.batchId, first.batch.batchId, "same input → same batchId");
+  // 注册表里仍只有一份
+  const vocab = getItems<{ id: string }>("vocabulary");
+  assert.equal(vocab.filter((v) => v.id === "pb_idem_word").length, 1);
+  const packs = [getContentPack("pb-idem-test")!];
+  assert.equal(packs.filter(Boolean).length, 1);
+});
+
+// ---------------------------------------------------------------- Duplicate detection
+
+test("duplicate: same real paper identity across packs → error", () => {
+  setup();
+  const real = makeRealPaper({ exam: "CET6", year: 2025, session: 12, set: 1 }, owned, "staging");
+  registerPaperPack("pack-paper-real-2025-12", real);
+  const dup = structuredClone(real) as CET6Paper;
+  const dupPack = {
+    id: "pack-paper-real-2025-12-dup",
+    name: "Duplicate Real Paper Pack",
+    version: "1.0.0",
+    contentType: "paper",
+    sourceId: "src-cet6-synthetic",
+    items: [dup],
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  };
+  const report = validateAll([getContentPack("pack-paper-real-2025-12")!, dupPack as never]);
+  assert.ok(report.errors.some((e) => e.message.includes("duplicate paper identity")), `expected duplicate identity error: ${report.errors.map(e => e.message).join("; ")}`);
+});
+
+test("duplicate: different real set is not a duplicate paper identity", () => {
+  setup();
+  const s1 = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const s2 = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 2 }, owned, "staging");
+  registerPaperPack("pack-real-s1", s1);
+  registerPaperPack("pack-real-s2", s2);
+  const report = validateAll([getContentPack("pack-real-s1")!, getContentPack("pack-real-s2")!] as never);
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate paper identity")), "set2 must not collide with set1");
+});
+
+// V13 Phase 1.1：fixture identity 与 real identity 永不冲突
+test("duplicate: synthetic fixture + real 2025-12 set1 coexist without collision", () => {
+  setup(); // builtin packs + synthetic fixture（cet6:fixture:synthetic-001）
+  const real = makeRealPaper({ exam: "CET6", year: 2025, session: 12, set: 1 }, owned, "staging");
+  registerPaperPack("pack-paper-real-2025-12", real);
+  // 两者同时存在于 Registry
+  assert.equal(getPaperById<{ paperId?: string }>(SYNTHETIC_PAPER_ID)?.paperId, SYNTHETIC_PAPER_ID);
+  assert.equal(getPaperById<{ paperId?: string }>("cet6:2025-12:set1")?.paperId, "cet6:2025-12:set1");
+  // 无 duplicate identity / 无 stable-ID collision
+  const report = validateAll([...registeredPacks(), getContentPack("pack-paper-real-2025-12")!] as never);
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate paper identity")), "fixture must not collide with real identity");
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate id")), "no stable-id collision between fixture and real paper");
+});
+
+test("duplicate: two real cet6 2025-12 set1 papers still duplicate ERROR", () => {
+  setup();
+  const a = makeRealPaper({ exam: "CET6", year: 2025, session: 12, set: 1 }, owned, "staging");
+  const b = makeRealPaper({ exam: "CET6", year: 2025, session: 12, set: 1 }, owned, "staging");
+  registerPaperPack("pack-real-a", a);
+  assert.throws(
+    () => registerPaperPack("pack-real-b", b),
+    /duplicate paper identity/,
+    "second real 2025-12 set1 must be rejected",
+  );
+});
+
+test("duplicate: same reading passage text across packs → warning", () => {
+  setup();
+  const base = {
+    id: "warn-r-1",
+    type: "reading",
+    title: "Dup Passage A",
+    difficulty: "easy",
+    passage: "This exact passage text is intentionally repeated across two packs to trigger a duplicate-text warning.",
+    estimatedMinutes: 3,
+    vocabulary: {},
+    questions: [
+      {
+        id: "q1",
+        prompt: "What is the main idea?",
+        options: [{ id: "a", text: "One." }, { id: "b", text: "Two." }],
+        answerId: "a",
+        shortExplanation: "x",
+        detailedExplanation: "y",
+        hint: "z",
+      },
+    ],
+    authenticity: "practice",
+    status: "active",
+    version: "1.0.0",
+    sourceId: MOCK_SOURCE.id,
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  };
+  const packA = { id: "warn-pack-a", name: "Warn Pack A", version: "1.0.0", contentType: "reading", sourceId: MOCK_SOURCE.id, items: [base], createdAt: "2026-09-26T00:00:00.000Z", updatedAt: "2026-09-26T00:00:00.000Z" };
+  const packB = { ...packA, id: "warn-pack-b", items: [{ ...base, id: "warn-r-2" }] };
+  const report = validateAll([packA as never, packB as never]);
+  assert.ok(report.warnings.some((w) => w.message.includes("duplicate normalized text hash")), `expected text-dup warning: ${report.warnings.map(w => w.message).join("; ")}`);
+});
+
+// ---------------------------------------------------------------- Staging / Published 隔离
+
+test("isolation: staging fixture never enters production pool (Paper 001 active is production)", () => {
+  setup();
+  const pub = getPublishableItems();
+  const pubPapers = pub.filter((it) => (it as { type?: string }).type === "paper");
+  assert.equal(pubPapers.length, 1, "only Paper 001 (active) in production pool");
+  assert.ok(pubPapers.some((it) => (it as { paperId?: string }).paperId === MOCK_PAPER_001_ID), "Paper 001 active must be in production pool");
+  assert.ok(!pubPapers.some((it) => (it as { paperId?: string }).paperId === SYNTHETIC_PAPER_ID), "staging fixture must not be in production pool");
+  assert.equal(getItems("paper").length, 2, "two paper packs in registry (fixture + Paper 001)");
+  for (const t of ["vocabulary", "reading", "listening", "translation", "writing"]) {
+    assert.ok(!getItems(t).some((it) => (it as { type?: string }).type === "paper"));
+  }
+  assert.equal(getPaperById<{ paperId?: string }>(SYNTHETIC_PAPER_ID)?.paperId, SYNTHETIC_PAPER_ID);
+  assert.ok(resolveContentById(SYNTHETIC_PAPER_ID), "dev/test resolve works");
+});
+
+// V13 Phase 1.1：Production pool fail-closed matrix
+test("production pool: fail-closed matrix", () => {
+  setup();
+  // 1. staging fixture → 不可见（Paper 001 active 可见，但 synthetic fixture staging 不可见）
+  const pubPapers = getPublishableItems().filter((it) => (it as { type?: string }).type === "paper");
+  assert.ok(pubPapers.some((it) => (it as { paperId?: string }).paperId === MOCK_PAPER_001_ID), "Paper 001 active must be visible");
+  assert.ok(!pubPapers.some((it) => (it as { paperId?: string }).paperId === SYNTHETIC_PAPER_ID), "staging fixture must be invisible");
+  // 2. unknown rights → 不可见
+  registerPaperPack("pool-unknown", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 1 }, unknown, "published"));
+  assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set1"), "unknown-rights published must be invisible");
+  // 3. permission_required → 不可见
+  registerPaperPack("pool-perm", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 2 }, permission, "published"));
+  assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set2"), "permission_required published must be invisible");
+  // 4. official public but no reuse evidence → 不可见
+  registerPaperPack("pool-official-noev", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 3 }, officialNoEvidence, "published"));
+  assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set3"), "official without reuse evidence must be invisible");
+  // 5. licensed + valid evidence → 可见
+  registerPaperPack("pool-licensed", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 4 }, licensedOk, "published"));
+  assert.ok(getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set4"), "licensed+evidence published must be visible");
+  // 6. owned → 可见
+  registerPaperPack("pool-owned", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 5 }, owned, "published"));
+  assert.ok(getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set5"), "owned published must be visible");
+  // 7. blocked content 即使 status=published 也不能被 getPublishableItems 返回
+  registerPaperPack("pool-blocked-published", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 6 }, officialBlocked, "published"));
+  assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set6"), "blocked published must never be returned");
+});
+
+// ---------------------------------------------------------------- 59 Mock 回归
+
+test("regression: 59 mock items intact and registry clean", () => {
+  setup();
+  assert.equal(getItems("vocabulary").length, 30);
+  assert.equal(getItems("reading").length, 6);
+  assert.equal(getItems("listening").length, 7);
+  assert.equal(getItems("translation").length, 8);
+  assert.equal(getItems("writing").length, 8);
+  const rep = validateAll(registeredPacks() as never);
+  assert.equal(rep.errors.length, 0, `mock+papers must validate: ${rep.errors.map((e) => e.message).join("; ")}`);
+});
+
+test("regression: repositories still resolve mock content", () => {
+  setup();
+  assert.equal(vocabularyRepository.all().length, 30);
+  assert.ok(vocabularyRepository.getById("word_sustain"), "legacy mock id resolves");
+});
+
+// ---------------------------------------------------------------- Deprecated ID → Registry resolve → replay
+
+test("deprecated id: alias maps old id to new stable id and repo resolves", () => {
+  setup();
+  registerAlias({ legacyId: "legacy-word-1", stableId: "word_sustain" });
+  assert.equal(resolveAlias("legacy-word-1"), "word_sustain");
+  // Registry byId 兼容旧 ID（repository 先 resolveAlias）
+  const hit = vocabularyRepository.getById("legacy-word-1");
+  assert.ok(hit, "old content ID must resolve through alias to Registry");
+  assert.equal(hit!.id, "word_sustain");
+});
+
+test("deprecated id: unknown legacy id falls back to identity", () => {
+  assert.equal(resolveAlias("never-existed-id"), "never-existed-id");
+});
+
+// ---------------------------------------------------------------- Exam spec
+
+test("exam spec: official public structure available", () => {
+  assert.equal(CET6_EXAM_SPEC.exam, "CET6");
+  assert.equal(CET6_EXAM_SPEC.sections.length, 4);
+  assert.deepEqual(allowedSubsections("reading"), ["cloze", "matching", "careful_reading"]);
+  assert.deepEqual(allowedSubsections("listening"), ["long_conversation", "passage", "lecture"]);
+  assert.equal(allowedSubsections("writing").length, 0);
+  assert.equal(CET6_EXAM_SPEC.rightsStatus, "official_public_material");
+});
+
+// ---------------------------------------------------------------- Importer rejects bad JSON (existing behavior preserved)
+
+test("importer: malformed JSON still rejected", () => {
+  setup();
+  assert.throws(() => importContentPackFromJson("{not json"), /invalid JSON/);
+});
+
+test("importer: unknown-rights paper can enter staging (audit path) but never production pool", () => {
+  setup();
+  const staged = makeRealPaper({ exam: "CET6", year: 2028, session: 6, set: 1 }, unknown, "staging");
+  const raw = JSON.stringify({
+    id: "pack-paper-rights-unknown-staging",
+    name: "Unknown Rights Staging Pack",
+    version: "1.0.0",
+    contentType: "paper",
+    sourceId: "src-cet6-synthetic",
+    items: [staged],
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  });
+  const result = importContentPackWithBatch(raw);
+  assert.equal(result.imported, true, "unknown-rights staging paper must be importable for human review");
+  assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === staged.paperId), "unknown-rights must never enter production pool");
+});
+
+test("importer: rights-blocked published paper registers but is fail-closed from production", () => {
+  setup();
+  const bad = makeRealPaper({ exam: "CET6", year: 2028, session: 6, set: 2 }, unknown, "published");
+  const raw = JSON.stringify({
+    id: "pack-paper-rights-blocked",
+    name: "Blocked Rights Pack",
+    version: "1.0.0",
+    contentType: "paper",
+    sourceId: "src-cet6-synthetic",
+    items: [bad],
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  });
+  const result = importContentPackWithBatch(raw);
+  assert.equal(result.imported, true, "structure-valid pack registers for audit");
+  assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === bad.paperId), "unknown-rights published must be invisible to production pool");
+});
+
+// ---------------------------------------------------------------- V13 Phase 2B.1: MOCK namespace + identity cross-validation
+
+/** 构造最小合法 ORIGINAL MOCK paper（authenticity=original；fixture=false；MOCK namespace）。 */
+function makeMockPaper(mockId: string, rights: ContentRights, status: CET6Paper["status"]): CET6Paper {
+  const paperId = mockPaperStableId(mockId);
+  const secId = extendStableId(paperId, "writing");
+  const gId = extendStableId(secId, "g1");
+  const qId = extendStableId(gId, "q1");
+  return {
+    paperId,
+    type: "paper",
+    tags: [],
+    examSpecId: CET6_EXAM_SPEC.examSpecId,
+    exam: "CET6",
+    level: "CET6",
+    year: 2026,
+    session: 6,
+    set: 1,
+    title: `Mock Paper ${paperId}`,
+    sourceId: SYNTHETIC_PAPER_SOURCE.id,
+    rights,
+    sections: [
+      {
+        sectionId: secId,
+        type: "writing",
+        order: 1,
+        groups: [
+          {
+            groupId: gId,
+            type: "writing",
+            order: 1,
+            prompt: "Write a short essay.",
+            questions: [
+              {
+                questionId: qId,
+                order: 1,
+                prompt: "Write a short essay.",
+                type: "subjective_writing",
+                answerText: "Model answer.",
+                answerKey: { value: "Model answer.", source: "test" },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    schemaVersion: "1.0.0",
+    contentVersion: "1.0.0",
+    isPartial: true,
+    fixture: false,
+    status,
+    authenticity: "original",
+    createdAt: "2026-09-26T00:00:00.000Z",
+    updatedAt: "2026-09-26T00:00:00.000Z",
+  };
+}
+
+test("identity: original mock must NOT use REAL date namespace (error)", () => {
+  setup();
+  const mock = makeMockPaper("paper-001", owned, "staging");
+  const bad = structuredClone(mock) as CET6Paper;
+  bad.paperId = paperStableId({ exam: "CET6", year: 2026, session: 6, set: 1 });
+  bad.year = 2026; bad.session = 6; bad.set = 1;
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("original/practice mock must use MOCK namespace")),
+    `expected original-mock-in-real-namespace error: ${errors.join("; ")}`,
+  );
+});
+
+test("identity: original mock in MOCK namespace passes", () => {
+  setup();
+  const mock = makeMockPaper("paper-001", owned, "staging");
+  const errors = validatePaper(mock);
+  assert.deepEqual(errors, [], `mock paper must pass: ${errors.join("; ")}`);
+});
+
+test("identity: real past_exam must NOT use MOCK namespace (error)", () => {
+  setup();
+  const real = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  const bad = structuredClone(real) as CET6Paper;
+  bad.paperId = mockPaperStableId("paper-001");
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("past_exam must use REAL namespace")),
+    `expected past_exam-in-mock-namespace error: ${errors.join("; ")}`,
+  );
+});
+
+test("identity: real / mock / fixture namespaces are structurally distinct and never collide", () => {
+  const realId = paperStableId({ exam: "CET6", year: 2026, session: 6, set: 1 });
+  const mockId = mockPaperStableId("paper-001");
+  const fixId = fixturePaperStableId(SYNTHETIC_FIXTURE_ID);
+  assert.equal(mockId, `${MOCK_PREFIX}:paper-001`);
+  assert.equal(stableIdNamespace(realId), "real");
+  assert.equal(stableIdNamespace(mockId), "mock");
+  assert.equal(stableIdNamespace(fixId), "fixture");
+  assert.equal(stableIdNamespace("word_sustain"), "invalid");
+  assert.ok(isMockStableId(mockId));
+  assert.ok(!isMockStableId(realId));
+  assert.ok(!isMockStableId(fixId));
+  // 三个 namespace 永远生成不同 ID
+  assert.equal(new Set([realId, mockId, fixId]).size, 3);
+  // mock 树 ID 格式合法
+  assert.ok(isValidStableId(mockId, "paper"));
+  assert.ok(isValidStableId(extendStableId(mockId, "reading"), "section"));
+  assert.ok(isValidStableId(extendStableId(extendStableId(mockId, "reading"), "careful", "g1"), "group"));
+  assert.ok(isValidStableId(extendStableId(extendStableId(mockId, "listening"), "lecture", "g2", "audio1"), "asset"));
+  // mock 不能借用 real date 格式 / fixture 保留字
+  assert.ok(!isValidStableId("cet6:mock:2026-6:set1", "paper"), "mock id must be <mockId>, not year-session-set");
+  assert.ok(!isValidStableId("cet6:mock:fixture:x", "paper"), "mock must not embed fixture reserved word");
+});
+
+test("identity: Paper 001 mock ID and real 2026-6 set1 coexist without collision", () => {
+  setup();
+  // Paper 001 已由 registerBuiltinPacks 注册（active）；此处只注册 real paper 验证共存
+  const real = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
+  registerPaperPack("pack-real-2026-6", real);
+  assert.equal(getPaperById<{ paperId?: string }>("cet6:mock:paper-001")?.paperId, "cet6:mock:paper-001");
+  assert.equal(getPaperById<{ paperId?: string }>("cet6:2026-6:set1")?.paperId, "cet6:2026-6:set1");
+  const report = validateAll([...registeredPacks(), getContentPack("pack-real-2026-6")!] as never);
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate paper identity")), "mock must not collide with real identity");
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate id")), "no stable-id collision between mock and real paper");
+});
+
+// ---------------------------------------------------------------- V13 Phase 2B.1: examSpecId 强绑定
+
+test("spec binding: production-capable complete original mock missing examSpecId → error", () => {
+  setup();
+  const complete = makeCompletePaper("complete-2026-6-set2", owned, "active");
+  const bad = structuredClone(complete) as CET6Paper;
+  delete bad.examSpecId;
+  const errors = validatePaper(bad);
+  assert.ok(
+    errors.some((e) => e.includes("must explicitly bind examSpecId")),
+    `expected missing examSpecId error: ${errors.join("; ")}`,
+  );
+});
+
+test("spec binding: published past_exam missing examSpecId → error", () => {
+  setup();
+  const real = makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 1 }, owned, "published");
+  const bad = structuredClone(real) as CET6Paper;
+  delete bad.examSpecId;
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("must explicitly bind examSpecId")), `expected missing examSpecId error: ${errors.join("; ")}`);
+});
+
+test("spec binding: synthetic fixture without examSpecId is compatible (fixture allowed)", () => {
+  setup();
+  const fix = structuredClone(syntheticCet6Paper) as CET6Paper;
+  delete fix.examSpecId;
+  const errors = validatePaper(fix);
+  assert.deepEqual(errors, [], `fixture must tolerate undefined examSpecId: ${errors.join("; ")}`);
+});
+
+test("spec binding: explicit old examSpecId stays valid when current spec changes (KNOWN list is stable)", () => {
+  // KNOWN_EXAM_SPEC_IDS 是显式历史列表：即使未来 CET6_EXAM_SPEC.examSpecId 变为新版本，
+  // 旧绑定 cet6-current-2026 仍是 known → 旧 Paper 不被新结构重新解释。
+  assert.ok(Array.isArray(KNOWN_EXAM_SPEC_IDS));
+  assert.ok(KNOWN_EXAM_SPEC_IDS.includes("cet6-current-2026"), "historical spec id must stay known");
+  assert.ok(isKnownExamSpecId("cet6-current-2026"));
+  // 显式绑定旧 spec 的 Paper 校验通过（不报 unknown examSpecId）
+  setup();
+  const real = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 2 }, owned, "staging");
+  real.examSpecId = "cet6-current-2026";
+  const errors = validatePaper(real);
+  assert.ok(!errors.some((e) => e.includes("unknown examSpecId")), `explicit old spec must remain valid: ${errors.join("; ")}`);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2C: Paper 001 生产验收
+
+function setupWithPaper001() {
+  resetRegistry();
+  resetImportBatches();
+  registerBuiltinPacks();
+  registerSyntheticPaperFixture();
+  registerMockPaper001();
+  }
+
+function paper001AllQuestions(): PaperQuestion[] {
+  const out: PaperQuestion[] = [];
+  for (const sec of mockPaper001.sections) {
+    for (const g of sec.groups) {
+      if (g.questions) out.push(...g.questions);
+    }
+  }
+  return out;
+}
+
+test("paper 001: identity 符合 V13 Final 规格（mock/original/full/active）", () => {
+  assert.equal(mockPaper001.paperId, "cet6:mock:paper-001");
+  assert.equal(mockPaper001.examSpecId, "cet6-current-2026");
+  assert.equal(mockPaper001.authenticity, "original");
+  assert.equal(mockPaper001.fixture, false);
+  assert.equal(mockPaper001.isPartial, false);
+  assert.equal(mockPaper001.status, "active");
+  assert.equal(mockPaper001.rights.licenseStatus, "owned");
+  assert.ok(isMockStableId(mockPaper001.paperId), "Paper 001 必须使用 MOCK namespace");
+  assert.ok(!isRealStableId(mockPaper001.paperId), "Paper 001 禁止 REAL namespace");
+  assert.ok(!isFixtureStableId(mockPaper001.paperId), "Paper 001 不是 fixture");
+});
+
+test("paper 001: 完整卷 57 题/任务 conformance 无 error", () => {
+  const errors = validatePaper(mockPaper001);
+  assert.deepEqual(errors, [], `Paper 001 结构错误: ${errors.join("; ")}`);
+});
+
+test("paper 001: section 结构 Writing1/Listening25/Reading30/Translation1", () => {
+  const byType = new Map<string, number>();
+  for (const sec of mockPaper001.sections) {
+    let n = 0;
+    for (const g of sec.groups) n += g.questions?.length ?? 0;
+    byType.set(sec.type, n);
+  }
+  assert.equal(byType.get("writing"), 1);
+  assert.equal(byType.get("listening"), 25);
+  assert.equal(byType.get("reading"), 30);
+  assert.equal(byType.get("translation"), 1);
+  assert.equal(paper001AllQuestions().length, 57);
+});
+
+test("paper 001: listening 25 = 长对话 8 + 篇章 7 + 讲话/报道/讲座 10", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const byGroup = new Map<string, number>();
+  for (const g of listening.groups) byGroup.set(g.type, (byGroup.get(g.type) ?? 0) + (g.questions?.length ?? 0));
+  assert.equal(byGroup.get("long_conversation"), 8);
+  assert.equal(byGroup.get("passage"), 7);
+  assert.equal(byGroup.get("lecture"), 10);
+});
+
+test("paper 001: reading 30 = 选词填空 10 + 匹配 10 + 仔细阅读 10", () => {
+  const reading = mockPaper001.sections.find((s) => s.type === "reading")!;
+  const byGroup = new Map<string, number>();
+  for (const g of reading.groups) byGroup.set(g.type, (byGroup.get(g.type) ?? 0) + (g.questions?.length ?? 0));
+  assert.equal(byGroup.get("cloze"), 10);
+  assert.equal(byGroup.get("matching"), 10);
+  assert.equal(byGroup.get("careful_reading"), 10);
+});
+
+test("paper 001: 每题都有答案（choice→answerId 合法；open→answerText）", () => {
+  const questions = paper001AllQuestions();
+  for (const q of questions) {
+    if (q.type === "choice") {
+      assert.ok(q.answerId, `choice ${q.questionId} 缺 answerId`);
+      assert.ok(q.options?.some((o) => o.id === q.answerId), `choice ${q.questionId} answerId 不在选项内`);
+    } else {
+      assert.ok(q.answerText && q.answerText.trim().length > 0, `open ${q.questionId} 缺 answerText`);
+    }
+    assert.ok(q.answerKey && q.answerKey.value.length > 0, `${q.questionId} 缺 answerKey`);
+  }
+});
+
+test("paper 001: 每题都有解析（short + detailed）", () => {
+  for (const q of paper001AllQuestions()) {
+    assert.ok(q.shortExplanation && q.shortExplanation.trim().length > 0, `${q.questionId} 缺 shortExplanation`);
+    assert.ok(q.detailedExplanation && q.detailedExplanation.trim().length > 0, `${q.questionId} 缺 detailedExplanation`);
+  }
+});
+
+test("paper 001: 听力 7 组全部有 transcript；7 个 audio 为 Phase 2D.1 真实资产且带 rights", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  assert.equal(listening.groups.length, 7, "官方 CET6 listening 应有 7 个 materials（2 long conv + 2 passage + 3 lecture）");
+  for (const g of listening.groups) {
+    assert.ok(g.transcript && g.transcript.trim().length > 0, `${g.groupId} 缺 transcript`);
+  }
+  const audioAssets = (mockPaper001.assets ?? []).filter((a) => a.type === "audio");
+  assert.equal(audioAssets.length, 7, "应有 7 个音频资产（一 material 一 asset）");
+  for (const a of audioAssets) {
+    assert.ok(!a.source.startsWith("mock://"), `${a.assetId} 必须是真实音频 source（Phase 2D.1 已替换 placeholder）`);
+    assert.ok(a.source.startsWith("/audio/papers/"), `${a.assetId} source 应为 public 音频路径`);
+    assert.ok(a.checksum && a.checksum.length >= 64, `${a.assetId} 缺真实 checksum`);
+    assert.equal(a.rights?.licenseStatus, "owned", `${a.assetId} 必须带 rights=owned`);
+    assert.ok(a.rights?.notes?.includes("Phase 2D.1"), `${a.assetId} rights notes 应记录 Phase 2D.1 生成与条款`);
+    assert.equal((a as unknown as { generated?: boolean }).generated, true, `${a.assetId} 应标记 generated=true（AI 合成语音）`);
+  }
+});
+
+test("paper 001: 无 orphan asset reference，无 orphan question，assetIds 全部可解析", () => {
+  const assetIds = new Set((mockPaper001.assets ?? []).map((a) => a.assetId));
+  const allIds: string[] = [mockPaper001.paperId];
+  for (const sec of mockPaper001.sections) {
+    allIds.push(sec.sectionId);
+    for (const g of sec.groups) {
+      allIds.push(g.groupId);
+      for (const q of g.questions ?? []) allIds.push(q.questionId);
+      for (const ref of g.assetIds ?? []) {
+        assert.ok(assetIds.has(ref), `group ${g.groupId} 引用不存在的 asset ${ref}`);
+      }
+    }
+  }
+  assert.equal(new Set(allIds).size, allIds.length, "全卷 stable IDs 出现重复（duplicate stable id）");
+});
+
+test("paper 001: rights=owned + provenance 完整，允许生产级使用", () => {
+  assert.equal(mockPaper001.rights.licenseStatus, "owned");
+  assert.ok((mockPaper001.rights?.rightsHolder?.length ?? 0) > 0, "缺 rightsHolder");
+  assert.equal(isPublishable(mockPaper001.rights), true, "owned 应判定 PUBLISHABLE");
+  assert.ok(mockPaper001.sourceId?.length > 0, "缺 sourceId");
+});
+
+test("paper 001: active 进入 production pool（学习页 Selector 可暴露）", () => {
+  setupWithPaper001();
+  const publishable = getPublishableItems();
+  assert.ok(publishable.some((i) => (i as { paperId?: string }).paperId === MOCK_PAPER_001_ID), "active Paper 001 必须出现在 publishable items");
+  assert.equal(getPaperById<{ paperId?: string }>(MOCK_PAPER_001_ID)?.paperId, MOCK_PAPER_001_ID);
+  const report = validateAll([...registeredPacks(), getContentPack("pack-paper-cet6-mock-001")!] as never);
+  assert.ok(!report.errors.some((e) => e.message.includes("duplicate")), `Paper 001 不得产生 duplicate: ${report.errors.map((e) => e.message).join("; ")}`);
+});
+
+test("paper 001: 注册后与 synthetic fixture / 内置 pack 共存，全库 duplicate=0", () => {
+  setupWithPaper001();
+  const report = validateAll([...registeredPacks(), getContentPack("pack-paper-cet6-mock-001")!] as never);
+  assert.equal(report.errors.length, 0, `全库校验错误: ${report.errors.map((e) => e.message).join("; ")}`);
+  assert.equal(report.warnings.length, 0, `全库校验警告: ${report.warnings.map((e) => e.message).join("; ")}`);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2D: Paper 001 Listening Audio
+
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+function paper001AudioAssets() {
+  return (mockPaper001.assets ?? []).filter((a) => a.type === "audio");
+}
+
+test("paper 001 audio: 7 个真实音频资产（2 long conv + 2 passage + 3 lecture），无 mock:// placeholder 残留", () => {
+  const audios = paper001AudioAssets();
+  assert.equal(audios.length, 7, "Paper 001 应有 7 个音频资产（官方 CET6 listening materials）");
+  for (const a of audios) {
+    assert.ok(!a.source.startsWith("mock://"), `${a.assetId} 仍是 placeholder: ${a.source}`);
+    assert.ok(a.source.startsWith("/audio/papers/"), `${a.assetId} source 应为 public 音频路径: ${a.source}`);
+  }
+});
+
+test("paper 001 audio: 音频文件存在且 size>0（从实际文件检查）", () => {
+  for (const a of paper001AudioAssets()) {
+    const fp = path.resolve(process.cwd(), "public", a.source.replace(/^\//, ""));
+    assert.ok(fs.existsSync(fp), `${a.assetId} 文件不存在: ${a.source}`);
+    const stat = fs.statSync(fp);
+    assert.ok(stat.size > 0, `${a.assetId} 文件为空`);
+    if (typeof a.sizeBytes === "number") assert.equal(a.sizeBytes, stat.size, `${a.assetId} sizeBytes 与实际文件不一致`);
+  }
+});
+
+test("paper 001 audio: checksum/duration/mimeType/provenance/rights 元数据完整", () => {
+  for (const a of paper001AudioAssets()) {
+    assert.ok(a.checksum && a.checksum.length >= 64, `${a.assetId} 缺 checksum`);
+    assert.ok(typeof a.duration === "number" && a.duration > 30, `${a.assetId} duration 缺失或过小`);
+    assert.equal(a.mimeType, "audio/mpeg", `${a.assetId} mimeType 错误`);
+    for (const f of ["sizeBytes", "contentVersion", "generatedAt", "provider", "voice", "termsCheckedDate"]) {
+      assert.ok((a as unknown as Record<string, unknown>)[f] !== undefined && String((a as unknown as Record<string, unknown>)[f]) !== "", `${a.assetId} 缺 provenance 字段 ${f}`);
+    }
+    assert.ok(a.rights?.licenseStatus && a.rights?.rightsHolder && a.rights?.notes, `${a.assetId} rights metadata 不完整`);
+  }
+});
+
+test("paper 001 audio: transcript/contentVersion 与 audio version 一致（无漂移）", () => {
+  for (const a of paper001AudioAssets()) {
+    assert.equal(a.contentVersion, mockPaper001.contentVersion, `${a.assetId} audio version 与 paper contentVersion 不一致`);
+  }
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const audioIds = new Set(paper001AudioAssets().map((a) => a.assetId));
+  const referenced = new Set<string>();
+  for (const g of listening.groups) for (const r of g.assetIds ?? []) referenced.add(r);
+  assert.equal(referenced.size, 7, "listening 组应引用 7 个音频（一 material 一 asset）");
+  for (const r of referenced) assert.ok(audioIds.has(r), `group 引用未知 audio asset: ${r}`);
+});
+
+// ---------------------------------------------------------------- V13 Phase 2D.1: Listening Material Structure (2+2+3) & Allocation
+
+test("paper 001 listening: official material count = 2 long_conversation + 2 passage + 3 lecture", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const byType = new Map<string, number>();
+  for (const g of listening.groups) byType.set(g.type, (byType.get(g.type) ?? 0) + 1);
+  assert.equal(byType.get("long_conversation"), 2, "长对话应为 2 篇");
+  assert.equal(byType.get("passage"), 2, "篇章应为 2 篇");
+  assert.equal(byType.get("lecture"), 3, "讲话/报道/讲座应为 3 篇");
+  assert.equal(listening.groups.length, 7, "总计 7 个 listening materials");
+});
+
+test("paper 001 listening: per-material question allocation = long conv 4+4 / passage 3+4 / lecture 4+3+3", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const lc = listening.groups.filter((g) => g.type === "long_conversation");
+  const pa = listening.groups.filter((g) => g.type === "passage");
+  const le = listening.groups.filter((g) => g.type === "lecture");
+  // long conv: 每篇 4 题
+  for (const g of lc) assert.equal(g.questions?.length, 4, `${g.groupId} 长对话应为 4 题`);
+  assert.equal(lc.reduce((n, g) => n + (g.questions?.length ?? 0), 0), 8, "长对话合计 8 题");
+  // passage: 3+4 或 4+3，合计 7
+  const paCounts = pa.map((g) => g.questions?.length ?? 0).sort((a, b) => a - b);
+  assert.deepEqual(paCounts, [3, 4], "passage 应为 3+4 题分配");
+  assert.equal(pa.reduce((n, g) => n + (g.questions?.length ?? 0), 0), 7, "passage 合计 7 题");
+  // lecture: 每篇 3-4 题，合计 10
+  for (const g of le) {
+    const qc = g.questions?.length ?? 0;
+    assert.ok(qc >= 3 && qc <= 4, `${g.groupId} lecture 每篇应为 3-4 题，实际 ${qc}`);
+  }
+  assert.equal(le.reduce((n, g) => n + (g.questions?.length ?? 0), 0), 10, "lecture 合计 10 题");
+  // 总计 25
+  assert.equal(listening.groups.reduce((n, g) => n + (g.questions?.length ?? 0), 0), 25);
+});
+
+test("paper 001 listening: 7 transcript units, each non-empty and self-authored (no real CET6 copy)", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  assert.equal(listening.groups.length, 7);
+  for (const g of listening.groups) {
+    assert.ok(g.transcript && g.transcript.trim().length > 50, `${g.groupId} transcript 过短或缺失`);
+    // 不得包含真实 CET6 真题标记
+    assert.ok(!/CET-?6 \d{4} (January|June|December) (真题|past paper)/i.test(g.transcript), `${g.groupId} 不应包含真实真题标记`);
+  }
+});
+
+test("paper 001 listening: no orphan audio assets — every asset referenced by exactly one group", () => {
+  const listening = mockPaper001.sections.find((s) => s.type === "listening")!;
+  const audioAssets = paper001AudioAssets();
+  assert.equal(audioAssets.length, 7);
+  const referenced = new Map<string, number>();
+  for (const g of listening.groups) {
+    assert.equal(g.assetIds?.length, 1, `${g.groupId} 应引用恰好 1 个 audio asset（一 material 一 asset）`);
+    for (const ref of g.assetIds ?? []) referenced.set(ref, (referenced.get(ref) ?? 0) + 1);
+  }
+  assert.equal(referenced.size, 7, "应引用 7 个不同 audio asset");
+  for (const [id, count] of referenced) assert.equal(count, 1, `audio asset ${id} 被引用 ${count} 次（应恰好 1 次）`);
+  // 无未引用的 audio asset
+  const assetIds = new Set(audioAssets.map((a) => a.assetId));
+  for (const id of referenced.keys()) assert.ok(assetIds.has(id), `引用了不存在的 asset: ${id}`);
+  for (const id of assetIds) assert.ok(referenced.has(id), `audio asset 未被任何 group 引用: ${id}`);
+});
+
+test("paper 001 listening: wrong material count triggers validator error (long_conversation 2→3)", () => {
+  const bad = structuredClone(mockPaper001) as CET6Paper;
+  const listening = bad.sections.find((s) => s.type === "listening")!;
+  // 复制一个 long_conversation group 使数量变为 3
+  const extra = structuredClone(listening.groups.find((g) => g.type === "long_conversation")!);
+  extra.groupId = extendStableId(listening.sectionId, "long_conversation", "g99");
+  extra.questions = extra.questions?.map((q, i) => ({ ...q, questionId: extendStableId(extra.groupId, `q${i + 1}`) }));
+  listening.groups.push(extra);
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("long_conversation") && e.includes("material count 3 != spec 2")), `应报 material count 错误: ${errors.join("; ")}`);
+});
+
+test("paper 001 listening: wrong per-material allocation triggers validator error (long conv 4→5)", () => {
+  const bad = structuredClone(mockPaper001) as CET6Paper;
+  const listening = bad.sections.find((s) => s.type === "listening")!;
+  const lc = listening.groups.find((g) => g.type === "long_conversation")!;
+  const extraQ = structuredClone(lc.questions![0]);
+  extraQ.questionId = extendStableId(lc.groupId, "q99");
+  extraQ.order = 99;
+  lc.questions!.push(extraQ);
+  const errors = validatePaper(bad);
+  assert.ok(errors.some((e) => e.includes("long_conversation") && e.includes("has 5 questions")), `应报 per-material allocation 错误: ${errors.join("; ")}`);
+});
+
+test("paper 001: contentVersion 1.1.0（Phase 2D.1 listening 结构重组）", () => {
+  assert.equal(mockPaper001.contentVersion, "1.1.0");
+  for (const a of paper001AudioAssets()) {
+    assert.equal(a.contentVersion, "1.1.0", `${a.assetId} audio contentVersion 应与 paper 一致`);
+  }
+});
+
+test("paper 001: AI 合成语音标识准备（generated=true + aiDisclosure + provider + termsCheckedDate）", () => {
+  for (const a of paper001AudioAssets()) {
+    const rec = a as unknown as { generated?: boolean; aiDisclosure?: string; provider?: string; termsCheckedDate?: string };
+    assert.equal(rec.generated, true, `${a.assetId} 应标记 generated=true`);
+    assert.ok(rec.aiDisclosure && rec.aiDisclosure.length > 0, `${a.assetId} 应有 aiDisclosure 文案`);
+    assert.ok(rec.provider && rec.provider.length > 0, `${a.assetId} 应有 provider`);
+    assert.ok(rec.termsCheckedDate && rec.termsCheckedDate.length > 0, `${a.assetId} 应有 termsCheckedDate`);
+  }
+});
+
+test("paper 001: audio rights scope hardened（territory / allowedUses / restrictions / permissionEvidence）", () => {
+  for (const a of paper001AudioAssets()) {
+    const r = a.rights as unknown as { territory?: string; allowedUses?: string[]; restrictions?: string[]; permissionEvidence?: string };
+    assert.ok(r.territory && r.territory.includes("China"), `${a.assetId} rights 应记录 territory（中国大陆）`);
+    assert.ok(r.allowedUses && r.allowedUses.some((u) => u.includes("learning")), `${a.assetId} rights 应记录 allowedUse（产品内学习播放）`);
+    assert.ok(r.restrictions && r.restrictions.length >= 2, `${a.assetId} rights 应记录 restrictions（至少 2 项）`);
+    assert.ok(r.permissionEvidence && r.permissionEvidence.startsWith("http"), `${a.assetId} rights 应记录 permissionEvidence（条款 URL）`);
+  }
+});

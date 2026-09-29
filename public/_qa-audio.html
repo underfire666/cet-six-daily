@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>QA Audio Smoke — Paper 001 (7 materials)</title>
+<style>
+  body { font-family: sans-serif; margin: 24px; }
+  .row { margin: 14px 0; }
+  audio { width: 100%; }
+  button { margin: 4px 8px 4px 0; padding: 6px 14px; }
+  #log { white-space: pre-wrap; font-family: monospace; font-size: 12px; margin-top: 16px; color: #333; }
+  .label { display: block; margin-bottom: 4px; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Paper 001 Listening Audio QA — 7 Materials (V13 Phase 2D.1)</h1>
+<p>官方 CET6 结构：2 long conversations + 2 passages + 3 talks/lectures = 7 audio assets。AI 合成语音（豆包语音 TTS）。</p>
+
+<div class="row"><span class="label">1. Long Conversation #1 (g1, 4 questions, 155.8s)</span>
+  <audio id="a1" preload="auto" src="/audio/papers/p001-long-conversation-g1.mp3" controls></audio></div>
+<div class="row"><span class="label">2. Long Conversation #2 (g2, 4 questions, 142.6s)</span>
+  <audio id="a2" preload="auto" src="/audio/papers/p001-long-conversation-g2.mp3" controls></audio></div>
+<div class="row"><span class="label">3. Passage #1 (g1, 4 questions, 88.9s)</span>
+  <audio id="a3" preload="auto" src="/audio/papers/p001-passage-g1.mp3" controls></audio></div>
+<div class="row"><span class="label">4. Passage #2 (g2, 3 questions, 85.1s)</span>
+  <audio id="a4" preload="auto" src="/audio/papers/p001-passage-g2.mp3" controls></audio></div>
+<div class="row"><span class="label">5. Talk/Lecture #1 (g1, 4 questions, 149.2s)</span>
+  <audio id="a5" preload="auto" src="/audio/papers/p001-lecture-g1.mp3" controls></audio></div>
+<div class="row"><span class="label">6. Talk/Lecture #2 (g2, 3 questions, 127.7s)</span>
+  <audio id="a6" preload="auto" src="/audio/papers/p001-lecture-g2.mp3" controls></audio></div>
+<div class="row"><span class="label">7. Talk/Lecture #3 (g3, 3 questions, 113.0s)</span>
+  <audio id="a7" preload="auto" src="/audio/papers/p001-lecture-g3.mp3" controls></audio></div>
+
+<div>
+  <button id="playAll">Play All</button>
+  <button id="pauseAll">Pause All</button>
+  <button id="rate08">0.8x</button>
+  <button id="rate10">1.0x</button>
+  <button id="replayA1">Replay #1</button>
+  <button id="checkDur">Check All Durations</button>
+</div>
+<div id="log"></div>
+<script>
+  const logEl = document.getElementById("log");
+  const audios = [1,2,3,4,5,6,7].map(i => document.getElementById("a" + i));
+  function log(msg) { logEl.textContent += msg + "\n"; }
+  audios.forEach((a, i) => {
+    a.addEventListener("error", () => log(`audio${i + 1} ERROR: ${a.error ? a.error.code : "unknown"} src=${a.currentSrc}`));
+    a.addEventListener("loadedmetadata", () => log(`audio${i + 1} metadata duration=${a.duration.toFixed(1)}s`));
+    a.addEventListener("ended", () => log(`audio${i + 1} ENDED at ${a.duration.toFixed(1)}s`));
+    a.addEventListener("play", () => log(`audio${i + 1} PLAY`));
+    a.addEventListener("canplay", () => log(`audio${i + 1} CANPLAY`));
+  });
+  document.getElementById("playAll").onclick = () => audios.forEach((a) => a.play());
+  document.getElementById("pauseAll").onclick = () => audios.forEach((a) => a.pause());
+  document.getElementById("rate08").onclick = () => { audios.forEach((a) => { a.playbackRate = 0.8; }); log("all rate -> 0.8"); };
+  document.getElementById("rate10").onclick = () => { audios.forEach((a) => { a.playbackRate = 1.0; }); log("all rate -> 1.0"); };
+  document.getElementById("replayA1").onclick = () => { const a = audios[0]; a.currentTime = 0; a.play(); log("audio1 replay from 0"); };
+  document.getElementById("checkDur").onclick = () => {
+    audios.forEach((a, i) => {
+      const d = a.readyState >= 2 ? a.duration.toFixed(1) : "not loaded";
+      log(`audio${i + 1} duration=${d}s readyState=${a.readyState}`);
+    });
+  };
+  window.addEventListener("error", (e) => log(`window error: ${e.message}`));
+  log("QA page loaded (7 audio materials)");
+</script>
+</body>
+</html>

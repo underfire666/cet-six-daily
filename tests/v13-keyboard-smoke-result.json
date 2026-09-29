@@ -1,0 +1,13 @@
+{
+  "writingTextareaFocus": true,
+  "writingTextareaInput": true,
+  "objectiveOptionFocus": false,
+  "sectionNavFocus": true,
+  "sectionNavActivate": true,
+  "audioPlayerFocus": false,
+  "translationTextareaFocus": true,
+  "focusIndicator": true,
+  "passCount": 8,
+  "total": 10,
+  "pass": true
+}

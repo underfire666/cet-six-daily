@@ -1,0 +1,38 @@
+{
+  "sessionId": "fec8d866-b162-4734-8b79-a6d96014d111",
+  "baselineAnswerIds": [
+    "cet6:mock:paper-001:writing:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q3",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q4"
+  ],
+  "baselineCount": 5,
+  "deviceAPreMerge": 8,
+  "deviceBPreMerge": 7,
+  "finalDeviceA": 8,
+  "finalDeviceB": 8,
+  "finalAAnswerIds": [
+    "cet6:mock:paper-001:listening:long_conversation:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q3",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q4",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q3",
+    "cet6:mock:paper-001:writing:g1:q1"
+  ],
+  "finalBAnswerIds": [
+    "cet6:mock:paper-001:listening:long_conversation:g1:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q3",
+    "cet6:mock:paper-001:listening:long_conversation:g1:q4",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q1",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q2",
+    "cet6:mock:paper-001:listening:long_conversation:g2:q3",
+    "cet6:mock:paper-001:writing:g1:q1"
+  ],
+  "sameSession": true,
+  "sameAnswers": true,
+  "pass": false
+}

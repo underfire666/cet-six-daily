@@ -9,10 +9,13 @@ export function AudioPlayer({
   audio,
   rate,
   onPlay,
+  aiGenerated = false,
 }: {
   audio: ListeningAudio;
   rate: ListeningRate;
   onPlay: () => void;
+  /** V13 Phase 2D.1：AI 合成语音标识（true 时在播放区域附近显著展示）。 */
+  aiGenerated?: boolean;
 }) {
   const mediaRef = useRef<HTMLAudioElement>(null);
   const [state, setState] = useState<PlaybackState>("idle");
@@ -125,6 +128,9 @@ export function AudioPlayer({
                   : "准备就绪"}
         </span>
         {audio.duration ? <small>约 {audio.duration} 秒</small> : null}
+        {aiGenerated ? (
+          <small title="本音频由 AI 语音合成生成，用于学习练习">AI 合成语音</small>
+        ) : null}
         {notice && (
           <small role={state === "error" ? "alert" : "status"}>{notice}</small>
         )}
