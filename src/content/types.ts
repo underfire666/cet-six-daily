@@ -83,6 +83,31 @@ export interface ContentRights {
   territory?: string;
   /** V13 Phase 2D.1：明确限制列表（如 standalone audio sublicense not granted / overseas deployment not auto-allowed）。 */
   restrictions?: string[];
+  /**
+   * V14：权利审查状态机（与 licenseStatus 并存）。
+   * licenseStatus 描述权利类型（owned/licensed/...），rightsStatus 描述审查进度/结论。
+   * 仅 "cleared" 可进入 REAL production；缺字段 = fail closed。
+   */
+  rightsStatus?:
+    | "unknown"
+    | "researching"
+    | "unverified"
+    | "restricted"
+    | "cleared"
+    | "expired"
+    | "revoked";
+  /** V14：授权依据（如 "signed_contract" / "official_license" / "implied_by_terms"）。 */
+  permissionBasis?: string;
+  /** V14：授权生效日期（ISO 8601）。 */
+  effectiveAt?: string;
+  /** V14：授权到期日期（ISO 8601），缺省 = 永久。 */
+  expiresAt?: string;
+  /** V14：来源条款检索日期（ISO 8601，条款时效敏感，发布前须复核）。 */
+  sourceRetrievedAt?: string;
+  /** V14：权利审查日期（ISO 8601）。 */
+  reviewedAt?: string;
+  /** V14：审查备注（不存 secret / 敏感合同正文）。 */
+  reviewNote?: string;
 }
 
 /** 内容来源登记。 */

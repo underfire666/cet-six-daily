@@ -133,19 +133,22 @@ export function isValidStableId(id: string, kind: StableIdKind): boolean {
   );
 }
 
-export type StableIdNamespace = "real" | "mock" | "fixture" | "invalid";
+export type StableIdNamespace = "real" | "mock" | "fixture" | "private" | "invalid";
 
 /**
- * 判别 stable ID 属于哪个 namespace（前 3 段 = paper 前缀段）：
+ * 判别 stable ID 属于哪个 namespace：
  * - "real"：真实 administered / past_exam / licensed official 卷（cet6:<year>-<session>:set<N>…）
  * - "mock"：自研原创模拟卷（cet6:mock:<mockId>…）
  * - "fixture"：合成仿真内容（cet6:fixture:<fixtureId>…）
+ * - "private"：用户 owner-scoped 私有导入（private:<owner-scoped-id>:<paper-id>…，V14）
  * - "invalid"：不合法
  */
 export function stableIdNamespace(id: string): StableIdNamespace {
   if (typeof id !== "string") return "invalid";
   const seg = id.split(":");
   if (seg.length < 3) return "invalid";
+  // V14 PRIVATE namespace：private:<owner-scoped-id>:<paper-id>（第一段固定保留字 private）
+  if (seg[0] === "private") return "private";
   const paperPrefix = seg.slice(0, 3).join(":");
   if (REAL_PAPER_RE.test(paperPrefix)) return "real";
   if (FIXTURE_PAPER_RE.test(paperPrefix)) return "fixture";

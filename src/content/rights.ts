@@ -20,6 +20,8 @@
  * - commercialUseAllowed 未确认 → 在 rights report 中明确显示限制，不静默当作 unrestricted。
  */
 import type { ContentRights } from "./types";
+import { stableIdNamespace } from "./stable-id";
+import type { CET6Paper } from "./papers";
 
 export type RightsVerdict = "allowed" | "blocked" | "unknown";
 
@@ -147,5 +149,116 @@ export function rightsIssues(
       message: "commercialUseAllowed not confirmed — must not be treated as unrestricted",
     });
   }
+  // V14：权利审查状态机。一旦记录了 rightsStatus，production 必须是 "cleared"；
+  // unknown/researching/unverified/restricted/expired/revoked 一律 error（fail closed）。
+  if (
+    opts.scope === "production" &&
+    rights.rightsStatus !== undefined &&
+    rights.rightsStatus !== "cleared"
+  ) {
+    issues.push({
+      level: "error",
+      message: `rightsStatus=${rights.rightsStatus} is not cleared (V14 rights state machine) — cannot enter production pool`,
+    });
+  }
   return issues;
+}
+
+/**
+ * V14：判断权利是否处于「已清结且当前有效」状态（fail closed）。
+ * 条件：rightsStatus === "cleared"，且未被吊销，且未过期（expiresAt 缺省=永久；
+ * 若 expiresAt 存在且早于当前日期 → false）。缺任何字段/非法日期 → false。
+ */
+export function isRightsCleared(rights: ContentRights | undefined | null): boolean {
+  if (!rights || typeof rights !== "object") return false;
+  if (rights.rightsStatus !== "cleared") return false;
+  // 注：rightsStatus 为单字段状态机；值为 "cleared" 时不可能同时是 "revoked"（revoked 是另一状态值）。
+  const now = Date.now();
+  if (typeof rights.expiresAt === "string" && rights.expiresAt.trim().length > 0) {
+    const exp = Date.parse(rights.expiresAt);
+    if (!Number.isFinite(exp) || exp < now) return false;
+  }
+  return true;
+}
+
+/** 是否存在再利用证据（permissionEvidence / licenseName / licenseUrl 任一非空）。 */
+function hasRightsEvidence(rights: ContentRights): boolean {
+  return Boolean(
+    (rights.permissionEvidence && rights.permissionEvidence.trim()) ||
+      (rights.licenseName && rights.licenseName.trim()) ||
+      (rights.licenseUrl && rights.licenseUrl.trim()),
+  );
+}
+
+/**
+ * V14：REAL Paper production 准入检查（REAL Production Guard）。
+ *
+ * 仅当全部满足时 eligible=true：
+ *   - authenticity === "past_exam"
+ *   - stableIdNamespace(paperId) === "real"
+ *   - rights.rightsStatus === "cleared"（且未过期/未吊销，见 isRightsCleared）
+ *   - rights.redistributionAllowed === true
+ *   - rights.commercialUseAllowed === true（production 必须明确，不接受 undefined）
+ *   - 证据存在（permissionEvidence / licenseName / licenseUrl 至少一个非空）
+ *   - rights.effectiveAt 存在且 <= 当前日期；若有 expiresAt 必须 >= 当前日期
+ *   - 内容结构校验 PASS（由调用方把 validatePaper 的 structuralErrors 传入；
+ *     本函数不反向调用 validatePaper，避免与 validatePaper 的准入检查相互递归）
+ *
+ * 返回所有不满足原因（reasons 为空 = eligible）。
+ */
+export function realProductionEligible(
+  paper: CET6Paper,
+  structuralErrors?: string[],
+): { eligible: boolean; reasons: string[] } {
+  const reasons: string[] = [];
+  const rights = paper?.rights;
+
+  if (paper?.authenticity !== "past_exam") {
+    reasons.push(`authenticity must be "past_exam" for REAL production (got ${String(paper?.authenticity)})`);
+  }
+  if (stableIdNamespace(paper?.paperId ?? "") !== "real") {
+    reasons.push(`paperId must use REAL namespace (cet6:<year>-<session>:set<N>), got ${String(paper?.paperId)}`);
+  }
+  if (!rights || typeof rights !== "object") {
+    reasons.push("missing rights metadata (fail closed)");
+  } else {
+    if (rights.rightsStatus !== "cleared") {
+      reasons.push(`rights.rightsStatus must be "cleared" (got ${String(rights.rightsStatus)})`);
+    }
+    if (!isRightsCleared(rights)) {
+      reasons.push("rights not cleared: expired or revoked or rightsStatus!=cleared (fail closed)");
+    }
+    if (rights.redistributionAllowed !== true) {
+      reasons.push(`rights.redistributionAllowed must be true (got ${String(rights.redistributionAllowed)})`);
+    }
+    if (rights.commercialUseAllowed !== true) {
+      reasons.push(`rights.commercialUseAllowed must be explicitly true for production (got ${String(rights.commercialUseAllowed)})`);
+    }
+    if (!hasRightsEvidence(rights)) {
+      reasons.push("rights evidence missing: permissionEvidence/licenseName/licenseUrl must have at least one");
+    }
+    // effectiveAt 必须存在且已生效；expiresAt 若存在必须尚未到期
+    if (typeof rights.effectiveAt !== "string" || !rights.effectiveAt.trim()) {
+      reasons.push("rights.effectiveAt missing (authorization effective date required)");
+    } else {
+      const eff = Date.parse(rights.effectiveAt);
+      if (!Number.isFinite(eff)) {
+        reasons.push(`rights.effectiveAt is not a valid ISO date: ${rights.effectiveAt}`);
+      } else if (eff > Date.now()) {
+        reasons.push(`rights.effectiveAt ${rights.effectiveAt} is in the future (not yet effective)`);
+      }
+    }
+    if (typeof rights.expiresAt === "string" && rights.expiresAt.trim()) {
+      const exp = Date.parse(rights.expiresAt);
+      if (!Number.isFinite(exp)) {
+        reasons.push(`rights.expiresAt is not a valid ISO date: ${rights.expiresAt}`);
+      } else if (exp < Date.now()) {
+        reasons.push(`rights.expiresAt ${rights.expiresAt} has passed (authorization expired)`);
+      }
+    }
+  }
+  if (Array.isArray(structuralErrors) && structuralErrors.length > 0) {
+    for (const e of structuralErrors) reasons.push(`content validation failed: ${e}`);
+  }
+  return { eligible: reasons.length === 0, reasons };
 }

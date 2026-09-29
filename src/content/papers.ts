@@ -18,6 +18,7 @@
 import type { ContentRights } from "./types";
 import { FIXTURE_PREFIX, MOCK_PREFIX, isValidStableId, paperStableId, stableIdNamespace } from "./stable-id";
 import { CET6_EXAM_SPEC, KNOWN_EXAM_SPEC_IDS, isKnownExamSpecId } from "./exam-spec";
+import { realProductionEligible } from "./rights";
 
 export type PaperLevel = "CET6";
 export type PaperSession = 6 | 12;
@@ -149,6 +150,20 @@ export interface CET6Paper {
   authenticity: "original" | "practice" | "past_exam";
   createdAt: string;
   updatedAt: string;
+  /**
+   * V14：试卷文本权利（独立于音频）。text rights cleared 不自动意味着 audio cleared。
+   * 缺省继承 paper.rights；REAL 真题建议显式拆分。
+   */
+  paperTextRights?: ContentRights;
+  /** V14：听力脚本/transcript 权利（独立于 audio recording）。 */
+  listeningScriptRights?: ContentRights;
+  /** V14：音频录制权利（官方原音频 vs project-generated / licensed re-recording）。 */
+  audioRecordingRights?: ContentRights;
+  /**
+   * V14：解析真实性。默认推荐 "project_authored"（自行原创解析，不抓培训机构解析）；
+   * "official_answer" 必须有权利证据支持；"licensed_third_party" 需第三方授权。
+   */
+  explanationAuthenticity?: "official_answer" | "project_authored" | "licensed_third_party";
 }
 
 const SECTION_KINDS: PaperSectionKind[] = ["writing", "listening", "reading", "translation"];
@@ -316,6 +331,51 @@ export function validatePaper(value: unknown): string[] {
   if (!["draft", "active", "deprecated", "raw", "staging", "published"].includes(paper.status)) err(`paper ${paper.paperId} bad status`);
   if (!["original", "practice", "past_exam"].includes(paper.authenticity)) err(`paper ${paper.paperId} bad authenticity`);
   if (!text(paper.createdAt) || !text(paper.updatedAt)) err(`paper ${paper.paperId} missing timestamps`);
+
+  // ===== V14：REAL Publication Guard / Rights State Machine / Audio·Explanation Rights Separation =====
+  const hasRightsEvidenceInline = (r: unknown): boolean => {
+    if (!object(r)) return false;
+    const rec = r as { permissionEvidence?: unknown; licenseName?: unknown; licenseUrl?: unknown };
+    return Boolean(
+      (typeof rec.permissionEvidence === "string" && rec.permissionEvidence.trim()) ||
+        (typeof rec.licenseName === "string" && rec.licenseName.trim()) ||
+        (typeof rec.licenseUrl === "string" && rec.licenseUrl.trim()),
+    );
+  };
+  // V14-3a：past_exam 且处于 production 状态（active/published）→ 必须通过 REAL production 准入。
+  if (paper.authenticity === "past_exam" && (paper.status === "active" || paper.status === "published")) {
+    const structuralErrors = [...errors];
+    const admission = realProductionEligible(paper, structuralErrors);
+    for (const reason of admission.reasons) err(`[V14 REAL production guard] ${reason}`);
+  }
+  // V14-3b：rightsStatus=cleared 必须伴随权利证据（cleared 不是自证）。
+  if (object(paper.rights) && (paper.rights as { rightsStatus?: unknown }).rightsStatus === "cleared") {
+    if (!hasRightsEvidenceInline(paper.rights)) {
+      err(`paper ${paper.paperId} rightsStatus=cleared requires evidence (permissionEvidence/licenseName/licenseUrl)`);
+    }
+  }
+  // V14-3c：expiresAt 存在且已早于当前日期 → 已过期，不能 production。
+  if (object(paper.rights) && typeof (paper.rights as { expiresAt?: unknown }).expiresAt === "string") {
+    const expStr = (paper.rights as { expiresAt: string }).expiresAt;
+    if (expStr.trim()) {
+      const exp = Date.parse(expStr);
+      if (!Number.isFinite(exp)) {
+        err(`paper ${paper.paperId} rights.expiresAt invalid ISO date: ${expStr}`);
+      } else if (exp < Date.now()) {
+        err(`paper ${paper.paperId} rights.expiresAt ${expStr} has passed (authorization expired)`);
+      }
+    }
+  }
+  // V14-5：past_exam 且含音频 asset 时，audioRecordingRights 必须独立存在（text cleared 不自动 = audio cleared）。
+  if (paper.authenticity === "past_exam" && Array.isArray(paper.assets) && paper.assets.some((a) => a?.type === "audio")) {
+    if (!object(paper.audioRecordingRights) || !text((paper.audioRecordingRights as { licenseStatus?: unknown }).licenseStatus as string)) {
+      err(`paper ${paper.paperId} past_exam with audio assets requires audioRecordingRights with licenseStatus (audio rights must be tracked separately from text rights)`);
+    }
+  }
+  // V14-5：official_answer 解析必须有权利证据支持。
+  if (paper.explanationAuthenticity === "official_answer" && !hasRightsEvidenceInline(paper.rights)) {
+    err(`paper ${paper.paperId} explanationAuthenticity=official_answer requires rights evidence (permissionEvidence/licenseName/licenseUrl)`);
+  }
   return errors;
 }
 
