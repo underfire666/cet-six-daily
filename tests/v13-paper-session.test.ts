@@ -520,10 +520,10 @@ test("Paper 001: has 7 listening materials and 25 listening questions", () => {
   assert.equal(listeningQuestions, 25);
 });
 
-// ============ 22. Paper 001 status is staging ============
-test("Paper 001: status is staging (not published)", () => {
+// ============ 22. Paper 001 status is active (production) ============
+test("Paper 001: status is active (production)", () => {
   const paper = setup();
-  assert.equal(paper.status, "staging");
+  assert.equal(paper.status, "active");
 });
 
 // ============ 23. Paper 001 authenticity is original ============

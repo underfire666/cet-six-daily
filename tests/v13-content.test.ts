@@ -806,17 +806,17 @@ test("duplicate: same reading passage text across packs → warning", () => {
 
 // ---------------------------------------------------------------- Staging / Published 隔离
 
-test("isolation: staging fixture never enters production pool or learning pool", () => {
+test("isolation: staging fixture never enters production pool (Paper 001 active is production)", () => {
   setup();
-  // production published pool：不含 paper（fixture staging）
   const pub = getPublishableItems();
-  assert.equal(pub.filter((it) => (it as { type?: string }).type === "paper").length, 0);
-  // demo 学习池（五专项）不含 paper
-  assert.equal(getItems("paper").length, 1, "paper pack exists in registry");
+  const pubPapers = pub.filter((it) => (it as { type?: string }).type === "paper");
+  assert.equal(pubPapers.length, 1, "only Paper 001 (active) in production pool");
+  assert.ok(pubPapers.some((it) => (it as { paperId?: string }).paperId === MOCK_PAPER_001_ID), "Paper 001 active must be in production pool");
+  assert.ok(!pubPapers.some((it) => (it as { paperId?: string }).paperId === SYNTHETIC_PAPER_ID), "staging fixture must not be in production pool");
+  assert.equal(getItems("paper").length, 2, "two paper packs in registry (fixture + Paper 001)");
   for (const t of ["vocabulary", "reading", "listening", "translation", "writing"]) {
     assert.ok(!getItems(t).some((it) => (it as { type?: string }).type === "paper"));
   }
-  // fixture 仅开发/测试 resolve
   assert.equal(getPaperById<{ paperId?: string }>(SYNTHETIC_PAPER_ID)?.paperId, SYNTHETIC_PAPER_ID);
   assert.ok(resolveContentById(SYNTHETIC_PAPER_ID), "dev/test resolve works");
 });
@@ -824,8 +824,10 @@ test("isolation: staging fixture never enters production pool or learning pool",
 // V13 Phase 1.1：Production pool fail-closed matrix
 test("production pool: fail-closed matrix", () => {
   setup();
-  // 1. staging fixture → 不可见
-  assert.equal(getPublishableItems().filter((it) => (it as { type?: string }).type === "paper").length, 0, "staging fixture must be invisible");
+  // 1. staging fixture → 不可见（Paper 001 active 可见，但 synthetic fixture staging 不可见）
+  const pubPapers = getPublishableItems().filter((it) => (it as { type?: string }).type === "paper");
+  assert.ok(pubPapers.some((it) => (it as { paperId?: string }).paperId === MOCK_PAPER_001_ID), "Paper 001 active must be visible");
+  assert.ok(!pubPapers.some((it) => (it as { paperId?: string }).paperId === SYNTHETIC_PAPER_ID), "staging fixture must be invisible");
   // 2. unknown rights → 不可见
   registerPaperPack("pool-unknown", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 1 }, unknown, "published"));
   assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set1"), "unknown-rights published must be invisible");
@@ -1050,13 +1052,12 @@ test("identity: real / mock / fixture namespaces are structurally distinct and n
 
 test("identity: Paper 001 mock ID and real 2026-6 set1 coexist without collision", () => {
   setup();
-  const mock = makeMockPaper("paper-001", owned, "staging");
+  // Paper 001 已由 registerBuiltinPacks 注册（active）；此处只注册 real paper 验证共存
   const real = makeRealPaper({ exam: "CET6", year: 2026, session: 6, set: 1 }, owned, "staging");
-  registerPaperPack("pack-mock-001", mock);
   registerPaperPack("pack-real-2026-6", real);
   assert.equal(getPaperById<{ paperId?: string }>("cet6:mock:paper-001")?.paperId, "cet6:mock:paper-001");
   assert.equal(getPaperById<{ paperId?: string }>("cet6:2026-6:set1")?.paperId, "cet6:2026-6:set1");
-  const report = validateAll([...registeredPacks(), getContentPack("pack-mock-001")!, getContentPack("pack-real-2026-6")!] as never);
+  const report = validateAll([...registeredPacks(), getContentPack("pack-real-2026-6")!] as never);
   assert.ok(!report.errors.some((e) => e.message.includes("duplicate paper identity")), "mock must not collide with real identity");
   assert.ok(!report.errors.some((e) => e.message.includes("duplicate id")), "no stable-id collision between mock and real paper");
 });
@@ -1126,13 +1127,13 @@ function paper001AllQuestions(): PaperQuestion[] {
   return out;
 }
 
-test("paper 001: identity 符合 Phase 2C 规格（mock/original/full/staging）", () => {
+test("paper 001: identity 符合 V13 Final 规格（mock/original/full/active）", () => {
   assert.equal(mockPaper001.paperId, "cet6:mock:paper-001");
   assert.equal(mockPaper001.examSpecId, "cet6-current-2026");
   assert.equal(mockPaper001.authenticity, "original");
   assert.equal(mockPaper001.fixture, false);
   assert.equal(mockPaper001.isPartial, false);
-  assert.equal(mockPaper001.status, "staging");
+  assert.equal(mockPaper001.status, "active");
   assert.equal(mockPaper001.rights.licenseStatus, "owned");
   assert.ok(isMockStableId(mockPaper001.paperId), "Paper 001 必须使用 MOCK namespace");
   assert.ok(!isRealStableId(mockPaper001.paperId), "Paper 001 禁止 REAL namespace");
@@ -1237,11 +1238,10 @@ test("paper 001: rights=owned + provenance 完整，允许生产级使用", () =
   assert.ok(mockPaper001.sourceId?.length > 0, "缺 sourceId");
 });
 
-test("paper 001: staging 不进入 production pool（学习页 Selector 不暴露）", () => {
+test("paper 001: active 进入 production pool（学习页 Selector 可暴露）", () => {
   setupWithPaper001();
   const publishable = getPublishableItems();
-  assert.ok(!publishable.some((i) => (i as { id?: string }).id === MOCK_PAPER_001_ID || (i as { id?: string }).id === "pack-paper-cet6-mock-001"), "staging Paper 001 不得出现在 publishable items");
-  // 但注册后可解析、可校验（staging 内容已入库等待后续发布）
+  assert.ok(publishable.some((i) => (i as { paperId?: string }).paperId === MOCK_PAPER_001_ID), "active Paper 001 必须出现在 publishable items");
   assert.equal(getPaperById<{ paperId?: string }>(MOCK_PAPER_001_ID)?.paperId, MOCK_PAPER_001_ID);
   const report = validateAll([...registeredPacks(), getContentPack("pack-paper-cet6-mock-001")!] as never);
   assert.ok(!report.errors.some((e) => e.message.includes("duplicate")), `Paper 001 不得产生 duplicate: ${report.errors.map((e) => e.message).join("; ")}`);

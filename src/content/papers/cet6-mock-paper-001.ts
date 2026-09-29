@@ -12,7 +12,7 @@
  * - 结构完整符合 cet6-current-2026：Writing 1 / Listening 25（长对话 8 + 篇章 7 +
  *   讲话·报道·讲座 10）/ Reading 30（选词填空 10 + 长篇阅读 10 + 仔细阅读 10）/
  *   Translation 1，共 57 题/任务。
- * - status=staging：不进入 production 池，不暴露给学习页 Selector；Phase 2D/2E 独立验收后再决定发布。
+ * - status=active：V13 Final Acceptance 通过后进入 production 池，暴露给学习页 Selector 与模拟卷入口。
  *
  * Phase 2C.1（editorial revision, contentVersion 1.0.1）：
  * - 独立 Editorial Review 修正答案位置分布（消除 B 偏好与 D 稀少，重排 15 题选项顺序，
@@ -1303,13 +1303,13 @@ export const mockPaper001: CET6Paper = {
   contentVersion: "1.1.0",
   isPartial: false,
   fixture: false,
-  status: "staging",
+  status: "active",
   authenticity: "original",
   createdAt: now,
   updatedAt: now,
 };
 
-/** 注册 Paper 001（幂等；内容脚本与测试调用；不进入运行时 bootstrap，不暴露给学习页 Selector）。 */
+/** 注册 Paper 001（幂等；V13 production 起由 registerBuiltinPacks 调用，进入运行时 bootstrap 与 production 池）。 */
 export function registerMockPaper001(): void {
   if (getContentPack(MOCK_PAPER_001_PACK_ID)) return;
   registerContentPack({
