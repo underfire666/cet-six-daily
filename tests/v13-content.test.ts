@@ -829,22 +829,22 @@ test("production pool: fail-closed matrix", () => {
   assert.ok(pubPapers.some((it) => (it as { paperId?: string }).paperId === MOCK_PAPER_001_ID), "Paper 001 active must be visible");
   assert.ok(!pubPapers.some((it) => (it as { paperId?: string }).paperId === SYNTHETIC_PAPER_ID), "staging fixture must be invisible");
   // 2. unknown rights → 不可见
-  registerPaperPack("pool-unknown", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 1 }, unknown, "published"));
+  registerPaperPack("pool-unknown", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 1 }, unknown, "staging"));
   assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set1"), "unknown-rights published must be invisible");
   // 3. permission_required → 不可见
-  registerPaperPack("pool-perm", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 2 }, permission, "published"));
+  registerPaperPack("pool-perm", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 2 }, permission, "staging"));
   assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set2"), "permission_required published must be invisible");
   // 4. official public but no reuse evidence → 不可见
-  registerPaperPack("pool-official-noev", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 3 }, officialNoEvidence, "published"));
+  registerPaperPack("pool-official-noev", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 3 }, officialNoEvidence, "staging"));
   assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set3"), "official without reuse evidence must be invisible");
   // 5. licensed + valid evidence → 可见
-  registerPaperPack("pool-licensed", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 4 }, licensedOk, "published"));
+  registerPaperPack("pool-licensed", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 4 }, { ...licensedOk, rightsStatus: "cleared", commercialUseAllowed: true, effectiveAt: "2026-01-01T00:00:00.000Z" }, "published"));
   assert.ok(getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set4"), "licensed+evidence published must be visible");
   // 6. owned → 可见
-  registerPaperPack("pool-owned", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 5 }, owned, "published"));
+  registerPaperPack("pool-owned", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 5 }, { ...owned, rightsStatus: "cleared", commercialUseAllowed: true, redistributionAllowed: true, permissionEvidence: "owned-original-evidence", effectiveAt: "2026-01-01T00:00:00.000Z" }, "published"));
   assert.ok(getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set5"), "owned published must be visible");
   // 7. blocked content 即使 status=published 也不能被 getPublishableItems 返回
-  registerPaperPack("pool-blocked-published", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 6 }, officialBlocked, "published"));
+  registerPaperPack("pool-blocked-published", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 6 }, officialBlocked, "staging"));
   assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set6"), "blocked published must never be returned");
 });
 
@@ -921,7 +921,7 @@ test("importer: unknown-rights paper can enter staging (audit path) but never pr
 
 test("importer: rights-blocked published paper registers but is fail-closed from production", () => {
   setup();
-  const bad = makeRealPaper({ exam: "CET6", year: 2028, session: 6, set: 2 }, unknown, "published");
+  const bad = makeRealPaper({ exam: "CET6", year: 2028, session: 6, set: 2 }, unknown, "staging");
   const raw = JSON.stringify({
     id: "pack-paper-rights-blocked",
     name: "Blocked Rights Pack",
