@@ -147,7 +147,11 @@ export interface CET6Paper {
   /** 合成/仿真 fixture 标记（不得与真实真题混标）。 */
   fixture?: boolean;
   status: "draft" | "active" | "deprecated" | "raw" | "staging" | "published";
-  authenticity: "original" | "practice" | "past_exam";
+  authenticity: "original" | "practice" | "past_exam" | "user_import";
+  /** V14 Phase 1A：可见性。public = 全局可访问（默认）；private = 仅 owner 可访问。 */
+  visibility?: "public" | "private";
+  /** V14 Phase 1A：所有者 ID（仅 private 内容必填，由 server 从 auth session 派生）。 */
+  ownerId?: string;
   createdAt: string;
   updatedAt: string;
   /**
@@ -329,7 +333,7 @@ export function validatePaper(value: unknown): string[] {
   if (paper.isPartial !== undefined && typeof paper.isPartial !== "boolean") err(`paper ${paper.paperId} isPartial must be boolean`);
   if (paper.fixture !== undefined && typeof paper.fixture !== "boolean") err(`paper ${paper.paperId} fixture must be boolean`);
   if (!["draft", "active", "deprecated", "raw", "staging", "published"].includes(paper.status)) err(`paper ${paper.paperId} bad status`);
-  if (!["original", "practice", "past_exam"].includes(paper.authenticity)) err(`paper ${paper.paperId} bad authenticity`);
+  if (!["original", "practice", "past_exam", "user_import"].includes(paper.authenticity)) err(`paper ${paper.paperId} bad authenticity`);
   if (!text(paper.createdAt) || !text(paper.updatedAt)) err(`paper ${paper.paperId} missing timestamps`);
 
   // ===== V14：REAL Publication Guard / Rights State Machine / Audio·Explanation Rights Separation =====

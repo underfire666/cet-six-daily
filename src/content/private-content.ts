@@ -86,3 +86,104 @@ export function assertPrivateAccess(content: PrivateContentMeta, sessionOwnerId:
   if (typeof sessionOwnerId !== "string" || !sessionOwnerId) return false;
   return content.ownerId === sessionOwnerId;
 }
+
+// ============================================================================
+// V14 Phase 1A：PRIVATE Paper 校验与隔离合约
+// ============================================================================
+
+/** SOURCE_D_PRIVATE_USER_IMPORT：用户个人导入内容的 canonical source class。 */
+export const SOURCE_D_PRIVATE_USER_IMPORT = "SOURCE_D_PRIVATE_USER_IMPORT" as const;
+
+/**
+ * 判断一个内容项是否为 PRIVATE（visibility=private 或 stable ID namespace=private）。
+ * 用于 production selector / public search / sync 等场景的排除判断。
+ */
+export function isPrivateContent(item: { visibility?: string; id?: string; paperId?: string }): boolean {
+  if (!item || typeof item !== "object") return false;
+  if (item.visibility === "private") return true;
+  const id = item.paperId ?? item.id;
+  if (typeof id === "string" && stableIdNamespace(id) === "private") return true;
+  return false;
+}
+
+/**
+ * V14 Phase 1A：PRIVATE Paper 校验（validatePrivatePaper）。
+ *
+ * 检查项（任一不满足 → 拒绝保存）：
+ * 1. visibility === "private"
+ * 2. authenticity === "user_import"（或 past_exam 但明确标记为 private owner import）
+ * 3. ownerId 存在且非空（由 server 从 auth session 派生）
+ * 4. paperId namespace === "private"
+ * 5. productionEligible === false（或未设置，PRIVATE 永不 production）
+ * 6. globalSelectorEligible === false
+ * 7. redistributionAllowed === false（或 rights.redistributionAllowed !== true）
+ * 8. rightsAcknowledgement 已确认（acknowledged=true + acknowledgedAt 存在）
+ *
+ * 返回所有不满足原因（空数组 = 通过）。
+ */
+export function validatePrivatePaper(paper: {
+  visibility?: string;
+  authenticity?: string;
+  ownerId?: string;
+  paperId?: string;
+  id?: string;
+  productionEligible?: boolean;
+  globalSelectorEligible?: boolean;
+  rights?: { redistributionAllowed?: boolean };
+  rightsAcknowledgement?: { acknowledged?: boolean; acknowledgedAt?: string };
+}): string[] {
+  const errors: string[] = [];
+  if (!paper || typeof paper !== "object") {
+    errors.push("private paper: paper object required");
+    return errors;
+  }
+  // 1. visibility
+  if (paper.visibility !== "private") {
+    errors.push(`private paper: visibility must be "private" (got ${String(paper.visibility)})`);
+  }
+  // 2. authenticity
+  if (paper.authenticity !== "user_import" && paper.authenticity !== "past_exam") {
+    errors.push(`private paper: authenticity must be "user_import" or "past_exam" (got ${String(paper.authenticity)})`);
+  }
+  // 3. ownerId
+  if (typeof paper.ownerId !== "string" || !paper.ownerId.trim()) {
+    errors.push("private paper: ownerId required (must be derived from server auth session)");
+  }
+  // 4. paperId namespace
+  const pid = paper.paperId ?? paper.id;
+  if (typeof pid !== "string" || stableIdNamespace(pid) !== "private") {
+    errors.push(`private paper: paperId must use private namespace (got ${String(pid)})`);
+  }
+  // 5. productionEligible
+  if (paper.productionEligible === true) {
+    errors.push("private paper: productionEligible must be false");
+  }
+  // 6. globalSelectorEligible
+  if (paper.globalSelectorEligible === true) {
+    errors.push("private paper: globalSelectorEligible must be false");
+  }
+  // 7. redistribution
+  if (paper.rights && paper.rights.redistributionAllowed === true) {
+    errors.push("private paper: redistributionAllowed must be false");
+  }
+  // 8. rights acknowledgement
+  if (!paper.rightsAcknowledgement || paper.rightsAcknowledgement.acknowledged !== true) {
+    errors.push("private paper: rightsAcknowledgement.acknowledged must be true");
+  } else if (typeof paper.rightsAcknowledgement.acknowledgedAt !== "string" || !paper.rightsAcknowledgement.acknowledgedAt.trim()) {
+    errors.push("private paper: rightsAcknowledgement.acknowledgedAt required");
+  }
+  return errors;
+}
+
+/**
+ * 从 ownerId 派生 owner-scoped namespace（不直接暴露 email / 敏感身份）。
+ * 实际实现中应使用 server-side hash（如 SHA-256 of user internal id + salt），
+ * 此处提供 contract 级别的格式校验函数。
+ */
+export function isValidOwnerScopedId(id: string): boolean {
+  if (typeof id !== "string" || !id.trim()) return false;
+  if (id.includes(":")) return false;
+  // 不允许直接暴露 email 格式（含 @）
+  if (id.includes("@")) return false;
+  return id.length >= 3 && id.length <= 128;
+}

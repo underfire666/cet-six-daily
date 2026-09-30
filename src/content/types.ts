@@ -151,8 +151,13 @@ export interface ContentMeta {
   qualityStatus?: ContentQuality;
   createdAt: string;
   updatedAt: string;
-  /** 真题 / 原创 / 练习区分，杜绝把原创标成真题。 */
-  authenticity: "original" | "practice" | "past_exam";
+  /** 真题 / 原创 / 练习 / 用户导入区分，杜绝把原创标成真题。
+   * V14 Phase 1A：新增 "user_import"（用户私有导入，仅 owner 可见，永不进入 production）。 */
+  authenticity: "original" | "practice" | "past_exam" | "user_import";
+  /** V14 Phase 1A：可见性。public = 全局可访问（默认，向后兼容）；private = 仅 owner 可访问。 */
+  visibility?: "public" | "private";
+  /** V14 Phase 1A：所有者 ID（仅 private 内容必填，由 server 从 auth session 派生，不信任 client）。 */
+  ownerId?: string;
   /** V13：数据结构版本（区别于 contentVersion 内容修订）。 */
   schemaVersion?: string;
   /** V13：内容修订版本——修正 typo / 补充解析 / 修正 transcript 时递增，stable ID 不变。 */

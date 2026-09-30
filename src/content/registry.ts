@@ -2,6 +2,7 @@ import type { ContentPack, ContentSource, ContentRights } from "./types";
 import { getSource } from "./sources";
 import { validateAll, validatePack } from "./validator";
 import { rightsVerdict } from "./rights";
+import { isPrivateContent } from "./private-content";
 
 type PackRecord = { pack: ContentPack; source: ContentSource };
 
@@ -81,6 +82,8 @@ export function getPublishableItems<T = unknown>(type?: string): T[] {
       const status = (item as {status?:string}).status;
       if (status !== "active" && status !== "published") return false;
       const itemRights = (item as {rights?: ContentRights}).rights;
+      // V14 Phase 1A：PRIVATE 内容永不进入 production selector
+      if (isPrivateContent(item as { visibility?: string; id?: string; paperId?: string })) return false;
       return !itemRights || rightsVerdict(itemRights) === "allowed";
     }) as T[]);
   }
