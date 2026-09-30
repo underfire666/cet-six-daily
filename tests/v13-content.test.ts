@@ -838,10 +838,10 @@ test("production pool: fail-closed matrix", () => {
   registerPaperPack("pool-official-noev", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 3 }, officialNoEvidence, "staging"));
   assert.ok(!getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set3"), "official without reuse evidence must be invisible");
   // 5. licensed + valid evidence → 可见
-  registerPaperPack("pool-licensed", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 4 }, { ...licensedOk, rightsStatus: "cleared", commercialUseAllowed: true, effectiveAt: "2026-01-01T00:00:00.000Z" }, "published"));
+  registerPaperPack("pool-licensed", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 4 }, { ...licensedOk, rightsStatus: "cleared", permissionBasis: "signed_contract", termType: "fixed", commercialUseAllowed: true, effectiveAt: "2026-01-01T00:00:00.000Z", expiresAt: "2099-12-31T23:59:59.000Z" }, "published"));
   assert.ok(getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set4"), "licensed+evidence published must be visible");
   // 6. owned → 可见
-  registerPaperPack("pool-owned", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 5 }, { ...owned, rightsStatus: "cleared", commercialUseAllowed: true, redistributionAllowed: true, permissionEvidence: "owned-original-evidence", effectiveAt: "2026-01-01T00:00:00.000Z" }, "published"));
+  registerPaperPack("pool-owned", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 5 }, { ...owned, rightsStatus: "cleared", permissionBasis: "signed_contract", termType: "fixed", commercialUseAllowed: true, redistributionAllowed: true, permissionEvidence: "owned-original-evidence", effectiveAt: "2026-01-01T00:00:00.000Z", expiresAt: "2099-12-31T23:59:59.000Z" }, "published"));
   assert.ok(getPublishableItems().some((it) => (it as { paperId?: string }).paperId === "cet6:2027-6:set5"), "owned published must be visible");
   // 7. blocked content 即使 status=published 也不能被 getPublishableItems 返回
   registerPaperPack("pool-blocked-published", makeRealPaper({ exam: "CET6", year: 2027, session: 6, set: 6 }, officialBlocked, "staging"));

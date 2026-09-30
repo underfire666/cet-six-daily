@@ -92,6 +92,7 @@ const CLEARED_RIGHTS: ContentRights = {
   rightsHolder: "Synthetic Rights Holder (fixture only)",
   rightsStatus: "cleared",
   permissionBasis: "signed_contract",
+  termType: "fixed",
   licenseName: "V14 Synthetic Evaluation License",
   licenseUrl: "https://rights.example.test/v14-fixture-license",
   permissionEvidence: "contract-ref:V14-SYNTHETIC-CLEARED",

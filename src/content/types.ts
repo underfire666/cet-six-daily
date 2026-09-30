@@ -96,8 +96,13 @@ export interface ContentRights {
     | "cleared"
     | "expired"
     | "revoked";
-  /** V14：授权依据（如 "signed_contract" / "official_license" / "implied_by_terms"）。 */
+  /** V14：授权依据（如 "signed_contract" / "written_permission" / "explicit_license" / "implied_by_terms"）。
+   * V14.1：implied_by_terms 单独不足以进入 REAL production；必须为明确授权依据。 */
   permissionBasis?: string;
+  /** V14.1：授权期限类型。fixed=有明确到期日（requires effectiveAt+expiresAt）；
+   * perpetual=永久授权（requires effectiveAt+明确永久证据）。缺省=未声明（REAL production fail closed）。
+   * 不得根据字段缺失推断"永久"。 */
+  termType?: "fixed" | "perpetual";
   /** V14：授权生效日期（ISO 8601）。 */
   effectiveAt?: string;
   /** V14：授权到期日期（ISO 8601），缺省 = 永久。 */

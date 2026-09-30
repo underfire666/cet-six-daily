@@ -199,7 +199,7 @@ test("13. realProductionEligible 返回所有不满足原因", () => {
   // 同时改坏多个维度 → reasons 应收集多条
   const broken: CET6Paper = {
     ...V14_FIXTURE_REAL_CLEARED,
-    authenticity: "original",
+    authenticity: "past_exam",
     rights: clearedRights({ rightsStatus: "unverified", redistributionAllowed: false, commercialUseAllowed: false, licenseName: undefined, licenseUrl: undefined, permissionEvidence: undefined }),
   };
   const r = realProductionEligible(broken);

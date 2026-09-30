@@ -208,3 +208,61 @@ Paper 上三个权利字段**独立追踪**，不互相继承：
 - "官方结构事实来自中国教育考试网，真题正文权利另行认定"
 
 **声明：本文件不是法律意见。** 所有权利判断基于 2026-09-29 的公开信息快照，授权状态/条款时间敏感，production 上线前须经专业法律审查并重新核对每一条授权证据。
+
+---
+
+## 附录 A：V14 Phase 0.1 变更（Rights Contract Normalization）
+
+> 更新日期：2026-09-30
+> 变更范围：types.ts / rights.ts / fixtures / 测试
+> 不影响：V14 Phase 0 已建立的 7 态状态机、REAL namespace、Audio 三分、Explanation rights、PRIVATE 导入合约
+
+### A.1 授权期限模型（termType）
+
+ContentRights 新增 	ermType?: "fixed" | "perpetual" 字段：
+
+| 值 | 含义 | 必需字段 |
+| --- | --- | --- |
+| ixed | 有明确到期日的授权 | effectiveAt + expiresAt（均为有效 ISO 日期，effectiveAt ≤ 当前，expiresAt ≥ 当前） |
+| perpetual | 永久授权 | effectiveAt + 明确永久证据（permissionEvidence 非空） |
+| 缺失 | 未声明授权期限 | **REAL production fail closed** — 不得根据字段缺失推断"永久" |
+
+**关键变更**：V14 Phase 0 中"expiresAt 缺省 = 永久有效"的规则已废止。V14.1 起，缺 	ermType 一律视为未声明，REAL production 拒绝。
+
+### A.2 permissionBasis 限制
+
+REAL production 要求 permissionBasis 为以下**明确授权依据**之一：
+
+- signed_contract（签署的合同）
+- written_permission（书面许可）
+- explicit_license（明确许可）
+
+**implied_by_terms 单独不足**：仅从服务条款/使用协议推断的授权不能作为 REAL production 的充分依据。非 canonical 的 permissionBasis 值同样拒绝。
+
+### A.3 三类 rights 独立校验（realProductionEligible）
+
+ealProductionEligible() 对 uthenticity=past_exam 的 Paper 执行三类 rights 独立校验：
+
+1. **paperTextRights**（始终检查，缺省继承 paper.rights）
+2. **listeningScriptRights**（当 Paper 含听力小节 long_conversation/passage/lecture 时检查，缺省继承 paper.rights）
+3. **audioRecordingRights**（当 Paper 含 type=audio asset 时检查，缺省继承 paper.rights）
+
+每类 rights 均通过 checkRightsProductionReady() 统一校验：rightsStatus=cleared + permissionBasis canonical + termType 有效 + redistributionAllowed=true + commercialUseAllowed=true + 证据存在。
+
+非 past_exam Paper（MOCK/original）不触发三类 rights 维度检查。
+
+### A.4 新增辅助函数
+
+- checkRightsProductionReady(rights, label)：单个 rights 对象的 production 准入检查，返回所有不满足原因
+- hasListeningSections(paper)：判断 Paper 是否含听力小节
+- hasAudioAssets(paper)：判断 Paper 是否含音频 asset
+
+### A.5 测试覆盖
+
+新增 	ests/v14.1-rights-normalization.test.ts（23 个测试）：
+- canonical source taxonomy（D=PRIVATE_USER_IMPORT, E=UNVERIFIED_WEB）
+- termType fail-closed（missing / fixed-no-expiresAt / expired / perpetual-no-evidence / perpetual-with-evidence）
+- 三类 rights 独立（text/script/audio 各自 unverified→reject、audio redistribution=false→reject、audio evidence missing→reject、all 3 cleared→eligible）
+- permissionBasis 限制（implied_by_terms→reject、non-canonical→reject、missing→reject、3 canonical basis→allowed）
+- MOCK 行为不回归、PRIVATE 行为不回归
+- missing rights object、wrong namespace

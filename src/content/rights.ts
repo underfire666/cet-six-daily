@@ -190,19 +190,123 @@ function hasRightsEvidence(rights: ContentRights): boolean {
   );
 }
 
+/** V14.1：REAL production 可接受的明确授权依据。implied_by_terms 不在此列。 */
+const CANONICAL_PERMISSION_BASIS = new Set(["signed_contract", "written_permission", "explicit_license"]);
+
+/**
+ * V14.1：检查单个 rights 对象是否满足 REAL production 准入（fail closed）。
+ * 返回所有不满足原因（空数组 = 通过）。
+ *
+ * 检查项：
+ *   - rights 对象存在
+ *   - rightsStatus === "cleared"
+ *   - permissionBasis 存在且为明确授权依据（非 implied_by_terms）
+ *   - termType 存在（fixed | perpetual），不得根据缺失推断永久
+ *   - fixed: effectiveAt + expiresAt 均存在且有效且未过期
+ *   - perpetual: effectiveAt 存在且有效 + 明确永久证据（permissionEvidence 非空）
+ *   - redistributionAllowed === true
+ *   - commercialUseAllowed === true
+ *   - 权利证据存在（permissionEvidence / licenseName / licenseUrl 至少一个）
+ */
+export function checkRightsProductionReady(
+  rights: ContentRights | undefined | null,
+  label: string,
+): string[] {
+  const reasons: string[] = [];
+  if (!rights || typeof rights !== "object") {
+    reasons.push(`${label}: missing rights object (fail closed)`);
+    return reasons;
+  }
+  if (rights.rightsStatus !== "cleared") {
+    reasons.push(`${label}: rightsStatus must be "cleared" (got ${String(rights.rightsStatus)})`);
+  }
+  // V14.1：permissionBasis 必须为明确授权依据；implied_by_terms 单独不足
+  if (!rights.permissionBasis || !rights.permissionBasis.trim()) {
+    reasons.push(`${label}: permissionBasis missing (explicit authorization basis required for REAL production)`);
+  } else if (rights.permissionBasis === "implied_by_terms") {
+    reasons.push(`${label}: permissionBasis=implied_by_terms is not sufficient for REAL production (requires signed_contract/written_permission/explicit_license)`);
+  } else if (!CANONICAL_PERMISSION_BASIS.has(rights.permissionBasis)) {
+    reasons.push(`${label}: permissionBasis="${rights.permissionBasis}" is not a canonical basis (accepted: signed_contract/written_permission/explicit_license)`);
+  }
+  // V14.1：termType 必须显式声明，不得根据缺失推断永久
+  if (!rights.termType) {
+    reasons.push(`${label}: termType missing (must be "fixed" or "perpetual"; missing term is NOT inferred as perpetual)`);
+  } else if (rights.termType === "fixed") {
+    if (typeof rights.effectiveAt !== "string" || !rights.effectiveAt.trim()) {
+      reasons.push(`${label}: fixed term requires effectiveAt`);
+    } else {
+      const eff = Date.parse(rights.effectiveAt);
+      if (!Number.isFinite(eff)) reasons.push(`${label}: effectiveAt is not a valid ISO date: ${rights.effectiveAt}`);
+      else if (eff > Date.now()) reasons.push(`${label}: effectiveAt ${rights.effectiveAt} is in the future (not yet effective)`);
+    }
+    if (typeof rights.expiresAt !== "string" || !rights.expiresAt.trim()) {
+      reasons.push(`${label}: fixed term requires expiresAt`);
+    } else {
+      const exp = Date.parse(rights.expiresAt);
+      if (!Number.isFinite(exp)) reasons.push(`${label}: expiresAt is not a valid ISO date: ${rights.expiresAt}`);
+      else if (exp < Date.now()) reasons.push(`${label}: expiresAt ${rights.expiresAt} has passed (authorization expired)`);
+    }
+  } else if (rights.termType === "perpetual") {
+    if (typeof rights.effectiveAt !== "string" || !rights.effectiveAt.trim()) {
+      reasons.push(`${label}: perpetual term requires effectiveAt`);
+    } else {
+      const eff = Date.parse(rights.effectiveAt);
+      if (!Number.isFinite(eff)) reasons.push(`${label}: effectiveAt is not a valid ISO date: ${rights.effectiveAt}`);
+      else if (eff > Date.now()) reasons.push(`${label}: effectiveAt ${rights.effectiveAt} is in the future (not yet effective)`);
+    }
+    // perpetual 需要明确永久证据（permissionEvidence 非空）
+    if (!rights.permissionEvidence || !rights.permissionEvidence.trim()) {
+      reasons.push(`${label}: perpetual term requires explicit perpetual evidence (permissionEvidence must be non-empty)`);
+    }
+  }
+  if (rights.redistributionAllowed !== true) {
+    reasons.push(`${label}: redistributionAllowed must be true (got ${String(rights.redistributionAllowed)})`);
+  }
+  if (rights.commercialUseAllowed !== true) {
+    reasons.push(`${label}: commercialUseAllowed must be explicitly true for production (got ${String(rights.commercialUseAllowed)})`);
+  }
+  if (!hasRightsEvidence(rights)) {
+    reasons.push(`${label}: rights evidence missing (permissionEvidence/licenseName/licenseUrl must have at least one)`);
+  }
+  return reasons;
+}
+
+/**
+ * V14.1：判断 paper 是否含听力小节（long_conversation / passage / lecture），
+ * 用于决定是否需要独立校验 listeningScriptRights。
+ */
+function hasListeningSections(paper: CET6Paper): boolean {
+  if (!Array.isArray(paper.sections)) return false;
+  return paper.sections.some((sec) =>
+    Array.isArray(sec?.groups) &&
+    sec.groups.some((g) => g?.type === "long_conversation" || g?.type === "passage" || g?.type === "lecture"),
+  );
+}
+
+/**
+ * V14.1：判断 paper 是否含音频 asset（type==="audio"），
+ * 用于决定是否需要独立校验 audioRecordingRights。
+ */
+function hasAudioAssets(paper: CET6Paper): boolean {
+  return Array.isArray(paper.assets) && paper.assets.some((a) => a?.type === "audio");
+}
+
 /**
  * V14：REAL Paper production 准入检查（REAL Production Guard）。
+ *
+ * V14.1 更新：
+ *   - 授权期限模型（termType fixed|perpetual），缺 termType → fail closed
+ *   - 三类 rights 独立校验：paperTextRights / listeningScriptRights / audioRecordingRights
+ *     （对应内容存在时，各自必须满足 production 准入；缺省继承 paper.rights）
+ *   - permissionBasis 限制：implied_by_terms 不足，必须为明确授权依据
  *
  * 仅当全部满足时 eligible=true：
  *   - authenticity === "past_exam"
  *   - stableIdNamespace(paperId) === "real"
- *   - rights.rightsStatus === "cleared"（且未过期/未吊销，见 isRightsCleared）
- *   - rights.redistributionAllowed === true
- *   - rights.commercialUseAllowed === true（production 必须明确，不接受 undefined）
- *   - 证据存在（permissionEvidence / licenseName / licenseUrl 至少一个非空）
- *   - rights.effectiveAt 存在且 <= 当前日期；若有 expiresAt 必须 >= 当前日期
- *   - 内容结构校验 PASS（由调用方把 validatePaper 的 structuralErrors 传入；
- *     本函数不反向调用 validatePaper，避免与 validatePaper 的准入检查相互递归）
+ *   - paperTextRights（或继承 paper.rights）通过 checkRightsProductionReady
+ *   - 若有听力小节：listeningScriptRights（或继承）通过 checkRightsProductionReady
+ *   - 若有音频 asset：audioRecordingRights（或继承）通过 checkRightsProductionReady
+ *   - 内容结构校验 PASS（由调用方把 validatePaper 的 structuralErrors 传入）
  *
  * 返回所有不满足原因（reasons 为空 = eligible）。
  */
@@ -211,7 +315,6 @@ export function realProductionEligible(
   structuralErrors?: string[],
 ): { eligible: boolean; reasons: string[] } {
   const reasons: string[] = [];
-  const rights = paper?.rights;
 
   if (paper?.authenticity !== "past_exam") {
     reasons.push(`authenticity must be "past_exam" for REAL production (got ${String(paper?.authenticity)})`);
@@ -219,44 +322,24 @@ export function realProductionEligible(
   if (stableIdNamespace(paper?.paperId ?? "") !== "real") {
     reasons.push(`paperId must use REAL namespace (cet6:<year>-<session>:set<N>), got ${String(paper?.paperId)}`);
   }
-  if (!rights || typeof rights !== "object") {
-    reasons.push("missing rights metadata (fail closed)");
-  } else {
-    if (rights.rightsStatus !== "cleared") {
-      reasons.push(`rights.rightsStatus must be "cleared" (got ${String(rights.rightsStatus)})`);
+
+  // V14.1：三类 rights 独立校验。仅对 past_exam REAL paper 执行（MOCK/original 不触发）。
+  if (paper?.authenticity === "past_exam") {
+    // text 始终存在（paper 必有文本内容）
+    const textRights = paper.paperTextRights ?? paper.rights;
+    for (const r of checkRightsProductionReady(textRights, "paperTextRights")) reasons.push(r);
+
+    if (hasListeningSections(paper)) {
+      const scriptRights = paper.listeningScriptRights ?? paper.rights;
+      for (const r of checkRightsProductionReady(scriptRights, "listeningScriptRights")) reasons.push(r);
     }
-    if (!isRightsCleared(rights)) {
-      reasons.push("rights not cleared: expired or revoked or rightsStatus!=cleared (fail closed)");
-    }
-    if (rights.redistributionAllowed !== true) {
-      reasons.push(`rights.redistributionAllowed must be true (got ${String(rights.redistributionAllowed)})`);
-    }
-    if (rights.commercialUseAllowed !== true) {
-      reasons.push(`rights.commercialUseAllowed must be explicitly true for production (got ${String(rights.commercialUseAllowed)})`);
-    }
-    if (!hasRightsEvidence(rights)) {
-      reasons.push("rights evidence missing: permissionEvidence/licenseName/licenseUrl must have at least one");
-    }
-    // effectiveAt 必须存在且已生效；expiresAt 若存在必须尚未到期
-    if (typeof rights.effectiveAt !== "string" || !rights.effectiveAt.trim()) {
-      reasons.push("rights.effectiveAt missing (authorization effective date required)");
-    } else {
-      const eff = Date.parse(rights.effectiveAt);
-      if (!Number.isFinite(eff)) {
-        reasons.push(`rights.effectiveAt is not a valid ISO date: ${rights.effectiveAt}`);
-      } else if (eff > Date.now()) {
-        reasons.push(`rights.effectiveAt ${rights.effectiveAt} is in the future (not yet effective)`);
-      }
-    }
-    if (typeof rights.expiresAt === "string" && rights.expiresAt.trim()) {
-      const exp = Date.parse(rights.expiresAt);
-      if (!Number.isFinite(exp)) {
-        reasons.push(`rights.expiresAt is not a valid ISO date: ${rights.expiresAt}`);
-      } else if (exp < Date.now()) {
-        reasons.push(`rights.expiresAt ${rights.expiresAt} has passed (authorization expired)`);
-      }
+
+    if (hasAudioAssets(paper)) {
+      const audioRights = paper.audioRecordingRights ?? paper.rights;
+      for (const r of checkRightsProductionReady(audioRights, "audioRecordingRights")) reasons.push(r);
     }
   }
+
   if (Array.isArray(structuralErrors) && structuralErrors.length > 0) {
     for (const e of structuralErrors) reasons.push(`content validation failed: ${e}`);
   }
