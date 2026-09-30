@@ -141,9 +141,9 @@ export function validatePrivatePaper(paper: {
   if (paper.visibility !== "private") {
     errors.push(`private paper: visibility must be "private" (got ${String(paper.visibility)})`);
   }
-  // 2. authenticity
-  if (paper.authenticity !== "user_import" && paper.authenticity !== "past_exam") {
-    errors.push(`private paper: authenticity must be "user_import" or "past_exam" (got ${String(paper.authenticity)})`);
+  // 2. authenticity — PRIVATE import 必须是 user_import，禁止 past_exam/original/practice
+  if (paper.authenticity !== "user_import") {
+    errors.push(`private paper: authenticity must be "user_import" (got ${String(paper.authenticity)})`);
   }
   // 3. ownerId
   if (typeof paper.ownerId !== "string" || !paper.ownerId.trim()) {

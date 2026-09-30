@@ -86,7 +86,7 @@ private:user-hash-d4e5f6:my-notes-paper-001
 | # | 检查项 | 要求 |
 |---|--------|------|
 | 1 | visibility | 必须 === "private" |
-| 2 | authenticity | 必须 === "user_import" 或 "past_exam"（private owner import） |
+| 2 | authenticity | 必须 === "user_import"（PRIVATE 禁止 past_exam/original/practice） |
 | 3 | ownerId | 必须存在且非空（server 从 auth session 派生，不信任 client） |
 | 4 | paperId namespace | 必须 === "private"（stableIdNamespace 检测） |
 | 5 | productionEligible | 必须 !== true（PRIVATE 永不 production） |
@@ -144,15 +144,15 @@ if (isPrivateContent(item)) return false;  // PRIVATE 永不进入 production se
 ## 8. Sync 范围
 
 - PRIVATE 内容**不进入**全局 content registry / production selector
-- PRIVATE 内容通过 owner-scoped sync 同步（V12 云同步架构的 account-scoped mutation queue）
+- PRIVATE 内容将通过 owner-scoped sync 同步（Phase 1E 将复用 V12 account-scoped queue）
 - 不同用户的 private 内容完全隔离，server 端按 ownerId 过滤
-- PRIVATE 内容的 mutation 携带 ownerId，server 校验后才执行
+- PRIVATE 内容的 mutation 将携带 ownerId，server 校验后才执行（Phase 1E 实现）
 
 ## 9. Review / Wrongbook 范围
 
-- PRIVATE paper 产生的错题/复习记录归属 owner
+- PRIVATE paper 产生的错题/复习记录将归属 owner（DESIGNED_ONLY，Phase 1D 实现）
 - 其他用户看不到 owner 的 private 错题
-- Daily Plan 可以包含 owner 的 private paper 复习任务（仅本人可见）
+- Daily Plan 将包含 owner 的 private paper 复习任务（PLANNED，Phase 1D 实现）
 - 全局统计/排行榜不包含 private 内容数据
 
 ## 10. 安全测试覆盖（27 tests）

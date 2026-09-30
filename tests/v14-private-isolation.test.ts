@@ -108,6 +108,19 @@ test("3b. validatePrivatePaper: authenticity=user_import → allowed", () => {
 });
 
 // ============================================================================
+test("3c. validatePrivatePaper: authenticity=past_exam → rejected (PRIVATE 禁止 past_exam)", () => {
+  const paper = makeValidPrivatePaper({ authenticity: "past_exam" });
+  const errors = validatePrivatePaper(paper);
+  assert.ok(errors.some((e) => e.includes("authenticity")), `past_exam 应被拒绝: ${errors.join("; ")}`);
+});
+
+test("3d. validatePrivatePaper: authenticity=practice → rejected", () => {
+  const paper = makeValidPrivatePaper({ authenticity: "practice" });
+  const errors = validatePrivatePaper(paper);
+  assert.ok(errors.some((e) => e.includes("authenticity")), `practice 应被拒绝: ${errors.join("; ")}`);
+});
+
+// ============================================================================
 // 4. validatePrivatePaper — ownerId 缺失
 // ============================================================================
 test("4. validatePrivatePaper: ownerId missing → reject", () => {

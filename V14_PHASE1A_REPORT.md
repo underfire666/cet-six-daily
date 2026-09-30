@@ -60,14 +60,16 @@ private stable ID 设计、rights acknowledgement 合约，以及 27 个安全�
 ### 3.5 SYNC_SCOPE
 
 - PRIVATE 内容不进入全局 content registry
-- 通过 owner-scoped sync 同步（V12 account-scoped mutation queue）
-- server 端按 ownerId 过滤，跨用户隔离
+- **DESIGNED_ONLY**：将通过 owner-scoped sync 同步（Phase 1E 将复用 V12 account-scoped queue）
+- **CONTRACT_DEFINED_NOT_IMPLEMENTED**：后续 CRUD/API 必须由 server 从 auth session 派生 ownerId 并按 owner 过滤
+- 当前未实现 private cloud sync
 
 ### 3.6 REVIEW_SCOPE
 
-- PRIVATE paper 产生的错题/复习归属 owner
+- **DESIGNED_ONLY**：PRIVATE paper 产生的错题/复习将归属 owner（Phase 1D 实现）
 - 其他用户不可见
-- Daily Plan 可包含 owner 的 private 复习任务（仅本人可见）
+- **PLANNED**：Daily Plan 将包含 owner 的 private 复习任务（Phase 1D 实现）
+- 当前未实现 private learning flow
 
 ### 3.7 IMPORT_TYPES
 
@@ -83,15 +85,15 @@ private stable ID 设计、rights acknowledgement 合约，以及 27 个安全�
 
 ### 3.9 TESTS
 
-- 27 个隔离测试，27/27 PASS
-- 覆盖：validatePrivatePaper 各维度、isPrivateContent、assertPrivateAccess、
+- 29 个隔离测试，29/29 PASS
+- 覆盖：validatePrivatePaper 各维度（含 authenticity user_import_only 4 项）、isPrivateContent、assertPrivateAccess、
   production selector 排除、privatePaperStableId 格式/collision、isValidOwnerScopedId
 
 ### 3.10 GATES
 
 | Gate | 结果 |
 |------|------|
-| npm test | 577/577 PASS |
+| npm test | 579/579 PASS |
 | typecheck | PASS |
 | lint (--max-warnings 0) | PASS |
 | build | PASS |
@@ -152,5 +154,19 @@ private stable ID 设计、rights acknowledgement 合约，以及 27 个安全�
 - ID 设计：private namespace 隔离，collision-safe
 - 测试：577/577 PASS（含 27 新增）
 - Gates：8/8 PASS
+
+## 8. 最终字段（Contract Normalization）
+
+| 字段 | 值 |
+|------|-----|
+| PRIVATE_AUTHENTICITY | user_import_only |
+| PAST_EXAM_ALLOWED_FOR_PRIVATE | NO |
+| SYNC_SCOPE | DESIGNED_ONLY |
+| SERVER_OWNER_AUTHORIZATION | CONTRACT_DEFINED_NOT_IMPLEMENTED |
+| REVIEW_SCOPE | DESIGNED_ONLY |
+| DAILY_PLAN_PRIVATE_SUPPORT | PLANNED |
+| PRIVATE_STORAGE_IMPLEMENTED | NO |
+| PRIVATE_SYNC_IMPLEMENTED | NO |
+| PRIVATE_LEARNING_FLOW_IMPLEMENTED | NO |
 
 **V14 Phase 1A — Private Content Import MVP Design: COMPLETE**
