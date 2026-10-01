@@ -1,6 +1,8 @@
 # V14 Phase 1B — Private Storage Layer 报告
 
 **日期**: 2026-10-01
+
+> 本报告的 603/603 是 Phase 1B 基线验收记录。Phase 1B.1 修补与最新验证见 V14_PHASE1B1_REPORT.md；以下结构/大小限制说明已据实际实现更正。
 **分支**: feature/v14-real-content-rights
 **基线**: 797240b (Phase 1A Final)
 
@@ -9,7 +11,7 @@
 ### 选择理由
 - 复用现有 PostgreSQL + Prisma 架构，避免平行存储方案
 - 遵循 V12 已建立的 user-scoped 表模式（userId 外键 + @@unique([userId, clientId]) + onDelete: Cascade）
-- 完整 CET6Paper 对象以 JSONB 存储，与 LearningSession.payload / ReviewItem.payload 模式一致
+- PRIVATE Paper 存储草稿对象（允许不完整）以 JSONB 存储，与 LearningSession.payload / ReviewItem.payload 模式一致
 - server 从 NextAuth session 派生 owner，不信任客户端任何身份字段
 
 ### PrivatePaper 表结构
@@ -20,7 +22,7 @@
 | userId | TEXT | 所有者（外键 → User.id, ON DELETE CASCADE） |
 | paperId | TEXT | owner-scoped stable ID（private:<ownerScopedId>:<localId>） |
 | title | TEXT | 卷标题 |
-| content | JSONB | 完整 CET6Paper 对象（authenticity=user_import, visibility=private） |
+| content | JSONB | PRIVATE Paper 存储草稿对象（允许不完整）（authenticity=user_import, visibility=private） |
 | createdAt | TIMESTAMPTZ(6) | 创建时间 |
 | updatedAt | TIMESTAMPTZ(6) | 更新时间 |
 
@@ -51,7 +53,7 @@
 - **身份字段强制**: create 时 server 生成 paperId、ownerId、ownerNamespace、authenticity、visibility、productionEligible、globalSelectorEligible 等字段，覆盖客户端任何伪造值
 - **update 身份锁定**: update 时从现有记录保留身份字段，不允许通过 content 修改 ownerId/paperId/visibility/authenticity
 - **一致错误响应**: 不存在和他人拥有的记录都返回 NOT_FOUND，避免泄露存在性
-- **内容校验**: create 和 update 均调用 `validatePrivatePaper()` 进行 8 项校验
+- **内容校验**: create/update 使用 validatePrivateDraft() 做结构与关联校验，并使用 validatePrivatePaper() 做元数据隔离校验（Phase 1B.1 修补）
 
 ### 错误码
 | code | HTTP 状态 | 说明 |
@@ -172,7 +174,7 @@
 
 - 私有卷存储在 PostgreSQL，不进入 content registry / production selector
 - 私有卷不能通过现有公开 Paper 路由访问（需后续 Phase 实现私有卷学习页）
-- API 路由未做请求体大小限制（Next.js 默认 1MB body limit）
+- Phase 1B.1 已为 POST/PUT 实现 1 MiB 实际流字节限制；App Router 不提供原报告声称的默认 1MB JSON body 限制
 - 未实现 rate limiting（复用 V12 登录 rate limit 模式，后续 Phase 添加）
 - 未实现软删除（当前为硬删除，后续 Phase 可考虑 tombstone）
 
@@ -196,5 +198,5 @@
 
 - 分支: feature/v14-real-content-rights
 - 基线: 797240b
-- 最终 HEAD: （见 Git closure）
+- Phase 1B 基线 HEAD: 6c3349c199950fef68c027e63881870c9f57045c；Phase 1B.1 最终状态见本地 output/v14-phase1b1-git-closure.md
 - 禁止: merge main / tag / Release / force push

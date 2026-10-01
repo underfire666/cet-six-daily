@@ -111,7 +111,7 @@ export function isPrivateContent(item: { visibility?: string; id?: string; paper
  *
  * 检查项（任一不满足 → 拒绝保存）：
  * 1. visibility === "private"
- * 2. authenticity === "user_import"（或 past_exam 但明确标记为 private owner import）
+ * 2. authenticity === "user_import"（PRIVATE 不允许 past_exam）
  * 3. ownerId 存在且非空（由 server 从 auth session 派生）
  * 4. paperId namespace === "private"
  * 5. productionEligible === false（或未设置，PRIVATE 永不 production）

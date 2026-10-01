@@ -1,6 +1,8 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V13 Content 1.0（V13.0.1 发布收尾，2026-09-29）
+## 当前工作版本：V14 Phase 1B.1（v14.3.2，Private Storage Hardening，2026-10-01）
+
+当前工作分支 feature/v14-real-content-rights。PRIVATE 存储及 CRUD owner 授权已实现；sync、私有卷学习流程、上传 UI/OCR/AI 未实现。Phase 1B.1 验收通过后停止，不开始 Phase 1C。以下 V13/V14 旧章节保留为历史记录。
 
 ### V13.0.1 发布收尾
 
@@ -363,3 +365,12 @@ Private Storage Layer：Prisma PrivatePaper 表 + migration、CRUD 服务层（c
 - 未实现上传 UI / PDF / OCR / AI
 - 未修改 Paper 001 正文/答案/音频/内容版本
 - 未 merge main / 打 tag / 建 Release
+
+## V14 Phase 1B.1 / v14.3.2（2026-10-01）
+
+- 修复 PRIVATE 结构校验、server 权利确认时间、实际字节请求大小限制、特殊字符 ID 二次解码、标题不一致、owner namespace 明文以及数据库错误状态码。
+- 新 ID 使用固定域分隔的完整 SHA-256 owner 摘要；旧 ID/namespace 保留，旧 sections 草稿更新兼容，不修改数据库 schema、不清空数据。
+- 634/634 tests、typecheck、lint 0/0、build、4 个 content gates PASS；真实生产 HTTP 登录/API 验证 44/44 PASS。测试用户按 exact ID 清理。
+- PRIVATE_STORAGE_IMPLEMENTED=YES；SERVER_OWNER_AUTHORIZATION=IMPLEMENTED_FOR_CRUD；PRIVATE_SYNC_IMPLEMENTED=NO；PRIVATE_LEARNING_FLOW_IMPLEMENTED=NO。
+- 详情：V14_PHASE1B1_REPORT.md；最终 Git SHA 与远程相等/clean/tag 不变证据保存在本地 output/v14-phase1b1-git-closure.md。
+- 未开始 Phase 1C；未修改 Paper 001；未 merge main、tag 或 Release。完成后停止等待检查。

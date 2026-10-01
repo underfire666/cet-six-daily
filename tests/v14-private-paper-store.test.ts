@@ -45,7 +45,7 @@ async function createTestUser(prefix: string) {
 function makeValidContent(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     schemaVersion: 1,
-    sections: { writing: [], listening: [], reading: [], translation: [] },
+    sections: [], isPartial: true,
     ...overrides,
   };
 }
@@ -537,4 +537,94 @@ test.before(async () => {
 // 清理 prisma 连接
 test.after(async () => {
   await prisma.$disconnect();
+});
+
+
+// Phase 1B.1: real database regressions, scoped to newly generated owners.
+test("1B.1 runtime validation, titles and server acknowledgement", async () => {
+  const user = await createTestUser("hardening");
+  const input = { localPaperId: "draft", title: "Draft", content: makeValidContent(), rightsAcknowledgement: makeRightsAck() };
+  const invalid = (e: PrivatePaperStoreError) => e.code === "VALIDATION_ERROR";
+  try {
+    for (const title of ["", "   ", 42, "x".repeat(201)]) await assert.rejects(createPrivatePaper(user.id, { ...input, title }), invalid);
+    for (const content of [[], null, { schemaVersion: 1, sections: "bad" }]) await assert.rejects(createPrivatePaper(user.id, { ...input, content }), invalid);
+    for (const statementVersion of ["", "99", null]) await assert.rejects(createPrivatePaper(user.id, { ...input, rightsAcknowledgement: { ...makeRightsAck(), statementVersion } }), invalid);
+    const start = Date.now();
+    const created = await createPrivatePaper(user.id, { ...input, rightsAcknowledgement: { ...makeRightsAck(), acknowledgedAt: "1900-01-01" } });
+    const before = await getPrivatePaper(user.id, created.paperId);
+    const ack = before.content.rightsAcknowledgement as { acknowledgedAt: string };
+    assert.ok(Date.parse(ack.acknowledgedAt) >= start); assert.ok(!created.paperId.includes(user.id));
+    await updatePrivatePaper(user.id, created.paperId, { content: { title: "Nested title", rightsAcknowledgement: { acknowledged: false }, importedAt: "forged" } });
+    const after = await getPrivatePaper(user.id, created.paperId);
+    assert.equal(after.title, "Nested title"); assert.equal(after.content.title, after.title);
+    assert.deepEqual(after.content.rightsAcknowledgement, before.content.rightsAcknowledgement); assert.equal(after.content.importedAt, before.content.importedAt);
+    await updatePrivatePaper(user.id, created.paperId, { title: "Top title" });
+    assert.equal((await getPrivatePaper(user.id, created.paperId)).content.title, "Top title");
+    for (const updates of [[], { title: "" }, { title: "   " }, { content: [] }, { content: { sections: {} } }, { title: "A", content: { title: "B" } }, { rightsAcknowledgement: { acknowledged: true, statementVersion: "99" } }]) await assert.rejects(updatePrivatePaper(user.id, created.paperId, updates), invalid);
+    assert.equal((await getPrivatePaper(user.id, created.paperId)).title, "Top title");
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
+});
+test("1B.1 special local IDs survive all CRUD operations", async () => {
+  const user = await createTestUser("special-id");
+  try {
+    for (const localPaperId of ["paper%", "paper%25", "中文卷", "with space"]) {
+      const p = await createPrivatePaper(user.id, { localPaperId, title: "Special", content: makeValidContent(), rightsAcknowledgement: makeRightsAck() });
+      assert.equal((await getPrivatePaper(user.id, p.paperId)).paperId, p.paperId);
+      await updatePrivatePaper(user.id, p.paperId, { title: "Updated" });
+      assert.equal((await getPrivatePaper(user.id, p.paperId)).title, "Updated");
+      await deletePrivatePaper(user.id, p.paperId);
+    }
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
+});
+test("1B.1 concurrent duplicate creates produce exactly one success", async () => {
+  const user = await createTestUser("race");
+  try {
+    const input = { localPaperId: "race", title: "Race", content: makeValidContent(), rightsAcknowledgement: makeRightsAck() };
+    const outcomes = await Promise.allSettled(Array.from({ length: 4 }, () => createPrivatePaper(user.id, input)));
+    assert.equal(outcomes.filter(o => o.status === "fulfilled").length, 1);
+    for (const o of outcomes) if (o.status === "rejected") assert.equal(o.reason.code, "DUPLICATE_ID");
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
+});
+test("1B.1 legacy ID remains accessible, immutable and cannot be duplicated", async () => {
+  const user = await createTestUser("legacy");
+  const paperId = `private:${user.id}:old`;
+  try {
+    const content = { ...makeValidContent(), sections: { writing: [], listening: [], reading: [], translation: [] }, id: paperId, paperId, title: "Old", ownerId: user.id, ownerNamespace: `user:${user.id}`, visibility: "private", authenticity: "user_import", importedAt: new Date().toISOString(), rightsAcknowledgement: makeRightsAck() };
+    await prisma.privatePaper.create({ data: { userId: user.id, paperId, title: "Old", content } });
+    assert.equal((await getPrivatePaper(user.id, paperId)).paperId, paperId);
+    await updatePrivatePaper(user.id, paperId, { title: "Legacy updated" });
+    const updated = await getPrivatePaper(user.id, paperId);
+    assert.equal(updated.paperId, paperId); assert.equal(updated.content.ownerNamespace, content.ownerNamespace); assert.ok(Array.isArray(updated.content.sections));
+    await assert.rejects(createPrivatePaper(user.id, { localPaperId: "old", title: "Dup", content: makeValidContent(), rightsAcknowledgement: makeRightsAck() }), (e: PrivatePaperStoreError) => e.code === "DUPLICATE_ID");
+    await deletePrivatePaper(user.id, paperId);
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
+});
+
+test("1B.1 storage failures remain INTERNAL_ERROR for every operation", async () => {
+  for (const [method, operation] of [
+    ["findFirst", () => createPrivatePaper("owner", { localPaperId: "x", title: "X", content: makeValidContent(), rightsAcknowledgement: makeRightsAck() })],
+    ["findUnique", () => getPrivatePaper("owner", "private:owner:x")],
+    ["findMany", () => listPrivatePapers("owner")],
+    ["findUnique", () => updatePrivatePaper("owner", "private:owner:x", { title: "X" })],
+    ["deleteMany", () => deletePrivatePaper("owner", "private:owner:x")],
+  ] as const) {
+    const original = prisma.privatePaper[method];
+    Object.assign(prisma.privatePaper, { [method]: async () => { throw Error("DB disconnected"); } });
+    try { await assert.rejects(operation(), (e: PrivatePaperStoreError) => e.code === "INTERNAL_ERROR"); }
+    finally { Object.assign(prisma.privatePaper, { [method]: original }); }
+  }
+});
+test("1B.1 Prisma duplicate and concurrent missing-row codes are normalized", async () => {
+  const { Prisma } = await import("@prisma/client");
+  const user = await createTestUser("db-code");
+  try {
+    const input = { localPaperId: "x", title: "X", content: makeValidContent(), rightsAcknowledgement: makeRightsAck() };
+    const originalCreate = prisma.privatePaper.create;
+    Object.assign(prisma.privatePaper, { create: async () => { throw new Prisma.PrismaClientKnownRequestError("not an English unique message", { code: "P2002", clientVersion: "6.19.3" }); } });
+    try { await assert.rejects(createPrivatePaper(user.id, input), (e: PrivatePaperStoreError) => e.code === "DUPLICATE_ID"); } finally { Object.assign(prisma.privatePaper, { create: originalCreate }); }
+    const paper = await createPrivatePaper(user.id, input);
+    const originalUpdate = prisma.privatePaper.update;
+    Object.assign(prisma.privatePaper, { update: async () => { throw new Prisma.PrismaClientKnownRequestError("concurrent deletion", { code: "P2025", clientVersion: "6.19.3" }); } });
+    try { await assert.rejects(updatePrivatePaper(user.id, paper.paperId, { title: "Y" }), (e: PrivatePaperStoreError) => e.code === "NOT_FOUND"); } finally { Object.assign(prisma.privatePaper, { update: originalUpdate }); }
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
 });
