@@ -314,3 +314,52 @@ Content Identity + Rights Hardening：进入第一批真实内容之前的小型
 ### 边界
 - 未开始 V14；未开始 V15 AI；未新增 Paper 002
 - Paper 001 为原创模拟卷，非官方 CET6 真题
+
+## V14 Phase 0/0.1（2026-09-30，分支 feature/v14-real-content-rights）
+
+### 目标
+Real Content Source & Rights Strategy：ContentRights 扩展、REAL Production Guard、Audio Rights 三分、Explanation Rights、PRIVATE 导入合约、7 个 synthetic fixtures、14 个新测试；Phase 0.1 统一 source taxonomy、授权期限 fail-closed、三类 rights 独立校验、permissionBasis 限制。
+
+### 已完成
+- ContentRights 扩展（rightsStatus 7态、permissionBasis、effectiveAt/expiresAt、termType）
+- REAL Production Guard（realProductionEligible()）
+- PRIVATE 导入合约（private-content.ts：owner-scoped stable ID、assertPrivateAccess）
+- 550/550 tests PASS，8/8 gates PASS
+- 提交：2aca1cb（Phase 0.1），已 push
+
+## V14 Phase 1A（2026-09-30，分支 feature/v14-real-content-rights）
+
+### 目标
+Private Content Import MVP Design：数据模型扩展（authenticity=user_import、visibility?、ownerId?）、validatePrivatePaper() 8 项校验、isPrivateContent() 检测、getPublishableItems() 排除 PRIVATE、29 个隔离测试；Contract Normalization 统一 authenticity=user_import_only，修正文档过度表述。
+
+### 已完成
+- 数据模型：ContentMeta + CET6Paper 新增 authenticity="user_import"、visibility?、ownerId?
+- validatePrivatePaper()：authenticity 固定 user_import_only（拒绝 past_exam/original/practice）
+- getPublishableItems()：PRIVATE 内容双重过滤（visibility + namespace）
+- 29/29 隔离测试 PASS
+- 579/579 tests PASS，8/8 gates PASS
+- 最终字段：PRIVATE_AUTHENTICITY=user_import_only、SYNC_SCOPE=DESIGNED_ONLY、SERVER_OWNER_AUTHORIZATION=CONTRACT_DEFINED_NOT_IMPLEMENTED、PRIVATE_STORAGE/SYNC/LEARNING_FLOW=NOT_IMPLEMENTED
+- 提交：797240b（Phase 1A Final），已 push
+
+## V14 Phase 1B（2026-10-01，分支 feature/v14-real-content-rights）
+
+### 目标
+Private Storage Layer：Prisma PrivatePaper 表 + migration、CRUD 服务层（create/get/list/update/delete）、Next.js API 路由（server 从 session 派生 owner）、24 个回归测试、8/8 gates。
+
+### 已完成并验证
+- **Prisma PrivatePaper 表**：userId 外键（ON DELETE CASCADE）、paperId TEXT、title TEXT、content JSONB、@@unique([userId, paperId])、@@index([userId])
+- **Migration**：20261001002437_private_paper（CREATE TABLE + INDEX + UNIQUE INDEX + FOREIGN KEY），不清空现有数据
+- **CRUD 服务层**（src/content/private-paper-store.ts）：createPrivatePaper/getPrivatePaper/listPrivatePapers/updatePrivatePaper/deletePrivatePaper
+- **安全设计**：server 派生 ownerId/paperId/authenticity/visibility 等身份字段，覆盖客户端伪造；update 禁止修改身份字段；不存在与他人记录返回一致 NOT_FOUND
+- **API 路由**：GET/POST /api/private-papers，GET/PUT/DELETE /api/private-papers/[paperId]，全部 401 未登录拦截
+- **内容校验**：create/update 均调用 validatePrivatePaper() 8 项校验
+- **测试**：24/24 PASS（未登录拒绝、CRUD 持久化、跨 owner 隔离、伪造 ownerId、禁止更新身份字段、非法内容、重复 ID、production selector 排除、Paper001 无回归）
+- **Gates**：npm test 603/603、typecheck PASS、lint 0 errors 0 warnings、build PASS、content:validate 0 errors 0 warnings、content:stats PASS、content:rights PASS、content:audio-validate PASS
+- **新增 prisma CLI**：prisma@6.19.3 devDependency（用于 migration，与 @prisma/client 版本匹配）
+
+### 未做（保持 Phase 1B 边界）
+- 未开始 Phase 1C（私有卷学习页/答题）
+- 未实现 PRIVATE_SYNC（Phase 1E 将复用 V12 account-scoped queue）
+- 未实现上传 UI / PDF / OCR / AI
+- 未修改 Paper 001 正文/答案/音频/内容版本
+- 未 merge main / 打 tag / 建 Release

@@ -29,6 +29,7 @@ model User {
   settings      UserSettings?
   syncMutations SyncMutation[]
   migrationRecords MigrationRecord[]
+  privatePapers PrivatePaper[]
 }
 
 model Profile {
@@ -202,4 +203,18 @@ model MigrationRecord {
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
 
   @@unique([userId, migrationId])
+}
+
+model PrivatePaper {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paperId   String   // client-generated stable id (private namespace)
+  title     String
+  content   Json     // full CET6Paper object (authenticity=user_import, visibility=private)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, paperId])
+  @@index([userId])
 }
