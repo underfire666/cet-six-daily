@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, Trash2, Check, X, Clock, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Check, X, Clock, AlertCircle, Loader2, Play } from "lucide-react";
 import { countContentStats } from "@/lib/private-papers/validation";
+import { checkPrivatePaperReadiness } from "@/lib/private-papers/readiness";
 
 interface PrivatePaperDetail {
   id: string;
@@ -109,6 +110,7 @@ export default function PrivatePaperDetailPage({ paperId }: { paperId: string })
 
   const stats = countContentStats(paper.content);
   const isPartial = paper.content.isPartial === true;
+  const readiness = checkPrivatePaperReadiness(paper.content);
 
   function startEditTitle() {
     if (!paper) return;
@@ -236,6 +238,24 @@ export default function PrivatePaperDetailPage({ paperId }: { paperId: string })
         </div>
         {isPartial && (
           <p className="pp-preview-note">不完整草稿暂不能开始学习。</p>
+        )}
+      </section>
+
+      {/* Start study */}
+      <section className="pp-detail-section">
+        <h3>学习</h3>
+        {readiness.ready ? (
+          <div className="pp-study-start">
+            <p className="pp-preview-note">本卷包含 {readiness.questions.length} 道可作答阅读选择题。本阶段私有练习暂不计入 XP、Streak 或学习统计。</p>
+            <Link href={`/me/private-papers/${encodeURIComponent(paperId)}/study`} className="pp-primary-btn" style={{ textDecoration: "none" }}>
+              <Play size={16} /> 开始学习
+            </Link>
+          </div>
+        ) : (
+          <div className="pp-study-not-ready">
+            <p className="pp-field-error"><AlertCircle size={14} /> {readiness.reason}</p>
+            <p className="pp-preview-note" style={{ marginTop: "8px", fontSize: "13px" }}>本阶段仅支持 reading section + careful_reading group + 内联 choice 选择题。</p>
+          </div>
         )}
       </section>
 

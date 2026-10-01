@@ -417,3 +417,41 @@ Private Paper Management + JSON Import UI：私有卷列表页、JSON 导入页�
 - 初版编码归一化、共享校验、按钮禁用和未完成验收的历史描述以上述修补为准。旧章节测试数量保留为历史记录。
 - PRIVATE_MANAGEMENT_UI / PRIVATE_JSON_IMPORT_UI=YES；PRIVATE_LEARNING_FLOW / PRIVATE_SYNC=NO；无 Prisma 变更，无 Paper 001 内容变更。
 - 详情：V14_PHASE1C1_REPORT.md；最终 Git closure：本地 output/v14c1-git-closure.md。只普通推送当前 feature，不 merge main/tag/Release/force push。完成后停止，不开始 Phase 1D/1E。
+
+## V14 Phase 1D.1（2026-10-01，分支 feature/v14-real-content-rights）
+
+### 目标
+Private Paper Learning MVP：让已导入的符合要求的私有卷完成详情页 → 开始学习 → 作答 → 提交 → 查看正确率/正确答案/解析 → 返回详情。仅支持 reading section + careful_reading group + 内联 choice questions。不奖励 XP/Streak/全局统计，不做服务端学习记录或跨设备同步，使用 sessionStorage 按 user.id+paperId 隔离本地进度。
+
+### 已完成并验证
+- **readiness 判定模块** `src/lib/private-papers/readiness.ts`：checkPrivatePaperReadiness(content) 检查 isPartial!==true、仅 reading section、仅 careful_reading group、无 questionRefs/assetIds、仅 choice 题、options>=2 且格式合法、answerId 存在且匹配、prompt 非空、至少 1 题；不静默跳过不支持内容。computePrivateContentHash（djb2）用于 sessionStorage 进度校验。scorePrivateAnswers 判分（correct/total/accuracy 保留1位小数）。
+- **学习页服务端组件** `src/app/me/private-papers/[paperId]/study/page.tsx`：auth() 服务端 session 校验、privatePaperIdFromRoute 解码、getPrivatePaper 读取（owner-scoped）、checkPrivatePaperReadiness 判定、渲染 StudyClient。未登录重定向，NOT_FOUND 走 notFound()。
+- **StudyClient** `src/app/me/private-papers/[paperId]/study/StudyClient.tsx`：作答状态管理（合并 StudyState 对象，与 PaperProvider 同构）、前后题导航、已答/未答计数、题号跳转 dots、未答题提交确认 modal、提交冻结、结算正确率、结果页（正确答案高亮+用户答案标记+解析/暂无解析）、重新练习（清空 sessionStorage 新建轮次）、sessionStorage 持久化（key=`private-study:`+userId+`:`+paperId）、恢复前验证身份+paperId+contentHash（内容变更则失效旧进度）、存储不可用/损坏容错、账号切换隔离。
+- **详情页更新** `DetailClient.tsx`：新增"学习"section——ready 时显示题目数量+说明+"开始学习"按钮，不 ready 时显示具体原因+支持范围说明。
+- **CSS**：globals.css 追加 pp-study-* 系列样式（进度条、阅读材料区、选项按钮、导航、题号 dots、modal、分数展示、答题回顾列表、正确/错误高亮、移动端响应式）。
+- **lint 修复**：React 19 `react-hooks/set-state-in-effect` 严格禁止 effect 中同步 setState。最终方案将 answers/currentIndex/submitted 合并为单个 StudyState 对象，restore effect 中使用 `setStudyState(loadStudyStateFromStorage(...))` 单次调用（与 PaperProvider 完全同构），lint 通过。
+- **测试**：35/35 PASS
+- **Gates**：npm test 709/709、typecheck PASS、lint 0 errors 0 warnings、build PASS、content:validate/stats/rights/audio-validate 全部 PASS
+- **浏览器 E2E**：导入合法卷 → 详情页"开始学习" → 学习页作答 → 提交 → 结果页正确率/解析 → 刷新 sessionStorage 恢复 → 重新练习重置 → 未答题确认 modal，全部通过
+
+### 未做（保持 Phase 1D 边界）
+- 未开始 Phase 1E（私有卷云同步）
+- 未实现 XP/Streak/学习统计/Daily Plan/Review 奖励
+- 未实现服务端学习记录持久化（仅 sessionStorage 标签页本地）
+- 未支持 listening/translation/writing/cloze/matching 等题型
+- 未修改 Paper 001 正文/答案/音频/内容版本
+- 未 merge main / 打 tag / 建 Release
+
+### 关键文件
+- 新增：`src/lib/private-papers/readiness.ts`、`src/app/me/private-papers/[paperId]/study/page.tsx`、`src/app/me/private-papers/[paperId]/study/StudyClient.tsx`、`tests/v14-private-paper-study.test.ts`
+- 修改：`src/app/me/private-papers/[paperId]/DetailClient.tsx`、`src/app/globals.css`
+- 截图：`output/v14d1-screenshots/`（3 张）
+
+### 最终字段
+- PRIVATE_LEARNING_FLOW=LIMITED_READING_CHOICE_MVP
+- PRIVATE_PROGRESS=TAB_LOCAL_ONLY
+- PRIVATE_REVIEW=NOT_IMPLEMENTED
+- PRIVATE_DAILY_PLAN=NOT_IMPLEMENTED
+- PRIVATE_SYNC=NOT_IMPLEMENTED
+- PRIVATE_XP=NOT_IMPLEMENTED
+- 无 Prisma 变更，无 Paper 001 内容变更
