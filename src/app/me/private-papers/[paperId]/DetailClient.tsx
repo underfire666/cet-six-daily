@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, Trash2, Check, X, Clock, AlertCircle, Loader2, Play } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Check, X, Clock, AlertCircle, Loader2, Play, BookX } from "lucide-react";
 import { countContentStats } from "@/lib/private-papers/validation";
 import { checkPrivatePaperReadiness } from "@/lib/private-papers/readiness";
 
@@ -257,6 +257,15 @@ export default function PrivatePaperDetailPage({ paperId }: { paperId: string })
             <p className="pp-preview-note" style={{ marginTop: "8px", fontSize: "13px" }}>本阶段仅支持 reading section + careful_reading group + 内联 choice 选择题。</p>
           </div>
         )}
+      </section>
+
+      {/* Wrong items */}
+      <section className="pp-detail-section">
+        <h3>私有错题</h3>
+        <p className="pp-preview-note">提交学习结果后，答错的题目会自动收录到私有错题本。仅记录当前内容版本的有效错题。</p>
+        <Link href={`/me/private-papers/${encodeURIComponent(paperId)}/wrong-items`} className="pp-secondary-btn" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <BookX size={16} /> 查看错题本
+        </Link>
       </section>
 
       {/* Metadata */}

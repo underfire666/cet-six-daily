@@ -605,7 +605,6 @@ test("1B.1 storage failures remain INTERNAL_ERROR for every operation", async ()
     ["findFirst", () => createPrivatePaper("owner", { localPaperId: "x", title: "X", content: makeValidContent(), rightsAcknowledgement: makeRightsAck() })],
     ["findUnique", () => getPrivatePaper("owner", "private:owner:x")],
     ["findMany", () => listPrivatePapers("owner")],
-    ["findUnique", () => updatePrivatePaper("owner", "private:owner:x", { title: "X" })],
   ] as const) {
     const original = prisma.privatePaper[method];
     Object.assign(prisma.privatePaper, { [method]: async () => { throw Error("DB disconnected"); } });
@@ -614,8 +613,10 @@ test("1B.1 storage failures remain INTERNAL_ERROR for every operation", async ()
   }
   const transaction = prisma.$transaction;
   Object.assign(prisma, { $transaction: async () => { throw Error("DB disconnected"); } });
-  try { await assert.rejects(deletePrivatePaper("owner", "private:owner:x"), (e: PrivatePaperStoreError) => e.code === "INTERNAL_ERROR"); }
-  finally { Object.assign(prisma, { $transaction: transaction }); }
+  try {
+    await assert.rejects(updatePrivatePaper("owner", "private:owner:x", { title: "X" }), (e: PrivatePaperStoreError) => e.code === "INTERNAL_ERROR");
+    await assert.rejects(deletePrivatePaper("owner", "private:owner:x"), (e: PrivatePaperStoreError) => e.code === "INTERNAL_ERROR");
+  } finally { Object.assign(prisma, { $transaction: transaction }); }
 
 });
 test("1B.1 Prisma duplicate and concurrent missing-row codes are normalized", async () => {
@@ -627,8 +628,8 @@ test("1B.1 Prisma duplicate and concurrent missing-row codes are normalized", as
     Object.assign(prisma.privatePaper, { create: async () => { throw new Prisma.PrismaClientKnownRequestError("not an English unique message", { code: "P2002", clientVersion: "6.19.3" }); } });
     try { await assert.rejects(createPrivatePaper(user.id, input), (e: PrivatePaperStoreError) => e.code === "DUPLICATE_ID"); } finally { Object.assign(prisma.privatePaper, { create: originalCreate }); }
     const paper = await createPrivatePaper(user.id, input);
-    const originalUpdate = prisma.privatePaper.update;
-    Object.assign(prisma.privatePaper, { update: async () => { throw new Prisma.PrismaClientKnownRequestError("concurrent deletion", { code: "P2025", clientVersion: "6.19.3" }); } });
-    try { await assert.rejects(updatePrivatePaper(user.id, paper.paperId, { title: "Y" }), (e: PrivatePaperStoreError) => e.code === "NOT_FOUND"); } finally { Object.assign(prisma.privatePaper, { update: originalUpdate }); }
+    const transaction = prisma.$transaction;
+    Object.assign(prisma, { $transaction: async () => { throw new Prisma.PrismaClientKnownRequestError("concurrent deletion", { code: "P2025", clientVersion: "6.19.3" }); } });
+    try { await assert.rejects(updatePrivatePaper(user.id, paper.paperId, { title: "Y" }), (e: PrivatePaperStoreError) => e.code === "NOT_FOUND"); } finally { Object.assign(prisma, { $transaction: transaction }); }
   } finally { await prisma.user.delete({ where: { id: user.id } }); }
 });

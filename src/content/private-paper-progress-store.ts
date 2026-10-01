@@ -2,6 +2,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { checkPrivatePaperReadiness, type PrivateFlatQuestion } from "@/lib/private-papers/readiness";
+import { recordWrongItems } from "@/content/private-wrong-item-store";
 
 export type PrivatePaperProgressErrorCode = "NOT_FOUND" | "VALIDATION_ERROR" | "CONFLICT" | "NOT_READY" | "CONTENT_CHANGED" | "INTERNAL_ERROR";
 export interface PrivatePaperProgressConflictInfo {
@@ -19,7 +20,7 @@ export interface PrivatePaperProgressView {
   progressVersion: number; paperId: string; attemptId: string; contentHash: string;
   answers: Record<string, string>; currentIndex: number; submitted: boolean; revision: number; updatedAt: string;
 }
-export interface PutPrivatePaperProgressResult { revision: number; updatedAt: string; }
+export interface PutPrivatePaperProgressResult { revision: number; updatedAt: string; wrongItemsRecorded: number; }
 export interface PrivateProgressSnapshot { progress: PrivatePaperProgressView | null; revision: number; invalidated: boolean; }
 const key = (userId: string, paperId: string) => ({ userId_paperId: { userId, paperId } });
 const record = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -90,7 +91,7 @@ export async function putPrivatePaperProgress(userId: string, paperId: string, i
     const receipt = await tx.syncMutation.findUnique({ where: { userId_mutationId: { userId, mutationId: String(mutationId) } } });
     if (receipt) {
       if (receipt.entityType !== "privateProgress" || receipt.entityId !== paperId || !record(receipt.payload) || receipt.payload.request !== canonical || !record(receipt.payload.result)) invalid("mutationId reused with different request");
-      return { revision: Number(receipt.payload.result.revision), updatedAt: String(receipt.payload.result.updatedAt) };
+      return { revision: Number(receipt.payload.result.revision), updatedAt: String(receipt.payload.result.updatedAt), wrongItemsRecorded: Number(receipt.payload.result.wrongItemsRecorded ?? 0) };
     }
     const existing = await tx.privatePaperProgress.findUnique({ where: key(userId, paperId) });
     const conflict = (kind: "revision_conflict" | "attempt_mismatch"): never => {
@@ -103,7 +104,15 @@ export async function putPrivatePaperProgress(userId: string, paperId: string, i
     const saved = existing
       ? await tx.privatePaperProgress.update({ where: key(userId, paperId), data })
       : await tx.privatePaperProgress.create({ data: { userId, paperId, ...data } });
-    const result = { revision: saved.revision, updatedAt: saved.updatedAt.toISOString() };
+    // Record wrong items inside the SAME transaction — only on first submission for this attempt.
+    // Same attemptId re-submit / mutationId retry does not re-record or increment.
+    let wrongItemsRecorded = 0;
+    const isFirstSubmissionForAttempt = Boolean(submitted) && (!existing?.submitted || existing.attemptId !== attemptId);
+    if (isFirstSubmissionForAttempt) {
+      const wr = await recordWrongItems(tx, userId, paperId, String(contentHash), String(attemptId), readiness.questions, answers);
+      wrongItemsRecorded = wr.recorded;
+    }
+    const result = { revision: saved.revision, updatedAt: saved.updatedAt.toISOString(), wrongItemsRecorded };
     await tx.syncMutation.create({ data: { userId, mutationId: String(mutationId), entityType: "privateProgress", entityId: paperId, operation: "upsert", payload: { request: canonical, result }, status: "applied" } });
     return result;
   }));

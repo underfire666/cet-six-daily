@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   RotateCcw,
   BookOpen,
+  BookX,
   RefreshCw,
   Cloud,
   CloudOff,
@@ -74,6 +75,7 @@ export default function StudyClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   // ── V14 Phase 1E.1: cloud sync state ──
   const [syncStatus, setSyncStatus] = useState<PrivateSyncStatus>("local_saved");
+  const [wrongItemsCount, setWrongItemsCount] = useState(0);
   const [conflictServerProgress, setConflictServerProgress] = useState<RemoteProgress | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const activeBinding = useRef<string | null>(null);
@@ -145,6 +147,7 @@ export default function StudyClient({
         } else if (studyRef.current.submitted || Object.keys(studyRef.current.answers).length) throw new Error("Cloud progress unavailable");
       }
       if (result.revisions[paperId]) knownRevisionRef.current = Math.max(knownRevisionRef.current, result.revisions[paperId]);
+      if (result.wrongItemsRecorded?.[paperId] && studyRef.current.submitted) setWrongItemsCount(result.wrongItemsRecorded[paperId]);
       setSyncStatus(result.failed ? "failed" : result.pending ? "pending" : "synced");
     } catch {
       if (current()) setSyncStatus("failed");
@@ -223,7 +226,7 @@ export default function StudyClient({
     if (!identityMatches || !ready) return;
     const online = () => { void pushSync(); };
     const acknowledge = (event: Event) => {
-      const detail = (event as CustomEvent<{ userId: string; paperId: string; contentHash: string; attemptId: string; revision: number }>).detail;
+      const detail = (event as CustomEvent<{ userId: string; paperId: string; contentHash: string; attemptId: string; revision: number; wrongItemsRecorded?: number }>).detail;
       if (!detail || detail.userId !== ownerId || detail.paperId !== paperId || detail.contentHash !== contentHash || detail.attemptId !== attemptIdRef.current || activeBinding.current !== binding) return;
       knownRevisionRef.current = Math.max(knownRevisionRef.current, detail.revision);
       try {
@@ -234,6 +237,9 @@ export default function StudyClient({
         if (!saved) setProgressStatus("storage_write_failed");
         setStorageAvailable(saved);
         setSyncStatus(pending ? "pending" : "synced");
+        if (next.submitted && typeof detail.wrongItemsRecorded === "number" && detail.wrongItemsRecorded > 0) {
+          setWrongItemsCount(detail.wrongItemsRecorded);
+        }
       } catch { setSyncStatus("failed"); }
     };
     window.addEventListener("online", online);
@@ -533,6 +539,13 @@ export default function StudyClient({
         )}
         {syncStatus === "pending" && <div className="pp-sync-status-banner" role="status">等待云端同步…</div>}
         {syncStatus === "synced" && <div className="pp-sync-status-banner" role="status">进度已同步到云端</div>}
+        {wrongItemsCount > 0 && studyState.submitted && (
+          <div className="pp-wrongbook-notification" role="status">
+            <BookX size={16} />
+            <span>{wrongItemsCount} 道错题已加入私有错题本</span>
+            <Link href={`/me/private-papers/${encodeURIComponent(paperId)}/wrong-items`} className="pp-wrongbook-link">查看错题本</Link>
+          </div>
+        )}
         {renderConflictDialog()}
         <section className="pp-detail-section">
           <div className="pp-study-score">

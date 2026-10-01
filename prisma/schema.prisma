@@ -31,6 +31,7 @@ model User {
   migrationRecords MigrationRecord[]
   privatePapers PrivatePaper[]
   privatePaperProgress PrivatePaperProgress[]
+  privateWrongItems PrivateWrongItem[]
 }
 
 model Profile {
@@ -237,4 +238,26 @@ model PrivatePaperProgress {
 
   @@unique([userId, paperId])
   @@index([userId])
+}
+
+model PrivateWrongItem {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paperId       String   // matches PrivatePaper.paperId (private namespace)
+  contentHash   String   // content version this wrong answer belongs to
+  questionId    String   // stable question identity (questionId from content), NOT display order
+  attemptId     String   // last attempt that recorded this wrong answer
+  userAnswer    String?  // user's selected optionId; null = unanswered
+  correctAnswer String   // correct optionId
+  wrongCount    Int      @default(1) // cumulative wrong attempts for this question
+  status        String   @default("active") // active | content_changed | paper_deleted
+  firstSeenAt   DateTime @default(now()) @db.Timestamptz(6)
+  lastSeenAt    DateTime @default(now()) @db.Timestamptz(6)
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, paperId, questionId])
+  @@index([userId, paperId])
+  @@index([userId, status])
 }

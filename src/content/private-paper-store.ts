@@ -4,6 +4,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { privatePaperStableId, validatePrivatePaper, type PrivateRightsAcknowledgement } from "./private-content";
 import { isRecord, validTitle, validatePrivateDraft } from "./private-paper-validation";
+import { deleteWrongItemsForPaper, markWrongItemsContentChanged } from "./private-wrong-item-store";
+import { computePrivateContentHash } from "@/lib/private-papers/readiness";
 export interface CreatePrivatePaperInput { localPaperId: string; title: string; content: Record<string, unknown>; rightsAcknowledgement: PrivateRightsAcknowledgement; }
 export interface UpdatePrivatePaperInput { title?: string; content?: Record<string, unknown>; rightsAcknowledgement?: PrivateRightsAcknowledgement; }
 export class PrivatePaperStoreError extends Error {
@@ -74,10 +76,11 @@ export async function updatePrivatePaper(userId: string, paperId: string, update
   owner(userId); checkPaperId(paperId);
   if (!isRecord(updates)) invalid("updates object required");
   if (updates.content !== undefined && !isRecord(updates.content)) invalid("content object required");
-  return database(async () => {
-    const existing = await prisma.privatePaper.findUnique({ where: key(userId, paperId) });
+  return database(() => prisma.$transaction(async tx => {
+    const existing = await tx.privatePaper.findUnique({ where: key(userId, paperId) });
     if (!existing) throw new PrivatePaperStoreError("NOT_FOUND", "paper not found");
     const previous = existing.content as Record<string, unknown>, patch = (updates.content ?? {}) as Record<string, unknown>;
+    const oldContentHash = computePrivateContentHash(previous);
     const title = titleFor(updates, patch, existing.title);
     const ack = updates.rightsAcknowledgement === undefined ? previous.rightsAcknowledgement : acknowledge(updates.rightsAcknowledgement);
     const merged = { ...previous, ...patch };
@@ -90,8 +93,14 @@ export async function updatePrivatePaper(userId: string, paperId: string, update
       }
     }
     const content = guardedContent(merged, userId, paperId, String(previous.ownerNamespace), title, previous.importedAt, ack);
-    return prisma.privatePaper.update({ where: key(userId, paperId), data: { title, content }, select: { id: true, paperId: true, title: true } });
-  });
+    const newContentHash = computePrivateContentHash(content);
+    const updated = await tx.privatePaper.update({ where: key(userId, paperId), data: { title, content }, select: { id: true, paperId: true, title: true } });
+    // When content changes, old wrong answers must not be explained with new content.
+    if (oldContentHash !== newContentHash) {
+      await markWrongItemsContentChanged(tx, userId, paperId);
+    }
+    return updated;
+  }));
 }
 export async function deletePrivatePaper(userId: string, paperId: string): Promise<{ success: true }> {
   owner(userId); checkPaperId(paperId);
@@ -99,6 +108,7 @@ export async function deletePrivatePaper(userId: string, paperId: string): Promi
     const result = await tx.privatePaper.deleteMany({ where: { userId, paperId } });
     if (!result.count) throw new PrivatePaperStoreError("NOT_FOUND", "paper not found");
     await tx.privatePaperProgress.deleteMany({ where: { userId, paperId } });
+    await deleteWrongItemsForPaper(tx, userId, paperId);
     return { success: true as const };
   }));
 }

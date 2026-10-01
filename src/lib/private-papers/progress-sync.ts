@@ -8,7 +8,7 @@ export interface PrivateProgressPayload {
 export interface RemoteProgress extends PrivateProgressPayload { paperId: string; progressVersion: number; revision: number; updatedAt: string; }
 export interface RemoteSnapshot { progress: RemoteProgress | null; revision: number; invalidated: boolean; }
 export type PrivateSyncStatus = "local_saved" | "pending" | "synced" | "failed" | "conflict";
-export interface PushPrivateProgressResult { applied: number; failed: number; conflicts: string[]; revisions: Record<string, number>; invalid: Record<string, string>; pending: number; }
+export interface PushPrivateProgressResult { applied: number; failed: number; conflicts: string[]; revisions: Record<string, number>; invalid: Record<string, string>; pending: number; wrongItemsRecorded: Record<string, number>; }
 interface PrivateMutation extends QueuedMutation { blocked?: boolean; }
 export const PRIVATE_PROGRESS_SYNC_EVENT = "cet-daily:private-progress-synced";
 const activeUserId = (): string | null => typeof window === "undefined" ? null : (window as unknown as { __CET_SYNC_USER_ID?: string }).__CET_SYNC_USER_ID ?? null;
@@ -75,7 +75,7 @@ export function pushPrivateProgressQueue(options: { userId: string; paperId?: st
   return task;
 }
 async function pushPrivateQueue({ userId, paperId: onlyPaper, fetchImpl = fetch, onConflict }: { userId: string; paperId?: string; fetchImpl?: typeof fetch; onConflict?: (paperId: string, server: RemoteProgress) => void }): Promise<PushPrivateProgressResult> {
-  const result: PushPrivateProgressResult = { applied: 0, failed: 0, conflicts: [], revisions: {}, invalid: {}, pending: 0 };
+  const result: PushPrivateProgressResult = { applied: 0, failed: 0, conflicts: [], revisions: {}, invalid: {}, pending: 0, wrongItemsRecorded: {} };
   if (!userId || activeUserId() !== userId) { result.failed = loadPrivateProgressQueue(userId).length; return result; }
   const generation = getSyncIdentityGeneration();
   const active = () => activeUserId() === userId && getSyncIdentityGeneration() === generation;
@@ -117,7 +117,8 @@ async function pushPrivateQueue({ userId, paperId: onlyPaper, fetchImpl = fetch,
       });
       savePrivateQueue(userId, remaining);
       result.applied++; result.revisions[paperId] = revision;
-      window.dispatchEvent(new CustomEvent(PRIVATE_PROGRESS_SYNC_EVENT, { detail: { userId, paperId, attemptId: payload.attemptId, contentHash: payload.contentHash, revision } }));
+      if (Number.isSafeInteger(data.wrongItemsRecorded) && Number(data.wrongItemsRecorded) > 0) result.wrongItemsRecorded[paperId] = Number(data.wrongItemsRecorded);
+      window.dispatchEvent(new CustomEvent(PRIVATE_PROGRESS_SYNC_EVENT, { detail: { userId, paperId, attemptId: payload.attemptId, contentHash: payload.contentHash, revision, wrongItemsRecorded: Number.isSafeInteger(data.wrongItemsRecorded) ? Number(data.wrongItemsRecorded) : 0 } }));
     } catch {
       if (!active()) break;
       savePrivateQueue(userId, loadPrivateProgressQueue(userId).map(m => m.mutationId === item.mutationId ? { ...m, status: "failed" } : m));
