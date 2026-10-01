@@ -1,3 +1,21 @@
+# Phase 1E.1 实现合约修订（2026-10-01）
+
+本节优先于下面保留的初版设计。实际验收见 V14_PHASE1E1_REPORT.md。
+
+- PrivatePaperProgress 每 owner/paper 一条最新进度，progressVersion=1。
+- owner 由服务端 session 派生；请求必须带 mutationId、attemptId、contentHash、baseRevision、progressVersion、合法 answers/currentIndex/submitted。
+- 写入事务先锁 PrivatePaper 行，再检查当前内容及 revision。新建要求 baseRevision=0；普通 save 要求同轮次，显式 restart 要求新 attemptId 且基础版本匹配。revision 永远递增。
+- SyncMutation 同事务记录规范请求和成功回执；同请求重放不产生新更新，不同请求不得重用 ID。
+- GET 是只读净化；内容/版本失效时返回 progress=null、当前 revision、invalidated=true，便于明确重启。
+- PRIVATE 使用独立 localStorage 账号队列，保留尝试过但未确认的不可变请求。新编辑只合并尚未发送的快照；收到旧请求确认后才更新新快照的基础版本。
+- 恢复优先检查同内容的本地 dirty 状态/队列；有未上传内容就保留本地并同步或显式冲突决策。无本地修改才采用有效云端。读取失败不能当作无记录。
+- 全局 V12 同步只处理全局队列；自动 PRIVATE 重试独立执行，不让它的失败阻断全局数据。账号代次与练习轮次保护迟到响应。
+- 不支持内容的旧请求停止同步；删除卷及进度同事务；旧请求不重建卷。PRIVATE 不接全局奖励或学习记录。
+
+---
+
+## 初版设计（历史记录）
+
 # V14 Phase 1E.1 — Private Study Progress Sync 设计说明
 
 日期：2026-10-01

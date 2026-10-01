@@ -1,8 +1,18 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1E.1（Private Study Progress Cloud Sync MVP，2026-10-01）
+## 当前工作版本：V14 Phase 1E.1（Private Study Progress Cloud Sync MVP，修复与验收通过，2026-10-01）
 
-当前工作分支 feature/v14-real-content-rights。PRIVATE 私有卷学习进度云同步已实现：服务端 PrivatePaperProgress 存储 + revision 乐观并发 + attemptId 练习轮次隔离；客户端复用 V12 账号隔离队列（entityType=privateProgress, snapshot 合并），独立 PUT 到专用进度端点；StudyClient 集成云端优先恢复、500ms debounce 推送、4 种同步状态、revision 冲突三选项弹窗（采用云端/保留本地/重新开始）。私有练习仍不接 XP、Streak、全局学习统计、Review、Daily Plan。PDF/图片/音频上传、OCR/AI 未实现。完成 Phase 1E.1 后停止，不开始 Phase 1E.2，也不合并 main 或发布标签。
+工作分支 feature/v14-real-content-rights。PRIVATE 阅读选择题进度云端保存、跨设备恢复、持久私有队列、冲突三种决策已实现。不接 XP/Streak/全局统计/Review/Daily Plan；不做其他私有题型、PDF/OCR/AI/分享。完成本阶段后停止，不开始 Phase 1E.2，不 merge main/tag/Release。
+
+### Phase 1E.1 最终硬化验收
+
+- 独立 owner-scoped PRIVATE 队列，旧共享队列安全迁移；全局 push/pending/手动同步不再被 PRIVATE 阻塞。立即持久化草稿/队列，仅对网络发送作 500ms 合并。
+- 数据库事务锁定试卷行，串行检查 readiness/hash/revision/attempt；并发同版本只成功一个。删除试卷和进度同事务。GET 净化只读，不覆盖较新写入。
+- mutationId + SyncMutation 请求回执实现重放幂等；mode=restart 条件切换轮次，旧轮次拒绝；内容更新提供 revision 供新进度重启。
+- 未上传本地/队列优先保留，关闭标签页可恢复队列草稿。确认失败读取与无云端记录，空队列不再误报已同步；账号代次保护迟到响应。
+- 自动检查：791/791 tests、typecheck、lint 0/0、build、四项 content gates 全部通过。
+- 55 项浏览器检查通过；两个独立 Chrome context；375/390/430/768/1440px 学习/冲突/结果页，无横向溢出或最后按钮遮挡；15 张截图。测试用户及关联数据均按精确 id/email 清理。
+- 最新报告 V14_PHASE1E1_REPORT.md；截图/日志及最终 Git SHA 留在 output/ 本地，不作为公开附件上传。旧章节保留为历史，当前状态以本节及最新报告为准。
 
 ### Phase 1D.1 最终收尾
 

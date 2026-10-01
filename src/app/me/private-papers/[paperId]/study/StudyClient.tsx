@@ -107,6 +107,10 @@ export default function StudyClient({
     const attempt = attemptIdRef.current;
     const current = () => activeBinding.current === binding && generation === syncGeneration.current && attemptIdRef.current === attempt;
     try {
+      const memory = studyRef.current;
+      if (memory.dirty && !loadPrivateProgressQueue(ownerId).some(m => m.entityId === paperId)) {
+        enqueuePrivateProgress(paperId, { attemptId: attempt!, contentHash, answers: memory.answers, currentIndex: memory.currentIndex, submitted: memory.submitted, baseRevision: knownRevisionRef.current, mode: memory.mode });
+      }
       const result = await pushPrivateProgressQueue({ userId: ownerId, paperId });
       if (!current()) return;
       if (result.invalid[paperId]) {
@@ -124,12 +128,28 @@ export default function StudyClient({
         } else setSyncStatus("failed");
         return;
       }
+      if (!result.applied && !result.failed && !result.pending) {
+        // An empty queue alone does not prove that a previously failed cloud read recovered.
+        const snapshot = await fetchRemoteSnapshot(paperId);
+        if (!current()) return;
+        const remote = snapshot.progress;
+        if (remote) {
+          if (remote.contentHash !== contentHash || remote.currentIndex >= questions.length || !Object.entries(remote.answers).every(([k,v]) => questions[Number(k)]?.options.some(o => o.id === v))) throw new Error("Invalid remote progress");
+          if (studyRef.current.dirty) {
+            setConflictServerProgress(remote); setShowConflictDialog(true); setSyncStatus("conflict"); return;
+          }
+          attemptIdRef.current = remote.attemptId; knownRevisionRef.current = remote.revision;
+          const restored = { answers: remote.answers, currentIndex: remote.currentIndex, submitted: remote.submitted, attemptId: remote.attemptId, revision: remote.revision, dirty: false };
+          updateStudy(restored);
+          if (!saveStudyProgress(ownerId, paperId, contentHash, restored)) setProgressStatus("storage_write_failed");
+        } else if (studyRef.current.submitted || Object.keys(studyRef.current.answers).length) throw new Error("Cloud progress unavailable");
+      }
       if (result.revisions[paperId]) knownRevisionRef.current = Math.max(knownRevisionRef.current, result.revisions[paperId]);
       setSyncStatus(result.failed ? "failed" : result.pending ? "pending" : "synced");
     } catch {
       if (current()) setSyncStatus("failed");
     }
-  }, [binding, ownerId, paperId, contentHash]);
+  }, [binding, ownerId, paperId, contentHash, questions, updateStudy]);
 
   // Invalidate outstanding callbacks before any interaction after a session change.
   useLayoutEffect(() => {
@@ -301,6 +321,7 @@ export default function StudyClient({
   function persistProgress(next: StudyProgressState) {
     if (activeBinding.current !== binding || !ready || verifyStatus === "invalid") return;
     const draft = { ...next, attemptId: attemptIdRef.current!, revision: knownRevisionRef.current, dirty: true };
+    updateStudy(draft);
     const ok = saveStudyProgress(ownerId, paperId, contentHash, draft);
     setStorageAvailable(ok);
     if (!ok) setProgressStatus("storage_write_failed");
