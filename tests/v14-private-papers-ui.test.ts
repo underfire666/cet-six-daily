@@ -80,7 +80,7 @@ test("4a. validateImportDraft: all valid", () => {
   const result = validateImportDraft({
     localPaperId: "test-001",
     title: "Test Paper",
-    content: { schemaVersion: "1.0.0" },
+    content: { schemaVersion: "1.0.0", sections: [], isPartial: true },
     parseError: "",
     acknowledged: true,
   });
@@ -447,4 +447,37 @@ test("14a. refresh re-reads from server (list after create)", async () => {
 // Cleanup prisma connection after all tests
 test.after(async () => {
   await prisma.$disconnect();
+});
+
+
+// Phase 1C.1 closure regressions: shared validation used by the actual form.
+test("import rejects malformed sections before making an API request", () => {
+  const result = validateImportDraft({ localPaperId: "draft", title: "Draft", content: { schemaVersion: "1.0.0", sections: "bad" }, parseError: "", acknowledged: true });
+  assert.equal(result.valid, false); assert.ok(result.errors.some(e => e.field === "content"));
+});
+test("import rejects unsupported schema and conflicting content title", () => {
+  const base = { localPaperId: "draft", title: "Draft", parseError: "", acknowledged: true };
+  assert.equal(validateImportDraft({ ...base, content: { schemaVersion: "99", sections: [] } }).valid, false);
+  assert.equal(validateImportDraft({ ...base, content: { schemaVersion: "1.0.0", sections: [], title: "Other" } }).valid, false);
+});
+test("request byte limit includes UTF-8 and JSON envelope", async () => {
+  const { serializeImport } = await import("../src/lib/private-papers/validation");
+  const draft = { localPaperId: "draft", title: "Draft", content: { schemaVersion: "1.0.0", sections: [], note: "中".repeat(350000) }, parseError: "", acknowledged: true };
+  assert.ok(serializeImport(draft).bytes > IMPORT_BODY_LIMIT);
+  assert.equal(validateImportDraft(draft).valid, false);
+  const envelope = { ...draft, content: { schemaVersion: "1.0.0", sections: [], note: "a".repeat(IMPORT_BODY_LIMIT - 60) } };
+  assert.ok(JSON.stringify(envelope.content).length < IMPORT_BODY_LIMIT);
+  assert.equal(validateImportDraft(envelope).valid, false);
+});
+test("question counts include questionRefs and legacy schema display", () => {
+  const stats = countContentStats({ schemaVersion: 1, sections: [{ groups: [{ questionRefs: [{ contentId: "r1", order: 1 }] }] }] });
+  assert.equal(stats.questions, 1); assert.equal(stats.schemaVersion, "1（兼容格式）");
+});
+test("private route IDs normalize only the encoded namespace boundary", async () => {
+  const { privatePaperIdFromRoute } = await import("../src/lib/private-papers/validation");
+  for (const id of ["private:owner:paper%", "private:owner:paper%25", "private:owner:paper%25%", "private:owner:literal%3A", "private:owner:中文", "private:owner:with space"]) {
+    assert.equal(privatePaperIdFromRoute(id), id);
+    assert.equal(privatePaperIdFromRoute(encodeURIComponent(id)), id);
+  }
+  for (const invalid of ["other", "private%3Aowner%3Abad%", "private%3Zowner%3Ax"]) assert.throws(() => privatePaperIdFromRoute(invalid));
 });

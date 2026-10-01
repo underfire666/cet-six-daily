@@ -1,8 +1,8 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1B.1（v14.3.2，Private Storage Hardening，2026-10-01）
+## 当前工作版本：V14 Phase 1C.1（Private Paper Management + JSON Import UI，收尾验收通过，2026-10-01）
 
-当前工作分支 feature/v14-real-content-rights。PRIVATE 存储/CRUD/管理 UI（列表/导入/详情）已实现；sync、私有卷答题流程、上传 UI/OCR/AI 未实现。Phase 1C.1 完成后停止，不开始 Phase 1D。以下 V13/V14 旧章节保留为历史记录。
+当前工作分支 feature/v14-real-content-rights。PRIVATE 存储/CRUD/管理 UI（列表/导入/详情）已实现；专项 sync、私有卷答题流程、PDF/图片/音频上传、OCR/AI 未实现。JSON 文件选择与浏览器读取已实现，不存储文件原件。Phase 1C.1 完成后停止，不开始 Phase 1D。以下 V13/V14 旧章节保留为历史记录。
 
 ### V13.0.1 发布收尾
 
@@ -360,9 +360,9 @@ Private Storage Layer：Prisma PrivatePaper 表 + migration、CRUD 服务层（c
 - **新增 prisma CLI**：prisma@6.19.3 devDependency（用于 migration，与 @prisma/client 版本匹配）
 
 ### 未做（保持 Phase 1B 边界）
-- 未开始 Phase 1C（私有卷学习页/答题）
+- 未开始 Phase 1C（导入/管理 UI；学习流程属于 Phase 1D）
 - 未实现 PRIVATE_SYNC（Phase 1E 将复用 V12 account-scoped queue）
-- 未实现上传 UI / PDF / OCR / AI
+- 未实现 PDF/图片/音频上传、OCR/AI；JSON 本地文件导入见 Phase 1C.1
 - 未修改 Paper 001 正文/答案/音频/内容版本
 - 未 merge main / 打 tag / 建 Release
 
@@ -395,14 +395,25 @@ Private Paper Management + JSON Import UI：私有卷列表页、JSON 导入页�
 ### 未做（保持 Phase 1C 边界）
 - 未开始 Phase 1D（私有卷答题/学习流程）
 - 未开始 Phase 1E（私有卷云同步）
-- 未实现上传 UI / PDF / OCR / AI
+- 未实现 PDF/图片/音频上传、OCR/AI；JSON 本地文件导入见 Phase 1C.1
 - 未修改 Paper 001 正文/答案/音频/内容版本
 - 未 merge main / 打 tag / 建 Release
-- 文件导入模式浏览器 E2E 未验证（UI 已实现，仅验证粘贴模式）
+- 文件导入模式浏览器 E2E 已在收尾补齐（见下方）
 - 真机移动端软键盘未验证
-- 跨 owner 浏览器隔离未验证（单元测试已覆盖）
+- 跨 owner 浏览器隔离已在收尾补齐（见下方）
 
 ### 关键文件
 - 新增：`src/app/me/private-papers/page.tsx`、`src/app/me/private-papers/import/page.tsx`、`src/app/me/private-papers/[paperId]/page.tsx`、`src/lib/private-papers/validation.ts`、`tests/v14-private-papers-ui.test.ts`、`V14_PHASE1C1_REPORT.md`
 - 修改：`src/app/me/page.tsx`、`src/app/globals.css`
 - 截图：`output/v14c1-screenshots/`（8 张）
+
+### Phase 1C.1 收尾修补与最终验收
+
+- 三个页面增加服务端 auth()；交互拆分为 Client 组件。详情 ID 仅按 namespace 前缀规范化一次，保留字面 %25/%3A；真实导入、列表跳转、刷新通过。
+- 导入共用服务端结构校验器，检查完整 UTF-8 请求字节限额；未确认禁用提交，同步 ref 阻止重复提交，失败保留输入，文件读取乱序与提交旧内容保护。
+- 修复登录页忽略 callbackUrl，允许站内返回路径，拒绝外部跳转；修正详情删除文案与 questionRefs 计数。
+- 674/674 tests、8/8 gates PASS；44/44 真实 HTTP；64/64 Chrome 浏览器检查 PASS。
+- 375/390/430/768/1440px × 列表/导入/详情共 15 组检查：无横向滚动或导航覆盖末尾正文，15 张截图保存于 output/playwright/v14c1-closure/。
+- 初版编码归一化、共享校验、按钮禁用和未完成验收的历史描述以上述修补为准。旧章节测试数量保留为历史记录。
+- PRIVATE_MANAGEMENT_UI / PRIVATE_JSON_IMPORT_UI=YES；PRIVATE_LEARNING_FLOW / PRIVATE_SYNC=NO；无 Prisma 变更，无 Paper 001 内容变更。
+- 详情：V14_PHASE1C1_REPORT.md；最终 Git closure：本地 output/v14c1-git-closure.md。只普通推送当前 feature，不 merge main/tag/Release/force push。完成后停止，不开始 Phase 1D/1E。

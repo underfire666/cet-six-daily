@@ -3,7 +3,15 @@
  *  The server remains the final validation boundary.
  */
 
+import { validatePrivateDraft } from "@/content/private-paper-validation";
 export const IMPORT_BODY_LIMIT = 1024 * 1024; // 1 MiB
+
+/** Serialize once; use the same string for byte validation and the actual request. */
+export function serializeImport(draft: ImportDraft): { body: string; bytes: number } {
+  const body = JSON.stringify({ localPaperId: draft.localPaperId, title: draft.title,
+    content: draft.content, rightsAcknowledgement: { acknowledged: draft.acknowledged, statementVersion: "1.0" } });
+  return { body, bytes: new TextEncoder().encode(body).byteLength };
+}
 
 export interface ImportValidationResult {
   valid: boolean;
@@ -66,6 +74,12 @@ export function validateImportDraft(draft: ImportDraft): ImportValidationResult 
     errors.push({ field: "acknowledgement", message: "请确认权利声明" });
   }
 
+  if (draft.content) {
+    for (const message of validatePrivateDraft(draft.content)) errors.push({ field: "content", message });
+    if (draft.content.title !== undefined && draft.content.title !== draft.title) errors.push({ field: "title", message: "标题与 JSON 内的 title 不一致" });
+  }
+  if (serializeImport(draft).bytes > IMPORT_BODY_LIMIT) errors.push({ field: "content", message: "完整请求超过 1 MiB，请减少 JSON 内容" });
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -93,6 +107,7 @@ export function countContentStats(content: Record<string, unknown>): ContentStat
           if (grp && typeof grp === "object" && Array.isArray((grp as Record<string, unknown>).questions)) {
             questions += ((grp as Record<string, unknown>).questions as unknown[]).length;
           }
+          if (grp && typeof grp === "object" && Array.isArray((grp as Record<string, unknown>).questionRefs)) questions += ((grp as Record<string, unknown>).questionRefs as unknown[]).length;
         }
       }
     }
@@ -103,7 +118,7 @@ export function countContentStats(content: Record<string, unknown>): ContentStat
     groups,
     questions,
     isPartial: content.isPartial === true,
-    schemaVersion: typeof content.schemaVersion === "string" ? content.schemaVersion : "未知",
+    schemaVersion: content.schemaVersion === 1 ? "1（兼容格式）" : typeof content.schemaVersion === "string" ? content.schemaVersion : "未知",
   };
 }
 
@@ -115,4 +130,13 @@ export function hasSpecialPaperIdChars(paperId: string): boolean {
 /** Encode a paperId for use in a URL path segment. */
 export function encodePaperIdForUrl(paperId: string): string {
   return encodeURIComponent(paperId);
+}
+
+/** Normalize the route boundary, never decode literal escapes inside a raw ID. */
+export function privatePaperIdFromRoute(value: string): string {
+  if (value.startsWith("private:")) return value;
+  if (!/^private%3a/i.test(value)) throw new Error("invalid private paper route");
+  const decoded = decodeURIComponent(value);
+  if (!decoded.startsWith("private:")) throw new Error("invalid private paper route");
+  return decoded;
 }

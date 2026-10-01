@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { loginReturnPath } from "@/lib/auth/callback-url";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function LoginPage() {
       setError("邮箱或密码不正确");
       return;
     }
-    router.push("/me");
+    router.push(loginReturnPath(new URLSearchParams(window.location.search).get("callbackUrl")));
     router.refresh();
   }
 
