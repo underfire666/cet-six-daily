@@ -1,0 +1,118 @@
+/** Client-side validation helpers for private paper import.
+ *  These mirror the server-side checks but provide early feedback.
+ *  The server remains the final validation boundary.
+ */
+
+export const IMPORT_BODY_LIMIT = 1024 * 1024; // 1 MiB
+
+export interface ImportValidationResult {
+  valid: boolean;
+  errors: Array<{ field: string; message: string }>;
+}
+
+export interface ImportDraft {
+  localPaperId: string;
+  title: string;
+  content: Record<string, unknown> | null;
+  parseError: string;
+  acknowledged: boolean;
+}
+
+export function validateLocalPaperId(id: string): string | null {
+  if (!id.trim()) return "localPaperId 不能为空";
+  if (id.length > 128) return "localPaperId 不能超过 128 字符";
+  if (/[:\x00-\x1f\x7f]/.test(id)) return "localPaperId 不能包含冒号或控制字符";
+  return null;
+}
+
+export function validateTitle(title: string): string | null {
+  if (!title.trim()) return "标题不能为空";
+  if (title.length > 200) return "标题不能超过 200 字符";
+  return null;
+}
+
+export function parseJsonContent(text: string): { content: Record<string, unknown> | null; error: string } {
+  const trimmed = text.trim();
+  if (!trimmed) return { content: null, error: "" };
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return { content: parsed as Record<string, unknown>, error: "" };
+    }
+    return { content: null, error: "JSON 必须是对象（object），不能是数组或其他类型" };
+  } catch {
+    return { content: null, error: "JSON 格式错误，请检查语法" };
+  }
+}
+
+export function validateImportDraft(draft: ImportDraft): ImportValidationResult {
+  const errors: Array<{ field: string; message: string }> = [];
+
+  const idErr = validateLocalPaperId(draft.localPaperId);
+  if (idErr) errors.push({ field: "localPaperId", message: idErr });
+
+  const titleErr = validateTitle(draft.title);
+  if (titleErr) errors.push({ field: "title", message: titleErr });
+
+  if (!draft.content) {
+    if (draft.parseError) {
+      errors.push({ field: "content", message: draft.parseError });
+    } else {
+      errors.push({ field: "content", message: "请提供 JSON 内容" });
+    }
+  }
+
+  if (!draft.acknowledged) {
+    errors.push({ field: "acknowledgement", message: "请确认权利声明" });
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+export interface ContentStats {
+  sections: number;
+  groups: number;
+  questions: number;
+  isPartial: boolean;
+  schemaVersion: string;
+}
+
+export function countContentStats(content: Record<string, unknown>): ContentStats {
+  let sections = 0;
+  let groups = 0;
+  let questions = 0;
+
+  const secs = content.sections;
+  if (Array.isArray(secs)) {
+    sections = secs.length;
+    for (const sec of secs) {
+      if (sec && typeof sec === "object" && Array.isArray((sec as Record<string, unknown>).groups)) {
+        const grps = (sec as Record<string, unknown>).groups as unknown[];
+        groups += grps.length;
+        for (const grp of grps) {
+          if (grp && typeof grp === "object" && Array.isArray((grp as Record<string, unknown>).questions)) {
+            questions += ((grp as Record<string, unknown>).questions as unknown[]).length;
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    sections,
+    groups,
+    questions,
+    isPartial: content.isPartial === true,
+    schemaVersion: typeof content.schemaVersion === "string" ? content.schemaVersion : "未知",
+  };
+}
+
+/** Check if a paperId contains special characters that need encoding. */
+export function hasSpecialPaperIdChars(paperId: string): boolean {
+  return /[%\s中文]/.test(paperId) || /[\u4e00-\u9fff]/.test(paperId);
+}
+
+/** Encode a paperId for use in a URL path segment. */
+export function encodePaperIdForUrl(paperId: string): string {
+  return encodeURIComponent(paperId);
+}

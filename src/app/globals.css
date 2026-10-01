@@ -1063,3 +1063,99 @@ button:disabled {
 .me-seg-btn.sm { padding: 6px 10px; font-size: 12px; }
 .me-weight-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
 .me-spacer { height: 24px; }
+
+/* === V14 Private Papers === */
+.me-back-link { display: inline-flex; align-items: center; color: #495057; text-decoration: none; margin-right: 8px; }
+.me-back-link:hover { color: #2b8a3e; }
+.pp-actions { margin: 16px 0; }
+.pp-import-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; background: #2b8a3e; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; text-decoration: none; }
+.pp-import-btn:hover { background: #237032; }
+.pp-import-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.pp-error { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #fff5f5; border: 1px solid #ffa8a8; border-radius: 8px; color: #c92a2a; font-size: 14px; margin: 12px 0; }
+.pp-error-large { flex-direction: column; text-align: center; padding: 32px; gap: 12px; }
+.pp-error-large p { margin: 0; font-size: 16px; }
+.pp-empty { text-align: center; padding: 48px 24px; color: #868e96; }
+.pp-empty-icon { color: #ced4da; margin-bottom: 16px; }
+.pp-empty h2 { font-size: 18px; color: #495057; margin: 0 0 8px; }
+.pp-empty p { font-size: 14px; margin: 0 0 20px; }
+.pp-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.pp-card { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #fff; border: 1px solid #e9ecef; border-radius: 10px; text-decoration: none; transition: border-color 0.15s; }
+.pp-card:hover { border-color: #2b8a3e; }
+.pp-card-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pp-card-title { font-size: 15px; font-weight: 500; color: #212529; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp-card-meta { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #868e96; }
+.pp-card-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; flex-shrink: 0; }
+.pp-card-badge.draft { background: #fff3bf; color: #946700; }
+.pp-card-badge.complete { background: #d3f9d8; color: #2b8a3e; }
+
+/* Import form */
+.pp-import-form { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.pp-mode-tabs { display: flex; gap: 0; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; }
+.pp-mode-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: #fff; border: none; font-size: 14px; cursor: pointer; color: #495057; }
+.pp-mode-tab.active { background: #2b8a3e; color: #fff; }
+.pp-field { display: flex; flex-direction: column; gap: 6px; }
+.pp-field label { font-size: 14px; font-weight: 500; color: #495057; }
+.pp-input { padding: 10px 12px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 15px; width: 100%; box-sizing: border-box; }
+.pp-input:focus { outline: none; border-color: #2b8a3e; }
+.pp-input.error { border-color: #fa5252; }
+.pp-textarea { padding: 10px 12px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 13px; font-family: ui-monospace, monospace; width: 100%; box-sizing: border-box; resize: vertical; line-height: 1.5; }
+.pp-textarea:focus { outline: none; border-color: #2b8a3e; }
+.pp-textarea.error { border-color: #fa5252; }
+.pp-field-error { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #c92a2a; }
+.pp-file-area { border: 2px dashed #dee2e6; border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; position: relative; }
+.pp-file-area:hover { border-color: #2b8a3e; }
+.pp-file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.pp-file-placeholder { color: #868e96; font-size: 14px; }
+.pp-file-name { display: flex; align-items: center; justify-content: center; gap: 6px; color: #2b8a3e; font-size: 14px; }
+.pp-checkbox-label { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #495057; cursor: pointer; line-height: 1.5; }
+.pp-checkbox-label input { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; }
+.pp-preview { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 16px; }
+.pp-preview h3 { font-size: 15px; margin: 0 0 12px; color: #495057; }
+.pp-preview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center; }
+.pp-preview-grid > div { display: flex; flex-direction: column; gap: 2px; }
+.pp-preview-grid strong { font-size: 20px; color: #212529; }
+.pp-preview-grid span { font-size: 12px; color: #868e96; }
+.pp-preview-note { font-size: 12px; color: #946700; margin: 10px 0 0; background: #fff3bf; padding: 6px 10px; border-radius: 6px; }
+.pp-form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }
+.pp-cancel-btn { display: inline-flex; align-items: center; padding: 10px 20px; background: #fff; color: #495057; border: 1px solid #dee2e6; border-radius: 8px; font-size: 15px; cursor: pointer; text-decoration: none; }
+.pp-cancel-btn:hover { background: #f8f9fa; }
+.pp-submit-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; background: #2b8a3e; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; }
+.pp-submit-btn:hover { background: #237032; }
+.pp-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.spin { animation: pp-spin 1s linear infinite; }
+@keyframes pp-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Detail page */
+.pp-detail-section { background: #fff; border: 1px solid #e9ecef; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.pp-detail-section h3 { font-size: 15px; color: #495057; margin: 0 0 12px; }
+.pp-detail-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pp-detail-title { font-size: 18px; font-weight: 600; color: #212529; margin: 0; overflow: hidden; text-overflow: ellipsis; }
+.pp-detail-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-top: 8px; }
+.pp-detail-badge.draft { background: #fff3bf; color: #946700; }
+.pp-detail-badge.complete { background: #d3f9d8; color: #2b8a3e; }
+.pp-title-edit { display: flex; flex-direction: column; gap: 8px; }
+.pp-title-edit-actions { display: flex; gap: 8px; }
+.pp-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; cursor: pointer; color: #495057; }
+.pp-icon-btn:hover { background: #e9ecef; }
+.pp-icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pp-meta-list { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.pp-meta-list > div { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f3f5; }
+.pp-meta-list > div:last-child { border-bottom: none; padding-bottom: 0; }
+.pp-meta-list dt { font-size: 13px; color: #868e96; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.pp-meta-list dd { font-size: 14px; color: #212529; margin: 0; text-align: right; word-break: break-all; }
+.pp-mono { font-family: ui-monospace, monospace; font-size: 12px; }
+.pp-danger-zone { border-color: #ffc9c9; }
+.pp-danger-text { font-size: 13px; color: #868e96; margin: 0 0 12px; }
+.pp-delete-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #fff; color: #c92a2a; border: 1px solid #ffa8a8; border-radius: 8px; font-size: 14px; cursor: pointer; }
+.pp-delete-btn:hover { background: #fff5f5; }
+.pp-delete-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.pp-delete-confirm { display: flex; flex-direction: column; gap: 10px; }
+.pp-delete-confirm p { margin: 0; font-size: 14px; color: #495057; }
+.pp-delete-actions { display: flex; gap: 10px; }
+
+/* Mobile responsive */
+@media (max-width: 430px) {
+  .pp-preview-grid { grid-template-columns: repeat(2, 1fr); }
+  .pp-form-actions { flex-direction: column-reverse; }
+  .pp-form-actions > * { width: 100%; justify-content: center; }
+}

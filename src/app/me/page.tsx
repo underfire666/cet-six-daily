@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, BookMarked, RotateCcw, Settings, Bell, Volume2, Info, Target, CalendarDays } from "lucide-react";
+import { ArrowRight, BookMarked, RotateCcw, Settings, Bell, Volume2, Info, Target, CalendarDays, FileText } from "lucide-react";
 import { useProfile } from "@/components/profile/ProfileProvider";
 
 export default function MePage() {
@@ -65,6 +65,14 @@ export default function MePage() {
             {stats.dueReviewCount === 0 ? "今日已完成 ✓" : `${stats.dueReviewCount}`}
             <ArrowRight size={14} />
           </span>
+        </Link>
+      </section>
+
+      <section className="me-section">
+        <h3>内容</h3>
+        <Link href="/me/private-papers" className="me-row">
+          <span className="me-row-label"><FileText size={18} /> 我的私有卷</span>
+          <ArrowRight size={16} />
         </Link>
       </section>
 

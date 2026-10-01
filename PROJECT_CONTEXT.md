@@ -2,7 +2,7 @@
 
 ## 当前工作版本：V14 Phase 1B.1（v14.3.2，Private Storage Hardening，2026-10-01）
 
-当前工作分支 feature/v14-real-content-rights。PRIVATE 存储及 CRUD owner 授权已实现；sync、私有卷学习流程、上传 UI/OCR/AI 未实现。Phase 1B.1 验收通过后停止，不开始 Phase 1C。以下 V13/V14 旧章节保留为历史记录。
+当前工作分支 feature/v14-real-content-rights。PRIVATE 存储/CRUD/管理 UI（列表/导入/详情）已实现；sync、私有卷答题流程、上传 UI/OCR/AI 未实现。Phase 1C.1 完成后停止，不开始 Phase 1D。以下 V13/V14 旧章节保留为历史记录。
 
 ### V13.0.1 发布收尾
 
@@ -374,3 +374,35 @@ Private Storage Layer：Prisma PrivatePaper 表 + migration、CRUD 服务层（c
 - PRIVATE_STORAGE_IMPLEMENTED=YES；SERVER_OWNER_AUTHORIZATION=IMPLEMENTED_FOR_CRUD；PRIVATE_SYNC_IMPLEMENTED=NO；PRIVATE_LEARNING_FLOW_IMPLEMENTED=NO。
 - 详情：V14_PHASE1B1_REPORT.md；最终 Git SHA 与远程相等/clean/tag 不变证据保存在本地 output/v14-phase1b1-git-closure.md。
 - 未开始 Phase 1C；未修改 Paper 001；未 merge main、tag 或 Release。完成后停止等待检查。
+
+## V14 Phase 1C.1（2026-10-01，分支 feature/v14-real-content-rights）
+
+### 目标
+Private Paper Management + JSON Import UI：私有卷列表页、JSON 导入页（粘贴/文件双模式）、私有卷详情页（内容概览/元信息/修改标题/删除确认）、"我的"页面入口、共享校验模块、33 个回归测试、8/8 gates、浏览器 E2E。
+
+### 已完成并验证
+- **列表页** `/me/private-papers`：useSession 鉴权，未登录重定向登录页，空状态引导，导入按钮，按更新时间排序
+- **导入页** `/me/private-papers/import`：粘贴 JSON / 选择文件双模式 tab，localPaperId + 标题 + JSON textarea + 权利确认 checkbox（默认不勾选），实时预览（section/group/question 数量 + 草稿提示），1MiB 限制，客户端校验 + 服务端最终校验，失败保留输入，成功跳转详情页
+- **详情页** `/me/private-papers/[paperId]`：内容概览（Section/Group/题目/草稿状态）、元信息（paperId/authenticity/visibility/创建/更新时间）、修改标题（保持 DB title 与 content.title 一致）、删除两步确认、404 处理、paperId 编码归一化（修复 useParams 双重编码 Bug）
+- **"我的"页面入口**：在 /me 新增"内容"section，包含"我的私有卷"链接（FileText 图标）
+- **共享校验模块** `src/lib/private-papers/validation.ts`：validateLocalPaperId/validateTitle/parseJsonContent/validateImportDraft/countContentStats/encodePaperIdForUrl/hasSpecialPaperIdChars/IMPORT_BODY_LIMIT
+- **CSS**：globals.css 追加 pp-* 系列样式（列表卡片、导入表单、预览网格、详情 section、危险操作区、移动端响应式 @media max-width:430px）
+- **测试**：33/33 PASS（客户端校验 18 + store 集成 15）
+- **Gates**：npm test 667/667、typecheck PASS、lint 0 errors 0 warnings、build PASS、content:validate/stats/rights/audio-validate 全部 PASS
+- **浏览器 E2E**：未登录重定向、注册登录、列表空状态、导入创建、详情显示、修改标题+刷新持久化、删除取消/确认、移动端布局，全部通过
+- **Bug 修复**：详情页 paperId 双重编码导致 404（useParams 返回编码值 + fetch 再次 encodeURIComponent），增加归一化解码逻辑
+
+### 未做（保持 Phase 1C 边界）
+- 未开始 Phase 1D（私有卷答题/学习流程）
+- 未开始 Phase 1E（私有卷云同步）
+- 未实现上传 UI / PDF / OCR / AI
+- 未修改 Paper 001 正文/答案/音频/内容版本
+- 未 merge main / 打 tag / 建 Release
+- 文件导入模式浏览器 E2E 未验证（UI 已实现，仅验证粘贴模式）
+- 真机移动端软键盘未验证
+- 跨 owner 浏览器隔离未验证（单元测试已覆盖）
+
+### 关键文件
+- 新增：`src/app/me/private-papers/page.tsx`、`src/app/me/private-papers/import/page.tsx`、`src/app/me/private-papers/[paperId]/page.tsx`、`src/lib/private-papers/validation.ts`、`tests/v14-private-papers-ui.test.ts`、`V14_PHASE1C1_REPORT.md`
+- 修改：`src/app/me/page.tsx`、`src/app/globals.css`
+- 截图：`output/v14c1-screenshots/`（8 张）
