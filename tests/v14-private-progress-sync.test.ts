@@ -250,3 +250,56 @@ test("cloud read failure is distinct from an empty cloud record", async () => {
   installBrowser();
   await assert.rejects(() => fetchRemoteProgress("paper-err", async () => { throw new Error("down"); }));
 });
+
+test("PRIVATE queue cannot poison the global profile batch, including legacy queue entries", async () => {
+  const { enqueueMutation, pushQueue, loadGlobalQueue } = await import("../src/lib/sync/client");
+  installBrowser(); setSyncUserId("mixed");
+  enqueueMutation({ entityType: "profile", entityId: "profile", operation: "upsert", payload: { targetScore: 500 } });
+  enqueueMutation({ entityType: "privateProgress", entityId: "private:owner:legacy", operation: "upsert", payload: payload() as unknown as Record<string, unknown> });
+  enqueuePrivateProgress("private:owner:dedicated", payload());
+  let sent: string[] = [];
+  const result = await pushQueue({ userId: "mixed", fetchImpl: async (_url, options) => {
+    const body = JSON.parse(String(options?.body));
+    sent = body.mutations.map((m: { entityType: string }) => m.entityType);
+    return Response.json({ applied: body.mutations.map((m: { mutationId: string }) => m.mutationId), skipped: [] });
+  }});
+  assert.deepEqual(sent, ["profile"]); assert.equal(result.failed, 0); assert.equal(loadGlobalQueue("mixed").length, 0);
+  assert.equal(loadPrivateProgressQueue("mixed").length, 2);
+});
+test("lost acknowledgement replays immutable request before rebasing the newer snapshot", async () => {
+  installBrowser(); setSyncUserId("lost");
+  const first = enqueuePrivateProgress("paper", payload());
+  let originalBody = "";
+  await pushPrivateProgressQueue({ userId: "lost", fetchImpl: async (_url, opts) => { originalBody = String(opts?.body); throw Error("reply lost after server commit"); } });
+  enqueuePrivateProgress("paper", payload({ answers: { 0: "B" } }));
+  let calls = 0;
+  const result = await pushPrivateProgressQueue({ userId: "lost", fetchImpl: async (_url, opts) => {
+    const request = JSON.parse(String(opts?.body));
+    if (++calls === 1) { assert.equal(String(opts?.body), originalBody); assert.equal(request.mutationId, first.mutationId); return putOk(1); }
+    assert.equal(request.baseRevision, 1); assert.equal(request.answers[0], "B"); return putOk(2);
+  }});
+  assert.equal(calls, 2); assert.equal(result.pending, 0); assert.equal(result.revisions.paper, 2);
+});
+test("rapid edit while push is in flight keeps latest answers and receives a new base revision", async () => {
+  installBrowser(); setSyncUserId("rapid"); enqueuePrivateProgress("paper", payload());
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let calls = 0;
+  const task = pushPrivateProgressQueue({ userId: "rapid", fetchImpl: async (_url, opts) => {
+    if (++calls === 1) { await gate; return putOk(1); }
+    const request = JSON.parse(String(opts?.body)); assert.equal(request.baseRevision, 1); assert.equal(request.answers[0], "C"); return putOk(2);
+  }});
+  enqueuePrivateProgress("paper", payload({ answers: { 0: "B" } }));
+  enqueuePrivateProgress("paper", payload({ answers: { 0: "C" } })); release();
+  assert.equal((await task).pending, 0); assert.equal(calls, 2);
+});
+test("A to B to A switch ignores the original A response and leaves replayable queue", async () => {
+  installBrowser(); setSyncUserId("A"); enqueuePrivateProgress("paper", payload());
+  const result = await pushPrivateProgressQueue({ userId: "A", fetchImpl: async () => { setSyncUserId("B"); setSyncUserId("A"); return putOk(1); } });
+  assert.equal(result.applied, 0); assert.equal(loadPrivateProgressQueue("A").length, 1);
+});
+test("malformed successful reply never acknowledges local progress", async () => {
+  installBrowser(); setSyncUserId("bad"); enqueuePrivateProgress("paper", payload());
+  const result = await pushPrivateProgressQueue({ userId: "bad", fetchImpl: async () => Response.json({ ok: true }) });
+  assert.equal(result.failed, 1); assert.equal(result.pending, 1);
+});

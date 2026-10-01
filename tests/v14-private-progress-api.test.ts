@@ -306,3 +306,61 @@ test("3a. privateRequest：session 为空 → 401", async () => {
 test.after(async () => {
   await prisma.$disconnect();
 });
+test("identical mutation replays original receipt and rejects ID reuse with different answers", async () => {
+  const user = await createTestUser("prog-replay");
+  try {
+    const { paperId, contentHash } = await createReadyPaper(user.id, "replay");
+    const request = { mutationId: randomUUID(), attemptId: randomUUID(), progressVersion: 1, contentHash, answers: { 0: "A" }, currentIndex: 0, submitted: false, baseRevision: 0 };
+    const first = await writeProgress(user.id, paperId, request);
+    assert.deepEqual(await writeProgress(user.id, paperId, request), first);
+    assert.equal((await getPrivatePaperProgress(user.id, paperId))!.revision, 1);
+    await expectProgressError(() => writeProgress(user.id, paperId, { ...request, answers: { 0: "B" } }), "VALIDATION_ERROR");
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
+});
+test("parallel writes with the same revision accept exactly one update", async () => {
+  const user = await createTestUser("prog-parallel");
+  try {
+    const { paperId, contentHash } = await createReadyPaper(user.id, "parallel");
+    const attemptId = randomUUID();
+    await putPrivatePaperProgress(user.id, paperId, { attemptId, contentHash, answers: {}, currentIndex: 0, submitted: false, baseRevision: 0 });
+    for (let i = 0; i < 8; i++) {
+      const baseRevision = (await getPrivatePaperProgress(user.id, paperId))!.revision;
+      const results = await Promise.allSettled(["A", "B"].map(answer => putPrivatePaperProgress(user.id, paperId, { attemptId, contentHash, answers: { 0: answer }, currentIndex: 0, submitted: false, baseRevision })));
+      assert.equal(results.filter(r => r.status === "fulfilled").length, 1);
+      assert.equal((await getPrivatePaperProgress(user.id, paperId))!.revision, baseRevision + 1);
+    }
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
+});
+test("explicit restart advances generation; old round cannot write over it", async () => {
+  const user = await createTestUser("prog-restart");
+  try {
+    const { paperId, contentHash } = await createReadyPaper(user.id, "restart");
+    const oldAttempt = randomUUID(), newAttempt = randomUUID();
+    await putPrivatePaperProgress(user.id, paperId, { attemptId: oldAttempt, contentHash, answers: { 0: "A" }, currentIndex: 0, submitted: true, baseRevision: 0 });
+    await putPrivatePaperProgress(user.id, paperId, { mode: "restart", attemptId: newAttempt, contentHash, answers: {}, currentIndex: 0, submitted: false, baseRevision: 1 });
+    await expectProgressError(() => putPrivatePaperProgress(user.id, paperId, { attemptId: oldAttempt, contentHash, answers: { 0: "B" }, currentIndex: 0, submitted: false, baseRevision: 2 }), "CONFLICT", "attempt_mismatch");
+    assert.equal((await getPrivatePaperProgress(user.id, paperId))!.attemptId, newAttempt);
+    await putPrivatePaperProgress(user.id, paperId, { attemptId: newAttempt, contentHash, answers: { 0: "A" }, currentIndex: 0, submitted: false, baseRevision: 2 });
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
+});
+test("content update exposes revision for a clean restart and rejects old content", async () => {
+  const { updatePrivatePaper } = await import("../src/content/private-paper-store");
+  const { readPrivateProgressSnapshot } = await import("../src/content/private-paper-progress-store");
+  const user = await createTestUser("prog-content-restart");
+  try {
+    const { paperId, contentHash } = await createReadyPaper(user.id, "changed");
+    const oldAttempt = randomUUID();
+    await putPrivatePaperProgress(user.id, paperId, { attemptId: oldAttempt, contentHash, answers: {}, currentIndex: 0, submitted: false, baseRevision: 0 });
+    const changed = makeReadyContent({ sections: [{ sectionId: "r-new", type: "reading", order: 0, groups: [{ groupId: "g-new", type: "careful_reading", order: 0, questions: [{ questionId: "new", type: "choice", order: 0, prompt: "New question", options: [{ id: "A", text: "One" }, { id: "B", text: "Two" }], answerId: "B" }] }] }] });
+    await updatePrivatePaper(user.id, paperId, { content: changed });
+    const snapshot = await readPrivateProgressSnapshot(user.id, paperId);
+    assert.equal(snapshot.invalidated, true); assert.equal(snapshot.progress, null); assert.equal(snapshot.revision, 1);
+    await expectProgressError(() => putPrivatePaperProgress(user.id, paperId, { attemptId: oldAttempt, contentHash, answers: {}, currentIndex: 0, submitted: false, baseRevision: 1 }), "CONTENT_CHANGED");
+    await putPrivatePaperProgress(user.id, paperId, { mode: "restart", attemptId: randomUUID(), contentHash: checkPrivatePaperReadiness(changed).contentHash, answers: { 0: "B" }, currentIndex: 0, submitted: false, baseRevision: snapshot.revision });
+    assert.equal((await getPrivatePaperProgress(user.id, paperId))!.answers[0], "B");
+  } finally { await prisma.user.delete({ where: { id: user.id } }); }
+});
+test("progress version and mutation ID are mandatory", async () => {
+  await expectProgressError(() => writeProgress("owner", "private:owner:p", { attemptId: "a" }), "VALIDATION_ERROR");
+  await expectProgressError(() => writeProgress("owner", "private:owner:p", { attemptId: "a", progressVersion: 1 }), "VALIDATION_ERROR");
+});
