@@ -1,236 +1,133 @@
-/**
- * V14 Phase 1E.1 — Private study progress cloud sync adapter.
- *
- * Reuses the V12 queue *data structure* (localStorage, per-user key, mutationId
- * idempotency, snapshot merge via MERGE_POLICY["privateProgress"]) but pushes to
- * a dedicated per-paper PUT endpoint that supports revision optimistic-concurrency
- * and attemptId isolation.
- *
- * PRIVATE progress never enters the global LearningSession / XP / Review /
- * Daily Plan: it only ever enqueues entityType="privateProgress", and is pushed
- * by pushPrivateProgressQueue (NOT by the global /api/sync/push batch).
- */
-
-import {
-  enqueueMutation,
-  loadQueue,
-  saveQueue,
-  type QueuedMutation,
-} from "@/lib/sync/client";
-
+/** Separate owner-scoped PRIVATE queue; immutable attempted requests survive lost replies. */
+import { getSyncIdentityGeneration } from "@/lib/sync/adapters";
+import { loadQueue, saveQueue, type QueuedMutation } from "@/lib/sync/client";
 export interface PrivateProgressPayload {
-  attemptId: string;
-  contentHash: string;
-  answers: Record<number, string>;
-  currentIndex: number;
-  submitted: boolean;
-  /** Revision the client based this write on; 0 when creating. */
-  baseRevision: number;
+  attemptId: string; contentHash: string; answers: Record<number, string>; currentIndex: number;
+  submitted: boolean; baseRevision: number; mode?: "save" | "restart";
 }
-
-export interface RemoteProgress {
-  paperId: string;
-  attemptId: string;
-  contentHash: string;
-  answers: Record<number, string>;
-  currentIndex: number;
-  submitted: boolean;
-  revision: number;
-  updatedAt: string;
-}
-
+export interface RemoteProgress extends PrivateProgressPayload { paperId: string; progressVersion: number; revision: number; updatedAt: string; }
+export interface RemoteSnapshot { progress: RemoteProgress | null; revision: number; invalidated: boolean; }
 export type PrivateSyncStatus = "local_saved" | "pending" | "synced" | "failed" | "conflict";
-
-export interface PushPrivateProgressResult {
-  /** Mutations accepted by the server (got a new revision). */
-  applied: number;
-  /** Mutations kept in the queue after a network/other error. */
-  failed: number;
-  /** paperIds that hit a revision_conflict and need a user decision. */
-  conflicts: string[];
-  /** paperId -> new revision for every mutation that was just applied. */
-  revisions: Record<string, number>;
-}
-
-// Mirror of the (non-exported) activeUserId in sync/client.ts so we do not have
-// to modify that file beyond the MERGE_POLICY entry. setSyncUserId writes this.
-function activeUserId(): string | null {
-  if (typeof window === "undefined") return null;
-  return (window as unknown as { __CET_SYNC_USER_ID?: string }).__CET_SYNC_USER_ID ?? null;
-}
-
-function progressUrl(paperId: string): string {
-  return `/api/private-papers/${encodeURIComponent(paperId)}/progress`;
-}
-
-/** Generate a fresh attemptId for a new practice round. */
-export function generateAttemptId(): string {
-  return crypto.randomUUID();
-}
-
-/**
- * Enqueue a private-progress snapshot for a paper. Because the merge policy is
- * "snapshot", any prior queued mutation for the same (user, paperId) is
- * collapsed — only the newest state survives.
- */
-export function enqueuePrivateProgress(paperId: string, payload: PrivateProgressPayload): QueuedMutation {
-  return enqueueMutation({
-    entityType: "privateProgress",
-    entityId: paperId,
-    operation: "upsert",
-    payload: payload as unknown as Record<string, unknown>,
-  });
-}
-
-/** Load only the privateProgress mutations queued for this user. */
-export function loadPrivateProgressQueue(userId: string): QueuedMutation[] {
-  return loadQueue(userId).filter((m) => m.entityType === "privateProgress");
-}
-
-/** Remove every queued privateProgress mutation for one paper (adopt cloud / restart). */
-export function clearPrivateProgressForPaper(userId: string, paperId: string): void {
-  const remaining = loadQueue(userId).filter(
-    (m) => !(m.entityType === "privateProgress" && m.entityId === paperId),
-  );
-  saveQueue(remaining, userId);
-}
-
-/** Normalize a raw server progress object (answers keys are strings) into RemoteProgress. */
-function normalizeRemoteProgress(paperId: string, raw: Record<string, unknown>): RemoteProgress {
-  const rawAnswers = (raw.answers ?? {}) as Record<string, unknown>;
-  const answers: Record<number, string> = {};
-  for (const [key, value] of Object.entries(rawAnswers)) {
-    if (!/^(0|[1-9][0-9]*)$/.test(key) || !Number.isSafeInteger(Number(key))) continue;
-    if (typeof value !== "string") continue;
-    answers[Number(key)] = value;
+export interface PushPrivateProgressResult { applied: number; failed: number; conflicts: string[]; revisions: Record<string, number>; invalid: Record<string, string>; pending: number; }
+interface PrivateMutation extends QueuedMutation { blocked?: boolean; }
+export const PRIVATE_PROGRESS_SYNC_EVENT = "cet-daily:private-progress-synced";
+const activeUserId = (): string | null => typeof window === "undefined" ? null : (window as unknown as { __CET_SYNC_USER_ID?: string }).__CET_SYNC_USER_ID ?? null;
+const queueKey = (userId: string) => `cet-daily:v14:private-progress-queue:${userId}`;
+const progressUrl = (paperId: string) => `/api/private-papers/${encodeURIComponent(paperId)}/progress`;
+export const generateAttemptId = () => crypto.randomUUID();
+function savePrivateQueue(userId: string, queue: PrivateMutation[]) { localStorage.setItem(queueKey(userId), JSON.stringify(queue)); }
+export function loadPrivateProgressQueue(userId: string): PrivateMutation[] {
+  const raw = localStorage.getItem(queueKey(userId));
+  const parsed: unknown = raw ? JSON.parse(raw) : [];
+  if (!Array.isArray(parsed)) throw new Error("Invalid PRIVATE queue");
+  // Migrate legacy PRIVATE records only after successfully persisting their new queue.
+  const legacy = loadQueue(userId).filter(m => m.entityType === "privateProgress");
+  if (legacy.length) {
+    const combined = [...parsed, ...legacy.filter(m => !parsed.some(q => q.mutationId === m.mutationId))];
+    savePrivateQueue(userId, combined);
+    saveQueue(loadQueue(userId).filter(m => m.entityType !== "privateProgress"), userId);
+    return combined;
   }
-  return {
-    paperId,
-    attemptId: typeof raw.attemptId === "string" ? raw.attemptId : "",
-    contentHash: typeof raw.contentHash === "string" ? raw.contentHash : "",
-    answers,
-    currentIndex: typeof raw.currentIndex === "number" ? raw.currentIndex : 0,
-    submitted: raw.submitted === true,
-    revision: typeof raw.revision === "number" ? raw.revision : 0,
-    updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : "",
-  };
+  return parsed;
 }
-
-/**
- * Push queued privateProgress mutations to the cloud, one PUT per paper.
- *
- * - 200                       -> applied; removed from queue; new revision surfaced.
- * - 404                       -> paper deleted; removed from queue (do not rebuild).
- * - 409 attempt_mismatch       -> stale practice round; removed from queue.
- * - 409 revision_conflict     -> kept in queue, fire onConflict with server progress.
- * - other error / network     -> kept in queue, counted as failed (manual retry).
- */
-export async function pushPrivateProgressQueue(options: {
-  userId: string;
-  fetchImpl?: typeof fetch;
-  onConflict?: (paperId: string, serverProgress: RemoteProgress) => void;
-}): Promise<PushPrivateProgressResult> {
-  const { userId, onConflict } = options;
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const empty: PushPrivateProgressResult = { applied: 0, failed: 0, conflicts: [], revisions: {} };
-
-  // Account-switch guard: never push a captured queue after the browser switched accounts.
-  if (!userId || activeUserId() !== userId) {
-    return { ...empty, failed: loadPrivateProgressQueue(userId).length };
-  }
-
+export function enqueuePrivateProgress(paperId: string, payload: PrivateProgressPayload): PrivateMutation {
+  const userId = activeUserId();
+  if (!userId) throw new Error("Authenticated owner required");
   const queue = loadPrivateProgressQueue(userId);
-  if (queue.length === 0) return empty;
-
-  const removed = new Set<string>();
-  const revisions: Record<string, number> = {};
-  const conflicts: string[] = [];
-  let applied = 0;
-  let failed = 0;
-
-  for (const mutation of queue) {
-    if (activeUserId() !== userId) break; // account switched mid-batch; stop.
-    const paperId = mutation.entityId;
-    const payload = mutation.payload as unknown as PrivateProgressPayload;
+  const previous = queue.find(m => m.entityId === paperId && m.status === "pending" && !m.blocked);
+  const prior = previous?.payload as unknown as PrivateProgressPayload | undefined;
+  const merged = { ...payload, mode: prior?.attemptId === payload.attemptId && prior.mode === "restart" ? "restart" : payload.mode ?? "save" };
+  const mutation: PrivateMutation = { mutationId: crypto.randomUUID(), entityType: "privateProgress", entityId: paperId, operation: "upsert", payload: merged, createdAt: new Date().toISOString(), attempts: 0, status: "pending" };
+  savePrivateQueue(userId, [...queue.filter(m => m !== previous), mutation]);
+  return mutation;
+}
+export function discardPrivateProgressForOtherContent(userId: string, paperId: string, contentHash: string) {
+  const queue = loadPrivateProgressQueue(userId);
+  savePrivateQueue(userId, queue.filter(m => m.entityId !== paperId || m.payload.contentHash === contentHash));
+}
+export function clearPrivateProgressForPaper(userId: string, paperId: string) { savePrivateQueue(userId, loadPrivateProgressQueue(userId).filter(m => m.entityId !== paperId)); }
+const record = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
+export function normalizeRemoteProgress(paperId: string, raw: unknown): RemoteProgress {
+  if (!record(raw) || raw.paperId !== paperId || raw.progressVersion !== 1 || typeof raw.attemptId !== "string" || !raw.attemptId || typeof raw.contentHash !== "string" || !raw.contentHash || !record(raw.answers) || !Number.isSafeInteger(raw.currentIndex) || Number(raw.currentIndex) < 0 || !Number.isSafeInteger(raw.revision) || Number(raw.revision) < 1 || typeof raw.submitted !== "boolean" || typeof raw.updatedAt !== "string") throw new Error("Invalid cloud progress");
+  const answers: Record<number, string> = {};
+  for (const [k, v] of Object.entries(raw.answers)) {
+    if (!/^(0|[1-9][0-9]*)$/.test(k) || !Number.isSafeInteger(Number(k)) || typeof v !== "string") throw new Error("Invalid cloud answers");
+    answers[Number(k)] = v;
+  }
+  return { paperId, progressVersion: 1, attemptId: raw.attemptId, contentHash: raw.contentHash, answers, currentIndex: Number(raw.currentIndex), submitted: raw.submitted, revision: Number(raw.revision), baseRevision: Number(raw.revision), updatedAt: raw.updatedAt };
+}
+export async function fetchRemoteSnapshot(paperId: string, fetchImpl: typeof fetch = fetch): Promise<RemoteSnapshot> {
+  const res = await fetchImpl(progressUrl(paperId), { cache: "no-store" });
+  if (!res.ok) throw new Error(`Cloud read ${res.status}`);
+  const data: unknown = await res.json();
+  if (!record(data) || typeof data.exists !== "boolean") throw new Error("Invalid cloud snapshot");
+  if (data.exists) { const progress = normalizeRemoteProgress(paperId, data.progress); return { progress, revision: progress.revision, invalidated: false }; }
+  if (data.progress !== null || !Number.isSafeInteger(data.revision) || Number(data.revision) < 0 || typeof data.invalidated !== "boolean") throw new Error("Invalid empty cloud snapshot");
+  return { progress: null, revision: Number(data.revision), invalidated: data.invalidated };
+}
+export async function fetchRemoteProgress(paperId: string, fetchImpl?: typeof fetch) { return (await fetchRemoteSnapshot(paperId, fetchImpl)).progress; }
+const inFlight = new Map<string, Promise<PushPrivateProgressResult>>();
+export function pushPrivateProgressQueue(options: { userId: string; paperId?: string; fetchImpl?: typeof fetch; onConflict?: (paperId: string, server: RemoteProgress) => void }): Promise<PushPrivateProgressResult> {
+  const running = inFlight.get(options.userId);
+  if (running) return running.then(() => pushPrivateProgressQueue(options));
+  const task = pushPrivateQueue(options).finally(() => { if (inFlight.get(options.userId) === task) inFlight.delete(options.userId); });
+  inFlight.set(options.userId, task);
+  return task;
+}
+async function pushPrivateQueue({ userId, paperId: onlyPaper, fetchImpl = fetch, onConflict }: { userId: string; paperId?: string; fetchImpl?: typeof fetch; onConflict?: (paperId: string, server: RemoteProgress) => void }): Promise<PushPrivateProgressResult> {
+  const result: PushPrivateProgressResult = { applied: 0, failed: 0, conflicts: [], revisions: {}, invalid: {}, pending: 0 };
+  if (!userId || activeUserId() !== userId) { result.failed = loadPrivateProgressQueue(userId).length; return result; }
+  const generation = getSyncIdentityGeneration();
+  const active = () => activeUserId() === userId && getSyncIdentityGeneration() === generation;
+  const attempted = new Set<string>();
+  for (let count = 0; count < 30 && active(); count++) {
+    const item = loadPrivateProgressQueue(userId).find(m => (!onlyPaper || m.entityId === onlyPaper) && !m.blocked && !attempted.has(m.mutationId));
+    if (!item) break;
+    const paperId = item.entityId, payload = item.payload as unknown as PrivateProgressPayload;
+    attempted.add(item.mutationId);
+    // Once sent, keep its ID and payload unchanged until an acknowledgement arrives.
+    savePrivateQueue(userId, loadPrivateProgressQueue(userId).map(m => m.mutationId === item.mutationId ? { ...m, status: "syncing", attempts: m.attempts + 1 } : m));
     try {
-      const res = await fetchImpl(progressUrl(paperId), {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
+      const res = await fetchImpl(progressUrl(paperId), { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, progressVersion: 1, mutationId: item.mutationId }) });
+      if (!active()) break;
+      const data: unknown = await res.json();
+      if (!record(data)) throw new Error("Invalid progress response");
+      if (res.status === 409 && (data.error === "revision_conflict" || data.error === "attempt_mismatch")) {
+        result.conflicts.push(paperId);
+        savePrivateQueue(userId, loadPrivateProgressQueue(userId).map(m => m.entityId === paperId ? { ...m, blocked: true, status: "failed" } : m));
+        if (data.serverProgress) onConflict?.(paperId, normalizeRemoteProgress(paperId, data.serverProgress));
+        continue;
+      }
+      if (res.status === 404 || res.status === 410 || data.error === "not_ready") {
+        result.invalid[paperId] = String(data.error ?? "not_found");
+        const queue = loadPrivateProgressQueue(userId);
+        savePrivateQueue(userId, res.status === 404 ? queue.filter(m => m.entityId !== paperId) : queue.map(m => m.entityId === paperId ? { ...m, blocked: true, status: "failed" } : m));
+        continue;
+      }
+      if (!res.ok || data.ok !== true || !Number.isSafeInteger(data.revision) || Number(data.revision) < 1) throw new Error("Progress write failed");
+      const revision = Number(data.revision);
+      const current = loadPrivateProgressQueue(userId);
+      // If the user already replaced this practice round, its old reply has no effect.
+      const stillQueued = current.some(m => m.mutationId === item.mutationId);
+      if (!stillQueued) continue;
+      const remaining = current.filter(m => m.mutationId !== item.mutationId).map(m => {
+        const next = m.payload as unknown as PrivateProgressPayload;
+        return m.entityId === paperId && m.status === "pending" && next.attemptId === payload.attemptId && next.contentHash === payload.contentHash
+          ? { ...m, payload: { ...next, baseRevision: revision, mode: "save" } } : m;
       });
-
-      if (res.status === 409) {
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          serverProgress?: Record<string, unknown>;
-        };
-        if (data.error === "revision_conflict") {
-          conflicts.push(paperId);
-          if (data.serverProgress) onConflict?.(paperId, normalizeRemoteProgress(paperId, data.serverProgress));
-          // Keep in queue; the user decides via the conflict dialog.
-          continue;
-        }
-        if (data.error === "attempt_mismatch") {
-          removed.add(mutation.mutationId); // stale practice round
-          continue;
-        }
-        // content_changed / not_ready / other 409: keep, surface as failed.
-        failed += 1;
-        continue;
-      }
-
-      if (res.status === 404) {
-        removed.add(mutation.mutationId); // paper deleted
-        continue;
-      }
-
-      if (!res.ok) {
-        failed += 1;
-        continue;
-      }
-
-      const data = (await res.json()) as { ok?: boolean; revision?: number };
-      if (data.ok === true && typeof data.revision === "number") {
-        removed.add(mutation.mutationId);
-        revisions[paperId] = data.revision;
-        applied += 1;
-      } else {
-        failed += 1;
-      }
+      savePrivateQueue(userId, remaining);
+      result.applied++; result.revisions[paperId] = revision;
+      window.dispatchEvent(new CustomEvent(PRIVATE_PROGRESS_SYNC_EVENT, { detail: { userId, paperId, attemptId: payload.attemptId, contentHash: payload.contentHash, revision } }));
     } catch {
-      // Network error: keep in queue for a later retry.
-      failed += 1;
+      if (!active()) break;
+      savePrivateQueue(userId, loadPrivateProgressQueue(userId).map(m => m.mutationId === item.mutationId ? { ...m, status: "failed" } : m));
+      result.failed++;
+      // A failed/ambiguous earlier write must be replayed before any later snapshot.
+      break;
     }
   }
-
-  // Rebuild the queue: drop removed mutations; leave failed/conflict ones in place.
-  const remaining = loadQueue(userId).filter((m) => !removed.has(m.mutationId));
-  saveQueue(remaining, userId);
-
-  return { applied, failed, conflicts, revisions };
-}
-
-/**
- * Fetch the current user's cloud progress for a paper.
- * Returns null when there is no record, the paper is gone, or the contentHash
- * no longer matches (the server returns exists:false in that case).
- */
-export async function fetchRemoteProgress(
-  paperId: string,
-  fetchImpl?: typeof fetch,
-): Promise<RemoteProgress | null> {
-  const impl = fetchImpl ?? fetch;
-  try {
-    const res = await impl(progressUrl(paperId), { cache: "no-store" });
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      exists?: boolean;
-      progress?: Record<string, unknown> | null;
-    };
-    if (data.exists !== true || !data.progress) return null;
-    return normalizeRemoteProgress(paperId, data.progress);
-  } catch {
-    return null;
-  }
+  const remaining = loadPrivateProgressQueue(userId).filter(m => !onlyPaper || m.entityId === onlyPaper);
+  result.conflicts = [...new Set([...result.conflicts, ...remaining.filter(m => m.blocked).map(m => m.entityId)])];
+  result.pending = remaining.length;
+  return result;
 }

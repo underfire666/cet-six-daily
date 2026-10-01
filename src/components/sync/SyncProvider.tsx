@@ -3,7 +3,8 @@
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { getSyncUserId } from "@/lib/sync/adapters";
-import { loadQueue, publishSyncStatus, pushQueue, pullRemote, runAutoSync, type SyncStatus } from "@/lib/sync/client";
+import { loadGlobalQueue, publishSyncStatus, pushQueue, pullRemote, runAutoSync, type SyncStatus } from "@/lib/sync/client";
+import { pushPrivateProgressQueue } from "@/lib/private-papers/progress-sync";
 import { hydrateFromPull } from "@/lib/sync/hydrate";
 
 // SyncProvider: sits inside the app shell, listens to online/offline events,
@@ -37,6 +38,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       }
       busy = true;
       try {
+        // PRIVATE failures do not block global learning sync.
+        try { await pushPrivateProgressQueue({ userId }); } catch { /* PRIVATE page shows its own failure state. */ }
+        if (!active()) return;
         let attempts = 0;
         let outcome: Awaited<ReturnType<typeof runAutoSync>>;
         do {
@@ -47,7 +51,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             push: () => pushQueue({ userId }),
             pull: () => pullRemote(),
             hydrate: (remote) => hydrateFromPull(userId, remote as Parameters<typeof hydrateFromPull>[1]),
-            pending: () => loadQueue(userId).length,
+            pending: () => loadGlobalQueue(userId).length,
             onStatus: report,
           });
         } while (active() && online() && attempts < 3 && (rerun || outcome === "pending"));

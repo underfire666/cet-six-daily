@@ -606,13 +606,17 @@ test("1B.1 storage failures remain INTERNAL_ERROR for every operation", async ()
     ["findUnique", () => getPrivatePaper("owner", "private:owner:x")],
     ["findMany", () => listPrivatePapers("owner")],
     ["findUnique", () => updatePrivatePaper("owner", "private:owner:x", { title: "X" })],
-    ["deleteMany", () => deletePrivatePaper("owner", "private:owner:x")],
   ] as const) {
     const original = prisma.privatePaper[method];
     Object.assign(prisma.privatePaper, { [method]: async () => { throw Error("DB disconnected"); } });
     try { await assert.rejects(operation(), (e: PrivatePaperStoreError) => e.code === "INTERNAL_ERROR"); }
     finally { Object.assign(prisma.privatePaper, { [method]: original }); }
   }
+  const transaction = prisma.$transaction;
+  Object.assign(prisma, { $transaction: async () => { throw Error("DB disconnected"); } });
+  try { await assert.rejects(deletePrivatePaper("owner", "private:owner:x"), (e: PrivatePaperStoreError) => e.code === "INTERNAL_ERROR"); }
+  finally { Object.assign(prisma, { $transaction: transaction }); }
+
 });
 test("1B.1 Prisma duplicate and concurrent missing-row codes are normalized", async () => {
   const { Prisma } = await import("@prisma/client");

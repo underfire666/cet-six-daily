@@ -22,7 +22,6 @@ import { scorePrivateAnswers, countValidAnswers } from "@/lib/private-papers/rea
 import {
   loadStudyProgress,
   saveStudyProgress,
-  clearStudyProgress,
   getProgressStatusMessage,
   INITIAL_PROGRESS,
   type StudyProgressState,
@@ -31,7 +30,10 @@ import {
 import {
   enqueuePrivateProgress,
   pushPrivateProgressQueue,
-  fetchRemoteProgress,
+  fetchRemoteSnapshot,
+  loadPrivateProgressQueue,
+  discardPrivateProgressForOtherContent,
+  PRIVATE_PROGRESS_SYNC_EVENT,
   generateAttemptId,
   clearPrivateProgressForPaper,
   type PrivateSyncStatus,
@@ -85,6 +87,9 @@ export default function StudyClient({
   const conflictFirstBtnRef = useRef<HTMLButtonElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const knownRevisionRef = useRef(0);
+  const syncGeneration = useRef(0);
+  const studyRef = useRef(studyState);
+  const updateStudy = useCallback((next: StudyProgressState) => { studyRef.current = next; setStudyState(next); }, []);
   const attemptIdRef = useRef<string | null>(null);
   if (attemptIdRef.current === null) attemptIdRef.current = generateAttemptId();
   const isRestoring = restoredBinding !== binding;
@@ -96,100 +101,125 @@ export default function StudyClient({
   const score = useMemo(() => scorePrivateAnswers(questions, answers), [questions, answers]);
   const progressMessage = getProgressStatusMessage(progressStatus);
 
-  // Push queued private-progress mutations to the cloud; surface revision + conflicts.
   const pushSync = useCallback(async () => {
     if (activeBinding.current !== binding) return;
-    let result;
+    const generation = syncGeneration.current;
+    const attempt = attemptIdRef.current;
+    const current = () => activeBinding.current === binding && generation === syncGeneration.current && attemptIdRef.current === attempt;
     try {
-      result = await pushPrivateProgressQueue({
-        userId: ownerId,
-        onConflict: (_pid, serverProgress) => {
-          if (activeBinding.current !== binding) return;
-          setConflictServerProgress(serverProgress);
+      const result = await pushPrivateProgressQueue({ userId: ownerId, paperId });
+      if (!current()) return;
+      if (result.invalid[paperId]) {
+        setVerifyStatus("invalid");
+        setVerifyMessage("试卷已删除、内容已变化或暂不能学习，请返回详情重新打开。当前答案不会继续上传。");
+        return;
+      }
+      if (result.conflicts.includes(paperId)) {
+        const snapshot = await fetchRemoteSnapshot(paperId);
+        if (!current()) return;
+        if (snapshot.progress && snapshot.progress.contentHash === contentHash) {
+          setConflictServerProgress(snapshot.progress);
           setShowConflictDialog(true);
           setSyncStatus("conflict");
-        },
-      });
+        } else setSyncStatus("failed");
+        return;
+      }
+      if (result.revisions[paperId]) knownRevisionRef.current = Math.max(knownRevisionRef.current, result.revisions[paperId]);
+      setSyncStatus(result.failed ? "failed" : result.pending ? "pending" : "synced");
     } catch {
-      if (activeBinding.current !== binding) return;
-      setSyncStatus("failed");
-      return;
+      if (current()) setSyncStatus("failed");
     }
-    if (activeBinding.current !== binding) return;
-    if (typeof result.revisions[paperId] === "number") knownRevisionRef.current = result.revisions[paperId];
-    if (result.conflicts.includes(paperId)) {
-      setSyncStatus("conflict");
-      return;
-    }
-    if (result.failed > 0) setSyncStatus("failed");
-    else if (result.applied > 0) setSyncStatus("synced");
-  }, [binding, ownerId, paperId]);
+  }, [binding, ownerId, paperId, contentHash]);
 
   // Invalidate outstanding callbacks before any interaction after a session change.
   useLayoutEffect(() => {
     const requests = requestId;
     const controller = abortRef;
+    const generations = syncGeneration;
     activeBinding.current = identityMatches ? binding : null;
     return () => {
       activeBinding.current = null;
+      generations.current++;
       requests.current++;
       controller.current?.abort();
       if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
     };
   }, [identityMatches, binding]);
 
-  // ── V14 Phase 1E.1: restore priority — cloud first, then local sessionStorage ──
+  // Restore dirty local drafts before cloud hydration; a queue also survives tab closure.
   useEffect(() => {
     if (!identityMatches || !ready) return;
     let cancelled = false;
     (async () => {
-      // 1. Try cloud first.
-      let remote: RemoteProgress | null = null;
-      try { remote = await fetchRemoteProgress(paperId); } catch { remote = null; }
+      const local = loadStudyProgress(ownerId, paperId, contentHash, questions);
+      let queue: ReturnType<typeof loadPrivateProgressQueue> = [];
+      let queueReadable = true;
+      try { discardPrivateProgressForOtherContent(ownerId, paperId, contentHash); queue = loadPrivateProgressQueue(ownerId).filter(m => m.entityId === paperId && m.payload.contentHash === contentHash); }
+      catch { queueReadable = false; }
+      let snapshot: Awaited<ReturnType<typeof fetchRemoteSnapshot>> | null = null;
+      try { snapshot = await fetchRemoteSnapshot(paperId); } catch { /* Preserve local state and surface failed read. */ }
       if (cancelled || activeBinding.current !== binding) return;
-
-      if (remote && remote.contentHash === contentHash) {
-        // Adopt cloud; do NOT enqueue (avoid push/pull echo).
-        setStudyState({ answers: remote.answers, currentIndex: remote.currentIndex, submitted: remote.submitted });
-        knownRevisionRef.current = remote.revision;
-        attemptIdRef.current = remote.attemptId;
-        setSyncStatus("synced");
-        setProgressStatus("loaded");
-        saveStudyProgress(ownerId, paperId, contentHash, {
-          answers: remote.answers,
-          currentIndex: remote.currentIndex,
-          submitted: remote.submitted,
-        });
-        setRestoredBinding(binding);
-        return;
+      const pending = queue.at(-1)?.payload;
+      const remote = snapshot?.progress;
+      const validAnswers = (value: Record<number, string>) => Object.entries(value).every(([k,v]) => Number.isSafeInteger(Number(k)) && questions[Number(k)]?.options.some(o => o.id === v));
+      if (remote && (!validAnswers(remote.answers) || remote.currentIndex >= total || remote.contentHash !== contentHash)) {
+        setVerifyStatus("invalid"); setVerifyMessage("云端进度格式或内容已变化，请返回详情重新打开。");
+        setRestoredBinding(binding); return;
       }
-
-      // 2. Fall back to local sessionStorage.
-      const result = loadStudyProgress(ownerId, paperId, contentHash, questions);
-      setStudyState({ answers: result.answers, currentIndex: result.currentIndex, submitted: result.submitted });
-      setProgressStatus(result.status);
-      setStorageAvailable(result.status !== "storage_read_failed");
-      setRestoredBinding(binding);
-
-      if (result.status === "loaded") {
-        // Local archive exists but cloud has no usable record: upload it (baseRevision=0 creates).
-        enqueuePrivateProgress(paperId, {
-          attemptId: attemptIdRef.current as string,
-          contentHash,
-          answers: result.answers,
-          currentIndex: result.currentIndex,
-          submitted: result.submitted,
-          baseRevision: 0,
-        });
-        knownRevisionRef.current = 0;
-        setSyncStatus("pending");
-        void pushSync();
+      // An old local archive without sync metadata is treated as a draft, never discarded.
+      const dirty = !!pending || (local.status === "loaded" && (local.dirty || !local.attemptId));
+      const draft = pending ? {
+        answers: pending.answers as Record<number,string>, currentIndex: Number(pending.currentIndex), submitted: pending.submitted === true,
+        attemptId: String(pending.attemptId), revision: Number(pending.baseRevision), dirty: true, mode: pending.mode === "restart" ? "restart" as const : "save" as const,
+      } : local;
+      let restored: StudyProgressState;
+      if (dirty && validAnswers(draft.answers) && Number.isSafeInteger(draft.currentIndex) && draft.currentIndex >= 0 && draft.currentIndex < total) {
+        restored = { answers: draft.answers, currentIndex: draft.currentIndex, submitted: draft.submitted, attemptId: draft.attemptId ?? remote?.attemptId ?? generateAttemptId(), revision: draft.revision ?? 0, dirty: true, mode: draft.mode ?? "save" };
+      } else if (remote) {
+        restored = { answers: remote.answers, currentIndex: remote.currentIndex, submitted: remote.submitted, attemptId: remote.attemptId, revision: remote.revision, dirty: false };
       } else {
-        setSyncStatus("synced");
+        restored = { answers: local.answers, currentIndex: local.currentIndex, submitted: local.submitted, attemptId: local.attemptId ?? generateAttemptId(), revision: snapshot?.revision ?? local.revision ?? 0, dirty: local.status === "loaded", mode: snapshot?.invalidated ? "restart" : "save" };
       }
+      attemptIdRef.current = restored.attemptId!;
+      knownRevisionRef.current = restored.revision ?? 0;
+      updateStudy(restored);
+      setProgressStatus(local.status);
+      setRestoredBinding(binding);
+      const saved = saveStudyProgress(ownerId, paperId, contentHash, restored);
+      setStorageAvailable(saved);
+      if (!saved) setProgressStatus("storage_write_failed");
+      if (!queueReadable) { setSyncStatus("failed"); return; }
+      if (restored.dirty && !pending) {
+        try { enqueuePrivateProgress(paperId, { attemptId: restored.attemptId!, contentHash, answers: restored.answers, currentIndex: restored.currentIndex, submitted: restored.submitted, baseRevision: restored.revision ?? 0, mode: restored.mode }); }
+        catch { setSyncStatus("failed"); return; }
+      }
+      if (pending || restored.dirty) { setSyncStatus("pending"); void pushSync(); }
+      else setSyncStatus(snapshot ? "synced" : "failed");
     })();
     return () => { cancelled = true; };
-  }, [identityMatches, ready, binding, ownerId, paperId, contentHash, questions, pushSync]);
+  }, [identityMatches, ready, binding, ownerId, paperId, contentHash, questions, total, pushSync, updateStudy]);
+
+  useEffect(() => {
+    if (!identityMatches || !ready) return;
+    const online = () => { void pushSync(); };
+    const acknowledge = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId: string; paperId: string; contentHash: string; attemptId: string; revision: number }>).detail;
+      if (!detail || detail.userId !== ownerId || detail.paperId !== paperId || detail.contentHash !== contentHash || detail.attemptId !== attemptIdRef.current || activeBinding.current !== binding) return;
+      knownRevisionRef.current = Math.max(knownRevisionRef.current, detail.revision);
+      try {
+        const pending = loadPrivateProgressQueue(ownerId).some(m => m.entityId === paperId);
+        const next = { ...studyRef.current, attemptId: detail.attemptId, revision: knownRevisionRef.current, dirty: pending, mode: "save" as const };
+        updateStudy(next);
+        const saved = saveStudyProgress(ownerId, paperId, contentHash, next);
+        if (!saved) setProgressStatus("storage_write_failed");
+        setStorageAvailable(saved);
+        setSyncStatus(pending ? "pending" : "synced");
+      } catch { setSyncStatus("failed"); }
+    };
+    window.addEventListener("online", online);
+    window.addEventListener(PRIVATE_PROGRESS_SYNC_EVENT, acknowledge);
+    return () => { window.removeEventListener("online", online); window.removeEventListener(PRIVATE_PROGRESS_SYNC_EVENT, acknowledge); };
+  }, [identityMatches, ready, ownerId, paperId, contentHash, binding, pushSync, updateStudy]);
 
   // Each operation awaits its own result. A superseded request can never authorize it.
   const verifyPaper = useCallback(async (): Promise<boolean> => {
@@ -270,55 +300,36 @@ export default function StudyClient({
 
   function persistProgress(next: StudyProgressState) {
     if (activeBinding.current !== binding || !ready || verifyStatus === "invalid") return;
-    const ok = saveStudyProgress(ownerId, paperId, contentHash, next);
+    const draft = { ...next, attemptId: attemptIdRef.current!, revision: knownRevisionRef.current, dirty: true };
+    const ok = saveStudyProgress(ownerId, paperId, contentHash, draft);
     setStorageAvailable(ok);
     if (!ok) setProgressStatus("storage_write_failed");
     else if (progressStatus === "storage_write_failed" || progressStatus === "storage_read_failed") setProgressStatus("loaded");
-    // Debounced cloud enqueue: coalesce rapid answer selection into one mutation.
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setSyncStatus("local_saved");
-    const baseRevision = knownRevisionRef.current;
-    const stateToSend = next;
-    debounceRef.current = setTimeout(() => {
-      if (activeBinding.current !== binding) return;
-      enqueuePrivateProgress(paperId, {
-        attemptId: attemptIdRef.current as string,
-        contentHash,
-        answers: stateToSend.answers,
-        currentIndex: stateToSend.currentIndex,
-        submitted: stateToSend.submitted,
-        baseRevision,
-      });
+    // Persist the queue immediately. Debounce only the network, not durable storage.
+    try {
+      enqueuePrivateProgress(paperId, { attemptId: draft.attemptId, contentHash, answers: draft.answers, currentIndex: draft.currentIndex, submitted: draft.submitted, baseRevision: draft.revision, mode: draft.mode });
       setSyncStatus("pending");
-      void pushSync();
-    }, 500);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => { if (activeBinding.current === binding) void pushSync(); }, 500);
+    } catch { setSyncStatus("failed"); }
   }
 
   function selectAnswer(questionIndex: number, optionId: string) {
     if (activeBinding.current !== binding || submitted || isRestoring || submitInFlight.current || verifyStatus === "invalid") return;
     if (!questions[questionIndex]?.options.some(o => o.id === optionId)) return;
     const next = { ...studyState, answers: { ...answers, [questionIndex]: optionId } };
-    setStudyState(next);
+    updateStudy(next);
     persistProgress(next);
   }
   function goTo(index: number) {
     if (activeBinding.current !== binding || index < 0 || index >= total || isRestoring || submitInFlight.current || verifyStatus === "invalid") return;
     const next = { ...studyState, currentIndex: index };
-    setStudyState(next);
+    updateStudy(next);
     persistProgress(next);
   }
 
-  function flushNow(next: StudyProgressState) {
+  function flushNow() {
     if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
-    enqueuePrivateProgress(paperId, {
-      attemptId: attemptIdRef.current as string,
-      contentHash,
-      answers: next.answers,
-      currentIndex: next.currentIndex,
-      submitted: next.submitted,
-      baseRevision: knownRevisionRef.current,
-    });
-    setSyncStatus("pending");
     void pushSync();
   }
 
@@ -333,10 +344,10 @@ export default function StudyClient({
         return;
       }
       const next = { ...studyState, submitted: true };
-      setStudyState(next);
+      updateStudy(next);
       setShowUnansweredConfirm(false);
       persistProgress(next);
-      flushNow(next); // submit must sync immediately
+      flushNow(); // submit must sync immediately
       window.scrollTo({ top: 0, behavior: "instant" });
     } finally {
       submitInFlight.current = false;
@@ -345,79 +356,88 @@ export default function StudyClient({
   }
   async function handleRetry() {
     if (activeBinding.current !== binding || submitInFlight.current) return;
-    submitInFlight.current = true;
-    setIsSubmitting(true);
-    if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
+    submitInFlight.current = true; setIsSubmitting(true);
     try {
       if (!await verifyPaper() || activeBinding.current !== binding) return;
-      const newAttempt = generateAttemptId();
-      attemptIdRef.current = newAttempt;
-      knownRevisionRef.current = 0;
-      const cleared = clearStudyProgress(ownerId, paperId);
-      setStudyState(INITIAL_PROGRESS);
-      setShowUnansweredConfirm(false);
-      setConflictServerProgress(null);
-      setShowConflictDialog(false);
-      setProgressStatus(cleared ? "no_archive" : "storage_write_failed");
-      setStorageAvailable(cleared);
+      const snapshot = await fetchRemoteSnapshot(paperId);
+      if (activeBinding.current !== binding) return;
+      syncGeneration.current++;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      attemptIdRef.current = generateAttemptId();
+      knownRevisionRef.current = snapshot.revision;
       clearPrivateProgressForPaper(ownerId, paperId);
-      enqueuePrivateProgress(paperId, { attemptId: newAttempt, contentHash, answers: {}, currentIndex: 0, submitted: false, baseRevision: 0 });
-      setSyncStatus("pending");
-      void pushSync();
-    } finally {
-      submitInFlight.current = false;
-      if (activeBinding.current === binding) setIsSubmitting(false);
-    }
+      const next: StudyProgressState = { ...INITIAL_PROGRESS, attemptId: attemptIdRef.current, revision: snapshot.revision, mode: "restart", dirty: true };
+      updateStudy(next); setShowUnansweredConfirm(false); setShowConflictDialog(false); setConflictServerProgress(null);
+      persistProgress(next); flushNow();
+    } catch { if (activeBinding.current === binding) setSyncStatus("failed"); }
+    finally { submitInFlight.current = false; if (activeBinding.current === binding) setIsSubmitting(false); }
   }
 
-  // ── V14 Phase 1E.1: conflict resolution ──
-  function handleAdoptCloud() {
-    const remote = conflictServerProgress;
-    if (!remote) return;
-    setStudyState({ answers: remote.answers, currentIndex: remote.currentIndex, submitted: remote.submitted });
-    knownRevisionRef.current = remote.revision;
-    attemptIdRef.current = remote.attemptId;
-    saveStudyProgress(ownerId, paperId, contentHash, {
-      answers: remote.answers,
-      currentIndex: remote.currentIndex,
-      submitted: remote.submitted,
-    });
-    clearPrivateProgressForPaper(ownerId, paperId);
-    setConflictServerProgress(null);
-    setShowConflictDialog(false);
-    setSyncStatus("synced");
+  async function handleAdoptCloud() {
+    if (activeBinding.current !== binding) return;
+    try {
+      const snapshot = await fetchRemoteSnapshot(paperId);
+      if (activeBinding.current !== binding || !snapshot.progress || snapshot.progress.contentHash !== contentHash) return;
+      syncGeneration.current++;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      const remote = snapshot.progress;
+      clearPrivateProgressForPaper(ownerId, paperId);
+      attemptIdRef.current = remote.attemptId; knownRevisionRef.current = remote.revision;
+      const next = { answers: remote.answers, currentIndex: remote.currentIndex, submitted: remote.submitted, attemptId: remote.attemptId, revision: remote.revision, dirty: false };
+      updateStudy(next);
+      const saved = saveStudyProgress(ownerId, paperId, contentHash, next);
+      if (!saved) setProgressStatus("storage_write_failed");
+      setStorageAvailable(saved); setShowConflictDialog(false); setConflictServerProgress(null); setSyncStatus("synced");
+    } catch { if (activeBinding.current === binding) setSyncStatus("failed"); }
   }
   function handleKeepLocal() {
     const remote = conflictServerProgress;
-    if (!remote) return;
-    clearPrivateProgressForPaper(ownerId, paperId);
-    enqueuePrivateProgress(paperId, {
-      attemptId: attemptIdRef.current as string,
-      contentHash,
-      answers: studyState.answers,
-      currentIndex: studyState.currentIndex,
-      submitted: studyState.submitted,
-      baseRevision: remote.revision, // force overwrite with server's current revision
-    });
-    knownRevisionRef.current = remote.revision;
-    setConflictServerProgress(null);
-    setShowConflictDialog(false);
-    setSyncStatus("pending");
-    void pushSync();
+    if (!remote || activeBinding.current !== binding) return;
+    try {
+      syncGeneration.current++;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      clearPrivateProgressForPaper(ownerId, paperId);
+      const differentAttempt = attemptIdRef.current !== remote.attemptId;
+      if (differentAttempt) attemptIdRef.current = generateAttemptId();
+      knownRevisionRef.current = remote.revision;
+      const next: StudyProgressState = { ...studyState, attemptId: attemptIdRef.current!, revision: remote.revision, dirty: true, mode: differentAttempt ? "restart" : "save" };
+      updateStudy(next); setShowConflictDialog(false); setConflictServerProgress(null);
+      persistProgress(next); flushNow();
+    } catch { setSyncStatus("failed"); }
   }
-  function handleRestartFromConflict() {
-    const newAttempt = generateAttemptId();
-    attemptIdRef.current = newAttempt;
-    knownRevisionRef.current = 0;
-    clearStudyProgress(ownerId, paperId);
-    clearPrivateProgressForPaper(ownerId, paperId);
-    setStudyState(INITIAL_PROGRESS);
-    setConflictServerProgress(null);
-    setShowConflictDialog(false);
-    setProgressStatus("no_archive");
-    enqueuePrivateProgress(paperId, { attemptId: newAttempt, contentHash, answers: {}, currentIndex: 0, submitted: false, baseRevision: 0 });
-    setSyncStatus("pending");
-    void pushSync();
+  const handleRestartFromConflict = handleRetry;
+
+  function renderConflictDialog() {
+    return (<>
+      {showConflictDialog && conflictServerProgress && (
+        <dialog ref={conflictDialogRef} className="pp-modal pp-conflict-dialog" aria-labelledby="pp-conflict-title" aria-describedby="pp-conflict-desc" onCancel={() => setShowConflictDialog(false)} onKeyDown={(event) => {
+            if (event.key !== "Tab") return;
+            const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+            const first = buttons[0], last = buttons[buttons.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+          }}>
+          <h3 id="pp-conflict-title"><AlertTriangle size={18} /> 进度冲突</h3>
+          <p id="pp-conflict-desc">检测到其他设备对本篇有更新，请选择保留哪份进度。两端不同题目的作答不会自动合并。</p>
+          <div className="pp-conflict-compare">
+            <div className="pp-conflict-col">
+              <strong>本机进度</strong>
+              <p>已答 {answeredCount} 题 · 第 {currentIndex + 1}/{total} 题{submitted ? " · 已提交" : ""}</p>
+            </div>
+            <div className="pp-conflict-col">
+              <strong>云端进度</strong>
+              <p>已答 {Object.keys(conflictServerProgress.answers).length} 题 · 第 {conflictServerProgress.currentIndex + 1}/{total} 题{conflictServerProgress.submitted ? " · 已提交" : ""}</p>
+              <p className="pp-preview-note">更新于 {conflictServerProgress.updatedAt ? new Date(conflictServerProgress.updatedAt).toLocaleString() : "—"}</p>
+            </div>
+          </div>
+          <div className="pp-modal-actions">
+            <button ref={conflictFirstBtnRef} type="button" className="pp-cancel-btn" onClick={handleAdoptCloud}>采用云端</button>
+            <button type="button" className="pp-cancel-btn" onClick={handleKeepLocal}>保留本地</button>
+            <button type="button" className="pp-primary-btn" onClick={handleRestartFromConflict}>重新开始</button>
+          </div>
+        </dialog>
+      )}
+    </>);
   }
 
   // 5. 渲染
@@ -486,10 +506,13 @@ export default function StudyClient({
         {verifyStatus === "failed" && <div className="pp-study-status-banner" role="alert">{verifyMessage}<button type="button" onClick={() => void verifyPaper()} className="pp-study-retry-btn">重新验证</button></div>}
         {syncStatus === "failed" && (
           <div className="pp-sync-status-banner pp-sync-status-failed" role="alert">
-            <CloudOff size={16} /><span>云端同步失败，结果已保存在本地。</span>
+            <CloudOff size={16} /><span>云端同步失败，当前结果已保留；请重试。</span>
             <button type="button" onClick={() => void pushSync()} className="pp-study-retry-btn"><RefreshCw size={14} /> 重试</button>
           </div>
         )}
+        {syncStatus === "pending" && <div className="pp-sync-status-banner" role="status">等待云端同步…</div>}
+        {syncStatus === "synced" && <div className="pp-sync-status-banner" role="status">进度已同步到云端</div>}
+        {renderConflictDialog()}
         <section className="pp-detail-section">
           <div className="pp-study-score">
             <div className="pp-study-score-main">
@@ -650,34 +673,7 @@ export default function StudyClient({
         </dialog>
       )}
 
-      {showConflictDialog && conflictServerProgress && (
-        <dialog ref={conflictDialogRef} className="pp-modal pp-conflict-dialog" aria-labelledby="pp-conflict-title" aria-describedby="pp-conflict-desc" onCancel={() => setShowConflictDialog(false)} onKeyDown={(event) => {
-            if (event.key !== "Tab") return;
-            const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
-            const first = buttons[0], last = buttons[buttons.length - 1];
-            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-          }}>
-          <h3 id="pp-conflict-title"><AlertTriangle size={18} /> 进度冲突</h3>
-          <p id="pp-conflict-desc">检测到其他设备对本篇有更新，请选择保留哪份进度。两端不同题目的作答不会自动合并。</p>
-          <div className="pp-conflict-compare">
-            <div className="pp-conflict-col">
-              <strong>本机进度</strong>
-              <p>已答 {answeredCount} 题 · 第 {currentIndex + 1}/{total} 题{submitted ? " · 已提交" : ""}</p>
-            </div>
-            <div className="pp-conflict-col">
-              <strong>云端进度</strong>
-              <p>已答 {Object.keys(conflictServerProgress.answers).length} 题 · 第 {conflictServerProgress.currentIndex + 1}/{total} 题{conflictServerProgress.submitted ? " · 已提交" : ""}</p>
-              <p className="pp-preview-note">更新于 {conflictServerProgress.updatedAt ? new Date(conflictServerProgress.updatedAt).toLocaleString() : "—"}</p>
-            </div>
-          </div>
-          <div className="pp-modal-actions">
-            <button ref={conflictFirstBtnRef} type="button" className="pp-cancel-btn" onClick={handleAdoptCloud}>采用云端</button>
-            <button type="button" className="pp-cancel-btn" onClick={handleKeepLocal}>保留本地</button>
-            <button type="button" className="pp-primary-btn" onClick={handleRestartFromConflict}>重新开始</button>
-          </div>
-        </dialog>
-      )}
+      {renderConflictDialog()}
 
       <div className="me-spacer" />
     </main>

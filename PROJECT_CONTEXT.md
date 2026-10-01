@@ -1,8 +1,8 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1D.1（Private Reading Choice MVP，收尾验收通过，2026-10-01）
+## 当前工作版本：V14 Phase 1E.1（Private Study Progress Cloud Sync MVP，2026-10-01）
 
-当前工作分支 feature/v14-real-content-rights。PRIVATE 存储/CRUD/管理 UI/JSON 导入及有限阅读选择题学习流程已实现。私有练习不接 XP、Streak、全局学习统计、Review、Daily Plan 或 sync；服务端答题记录、跨设备同步、PDF/图片/音频上传、OCR/AI 未实现。完成 Phase 1D.1 后停止，不开始 Phase 1E，也不合并 main 或发布标签。
+当前工作分支 feature/v14-real-content-rights。PRIVATE 私有卷学习进度云同步已实现：服务端 PrivatePaperProgress 存储 + revision 乐观并发 + attemptId 练习轮次隔离；客户端复用 V12 账号隔离队列（entityType=privateProgress, snapshot 合并），独立 PUT 到专用进度端点；StudyClient 集成云端优先恢复、500ms debounce 推送、4 种同步状态、revision 冲突三选项弹窗（采用云端/保留本地/重新开始）。私有练习仍不接 XP、Streak、全局学习统计、Review、Daily Plan。PDF/图片/音频上传、OCR/AI 未实现。完成 Phase 1E.1 后停止，不开始 Phase 1E.2，也不合并 main 或发布标签。
 
 ### Phase 1D.1 最终收尾
 
@@ -464,3 +464,60 @@ Private Paper Learning MVP：让已导入的符合要求的私有卷完成详情
 - PRIVATE_SYNC=NOT_IMPLEMENTED
 - PRIVATE_XP=NOT_IMPLEMENTED
 - 无 Prisma 变更，无 Paper 001 内容变更
+
+## V14 Phase 1E.1（2026-10-01，分支 feature/v14-real-content-rights）
+
+### 目标
+Private Study Progress Cloud Sync MVP：同一账号在另一浏览器/设备打开同一私有卷，能恢复答案、当前题号及已提交结果；网络失败时保留本地作答，恢复后可重试。复用 V12 账号隔离队列/重试/同步状态机制，不重写现有同步系统。
+
+### 已完成并验证
+- **Prisma PrivatePaperProgress 模型**：owner-scoped，字段 paperId/attemptId/contentHash/answers(JSON)/currentIndex/submitted/revision/createdAt/updatedAt；@@unique([userId, paperId])；migration `20261001111004_add_private_paper_progress`
+- **服务端存储层** `src/content/private-paper-progress-store.ts`：getPrivatePaperProgress（读取并净化非法答案、contentHash 不匹配返回 null）、putPrivatePaperProgress（事务内先查后写，attemptId/revision/contentHash 条件更新）；不存储分数，读取时按当前试卷重算
+- **API 路由** `GET/PUT /api/private-papers/[paperId]/progress`：server session 派生 owner，不信任请求中的 userId；错误映射 NOT_FOUND->404、VALIDATION_ERROR->422、CONFLICT(revision_conflict/attempt_mismatch)->409、NOT_READY->409、CONTENT_CHANGED->409；revision_conflict 返回服务端最新进度供客户端决策
+- **客户端同步适配器** `src/lib/private-papers/progress-sync.ts`：复用 V12 队列数据结构（enqueueMutation/loadQueue/saveQueue），entityType=privateProgress，合并策略 snapshot；独立推送 pushPrivateProgressQueue（逐个 PUT 专用端点，不走 /api/sync/push）；fetchRemoteProgress 拉取云端；clearPrivateProgressForPaper 清空队列；generateAttemptId 新练习轮次；账号切换保护 activeUserId() 校验
+- **StudyClient 集成**：云端优先恢复（GET 云端有进度且 contentHash 匹配->采用云端，不入队；否则回退本地 sessionStorage，本地有效则 baseRevision=0 入队创建）；500ms debounce 入队推送（高频选答案合并，提交即时 flush）；4 种同步状态 local_saved/pending/synced/failed + conflict；revision 冲突弹窗三选项（采用云端/保留本地强制覆盖/重新开始）；重新练习生成新 attemptId 并清空队列；迟到响应保护（activeBinding + requestId）；账号切换立即隐藏
+- **V12 sync/client.ts**：MERGE_POLICY 添加 privateProgress: "snapshot"（唯一修改）
+- **CSS**：pp-sync-status-banner 4 状态配色 + pp-conflict-dialog 对比弹窗 + 移动端响应式
+- **测试**：tests/v14-private-progress-api.test.ts（19 项，真实 Prisma）+ tests/v14-private-progress-sync.test.ts（14 项，mock fetch）
+- **Gates**：npm test 781/781、typecheck PASS、lint 0 errors/0 warnings、build PASS、content:validate/stats/rights/audio-validate 全部 PASS
+- **关键修复**：路由层 PrivatePaperProgressStoreError 映射（原实现返回 500，修复后返回正确 409/422/404，使客户端冲突检测正常工作）
+
+### 恢复优先级
+1. 云端进度优先（contentHash 匹配->采用，不入队）
+2. 本地 sessionStorage（云端无进度时回退，有效则立即上传）
+3. 全新开始（新 attemptId）
+
+### 冲突规则
+- revision 条件更新：PUT 携带 baseRevision，服务端校验 revision===baseRevision 才更新并递增
+- 冲突时不自动合并 answers，弹窗提供采用云端/保留本地/重新开始
+- 重新练习创建新 attemptId，旧轮次请求返回 attempt_mismatch 被拒绝
+- 重复 mutation 幂等（V12 mutationId + 服务端 revision 递增）
+
+### 隔离
+- PRIVATE 进度不进入全局 LearningSession/XP/Review/Daily Plan
+- 不调用 enqueueSession/enqueueXpEvent 等全局适配器
+- 队列按 userId 分 key，A 的待同步队列不会作为 B 推送
+- 私有练习不写 cet-* localStorage 全局学习记录
+
+### 未做（保持 Phase 1E.1 边界）
+- 未开始 Phase 1E.2
+- 未接入 XP/Streak/全局学习统计/Review/Daily Plan
+- 未支持 listening/translation/writing/cloze/matching 等题型
+- 未实现 PDF/图片/音频上传、OCR/AI
+- 未修改 Paper 001 正文/答案/音频/内容版本
+- 未 merge main、打 tag、建 Release
+- 同一练习 revision 冲突不自动合并 answers（需用户手动决策）
+- 不支持多标签页同时作答同一篇卷
+
+### 关键文件
+- 新增：`src/content/private-paper-progress-store.ts`、`src/lib/private-papers/progress-sync.ts`、`src/app/api/private-papers/[paperId]/progress/route.ts`、`tests/v14-private-progress-api.test.ts`、`tests/v14-private-progress-sync.test.ts`、`prisma/migrations/20261001111004_add_private_paper_progress/`、`V14_PHASE1E1_DESIGN.md`、`V14_PHASE1E1_REPORT.md`
+- 修改：`prisma/schema.prisma`、`src/lib/sync/client.ts`、`src/lib/private-papers/progress-storage.ts`、`src/content/private-paper-store.ts`、`src/app/me/private-papers/[paperId]/study/StudyClient.tsx`、`src/app/globals.css`、`PROJECT_CONTEXT.md`
+
+### 最终字段
+- PRIVATE_LEARNING_FLOW=LIMITED_READING_CHOICE_MVP
+- PRIVATE_PROGRESS=CLOUD_SYNCED
+- PRIVATE_SYNC=IMPLEMENTED（V12 队列复用 + 专用端点）
+- PRIVATE_REVIEW=NOT_IMPLEMENTED
+- PRIVATE_DAILY_PLAN=NOT_IMPLEMENTED
+- PRIVATE_XP=NOT_IMPLEMENTED
+- 无 Paper 001 内容变更

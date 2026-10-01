@@ -95,11 +95,10 @@ export async function updatePrivatePaper(userId: string, paperId: string, update
 }
 export async function deletePrivatePaper(userId: string, paperId: string): Promise<{ success: true }> {
   owner(userId); checkPaperId(paperId);
-  return database(async () => {
-    const result = await prisma.privatePaper.deleteMany({ where: { userId, paperId } });
+  return database(() => prisma.$transaction(async tx => {
+    const result = await tx.privatePaper.deleteMany({ where: { userId, paperId } });
     if (!result.count) throw new PrivatePaperStoreError("NOT_FOUND", "paper not found");
-    // Cascade-delete associated progress (no FK constraint; paperId is a string reference).
-    await prisma.privatePaperProgress.deleteMany({ where: { userId, paperId } }).catch(() => { /* progress deletion is best-effort */ });
-    return { success: true };
-  });
+    await tx.privatePaperProgress.deleteMany({ where: { userId, paperId } });
+    return { success: true as const };
+  }));
 }

@@ -1,24 +1,9 @@
-/**
- * V14 Phase 1E.1 — Private Paper Study Progress 服务端存储层。
- *
- * 只信任 HTTP session 派生的 userId；不接受客户端传入的 ownerId。
- * - getPrivatePaperProgress：读取并净化（contentHash 不匹配 → null；非法答案丢弃并回写）。
- * - putPrivatePaperProgress：条件更新（attemptId / revision / contentHash 校验，事务内先查后写）。
- * - 不存储分数：读取时由调用方按当前试卷重算。
- */
+/** Owner-scoped PRIVATE progress. Paper row locks serialize writes and deletion. */
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
-import { getPrivatePaper, PrivatePaperStoreError } from "./private-paper-store";
 import { checkPrivatePaperReadiness, type PrivateFlatQuestion } from "@/lib/private-papers/readiness";
 
-export type PrivatePaperProgressErrorCode =
-  | "NOT_FOUND"
-  | "VALIDATION_ERROR"
-  | "CONFLICT"
-  | "NOT_READY"
-  | "CONTENT_CHANGED"
-  | "INTERNAL_ERROR";
-
+export type PrivatePaperProgressErrorCode = "NOT_FOUND" | "VALIDATION_ERROR" | "CONFLICT" | "NOT_READY" | "CONTENT_CHANGED" | "INTERNAL_ERROR";
 export interface PrivatePaperProgressConflictInfo {
   conflictType?: "revision_conflict" | "attempt_mismatch";
   currentRevision?: number;
@@ -27,279 +12,99 @@ export interface PrivatePaperProgressConflictInfo {
   reason?: string;
   details?: string[];
 }
-
 export class PrivatePaperProgressStoreError extends Error {
-  constructor(
-    public code: PrivatePaperProgressErrorCode,
-    message: string,
-    public extra?: PrivatePaperProgressConflictInfo,
-  ) {
-    super(message);
-    this.name = "PrivatePaperProgressStoreError";
-  }
+  constructor(public code: PrivatePaperProgressErrorCode, message: string, public extra?: PrivatePaperProgressConflictInfo) { super(message); this.name = "PrivatePaperProgressStoreError"; }
 }
-
 export interface PrivatePaperProgressView {
-  paperId: string;
-  attemptId: string;
-  contentHash: string;
-  answers: Record<string, string>;
-  currentIndex: number;
-  submitted: boolean;
-  revision: number;
-  updatedAt: string;
+  progressVersion: number; paperId: string; attemptId: string; contentHash: string;
+  answers: Record<string, string>; currentIndex: number; submitted: boolean; revision: number; updatedAt: string;
 }
-
-export interface PutPrivatePaperProgressResult {
-  revision: number;
-  updatedAt: string;
+export interface PutPrivatePaperProgressResult { revision: number; updatedAt: string; }
+export interface PrivateProgressSnapshot { progress: PrivatePaperProgressView | null; revision: number; invalidated: boolean; }
+const key = (userId: string, paperId: string) => ({ userId_paperId: { userId, paperId } });
+const record = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+function invalid(message: string): never { throw new PrivatePaperProgressStoreError("VALIDATION_ERROR", message); }
+function identity(userId: string, paperId: string) {
+  if (!userId?.trim() || !/^private:[^:@\s]+:[^:\x00-\x1f\x7f]+$/u.test(paperId) || paperId.length > 400) throw new PrivatePaperProgressStoreError("NOT_FOUND", "paper not found");
 }
-
-function owner(userId: string) {
-  if (typeof userId !== "string" || !userId.trim()) {
-    throw new PrivatePaperProgressStoreError("NOT_FOUND", "paper not found");
-  }
-}
-
-function checkPaperId(paperId: string) {
-  if (typeof paperId !== "string" || !/^private:[^:@\s]+:[^:\x00-\x1f\x7f]+$/u.test(paperId) || paperId.length > 400) {
-    throw new PrivatePaperProgressStoreError("NOT_FOUND", "paper not found");
-  }
-}
-
-function invalid(message: string, details?: string[]): never {
-  throw new PrivatePaperProgressStoreError("VALIDATION_ERROR", message, { details });
-}
-
 async function database<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
+  try { return await operation(); } catch (error) {
     if (error instanceof PrivatePaperProgressStoreError) throw error;
-    if (error instanceof PrivatePaperStoreError) throw error;
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") throw new PrivatePaperProgressStoreError("CONFLICT", "progress already exists");
-      if (error.code === "P2025") throw new PrivatePaperProgressStoreError("NOT_FOUND", "progress not found");
-    }
     throw new PrivatePaperProgressStoreError("INTERNAL_ERROR", "private paper progress storage unavailable");
   }
 }
-
-const key = (userId: string, paperId: string) => ({ userId_paperId: { userId, paperId } });
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+async function lockPaper(tx: Prisma.TransactionClient, userId: string, paperId: string) {
+  const papers = await tx.$queryRaw<Array<{ content: Prisma.JsonValue }>>(Prisma.sql`SELECT "content" FROM "PrivatePaper" WHERE "userId" = ${userId} AND "paperId" = ${paperId} FOR UPDATE`);
+  if (!papers[0] || !record(papers[0].content)) throw new PrivatePaperProgressStoreError("NOT_FOUND", "paper not found");
+  return checkPrivatePaperReadiness(papers[0].content);
 }
-
-/**
- * 净化 answers。
- * - PUT（forWrite=true）：键不规范、值不是合法 optionId → VALIDATION_ERROR；越界索引静默忽略。
- * - GET（forWrite=false）：非法条目一律丢弃，不抛错。
- */
-function sanitizeAnswers(
-  raw: unknown,
-  questions: PrivateFlatQuestion[],
-  forWrite: boolean,
-): { answers: Record<string, string>; dropped: boolean } {
-  if (!isRecord(raw)) {
-    if (forWrite) invalid("answers must be an object");
-    return { answers: {}, dropped: false };
-  }
-  const byIndex = new Map(questions.map((q) => [q.index, q]));
+function answersFor(raw: unknown, questions: PrivateFlatQuestion[], strict: boolean): Record<string, string> {
+  if (!record(raw)) { if (strict) invalid("answers must be an object"); return {}; }
   const clean: Record<string, string> = {};
-  let dropped = false;
-  for (const [entryKey, value] of Object.entries(raw)) {
-    if (!/^(0|[1-9][0-9]*)$/.test(entryKey)) {
-      if (forWrite) invalid(`answer key "${entryKey}" must be a canonical non-negative integer string`);
-      dropped = true;
-      continue;
-    }
-    const index = Number(entryKey);
-    const question = byIndex.get(index);
-    if (!question) {
-      // 越界索引：静默忽略，不计数。
-      dropped = true;
-      continue;
-    }
-    if (typeof value !== "string" || !question.options.some((o) => o.id === value)) {
-      if (forWrite) invalid(`answer for question ${index} is not a valid optionId`);
-      dropped = true;
-      continue;
-    }
-    clean[entryKey] = value;
+  for (const [k, v] of Object.entries(raw)) {
+    if (!/^(0|[1-9][0-9]*)$/.test(k) || !Number.isSafeInteger(Number(k))) { if (strict) invalid("invalid answer index"); continue; }
+    const q = questions[Number(k)];
+    if (!q) continue;
+    if (typeof v !== "string" || !q.options.some(o => o.id === v)) { if (strict) invalid("invalid optionId"); continue; }
+    clean[k] = v;
   }
-  return { answers: clean, dropped };
+  return clean;
 }
-
-function toView(record: {
-  paperId: string;
-  attemptId: string;
-  contentHash: string;
-  answers: Prisma.JsonValue;
-  currentIndex: number;
-  submitted: boolean;
-  revision: number;
-  updatedAt: Date;
-}): PrivatePaperProgressView {
-  const answers: Record<string, string> = {};
-  if (isRecord(record.answers)) {
-    for (const [k, v] of Object.entries(record.answers)) {
-      if (typeof v === "string") answers[k] = v;
-    }
-  }
-  return {
-    paperId: record.paperId,
-    attemptId: record.attemptId,
-    contentHash: record.contentHash,
-    answers,
-    currentIndex: record.currentIndex,
-    submitted: record.submitted,
-    revision: record.revision,
-    updatedAt: record.updatedAt.toISOString(),
-  };
+function view(row: { paperId: string; progressVersion: number; attemptId: string; contentHash: string; answers: Prisma.JsonValue; currentIndex: number; submitted: boolean; revision: number; updatedAt: Date }, questions: PrivateFlatQuestion[]): PrivatePaperProgressView {
+  return { paperId: row.paperId, attemptId: row.attemptId, contentHash: row.contentHash, progressVersion: row.progressVersion, revision: row.revision, submitted: row.submitted, answers: answersFor(row.answers, questions, false), currentIndex: Math.max(0, Math.min(row.currentIndex, questions.length - 1)), updatedAt: row.updatedAt.toISOString() };
 }
-
-/**
- * 读取当前用户的私有卷进度。
- * - 试卷不存在 / 跨 owner → NOT_FOUND。
- * - 试卷不 ready 或 contentHash 不匹配 → 返回 null（exists:false，旧进度不可恢复）。
- * - 非法 answers 丢弃并回写净化后的记录。
- */
-export async function getPrivatePaperProgress(
-  userId: string,
-  paperId: string,
-): Promise<PrivatePaperProgressView | null> {
-  owner(userId);
-  checkPaperId(paperId);
-  return database(async () => {
-    const paper = await getPrivatePaper(userId, paperId);
-    const readiness = checkPrivatePaperReadiness(paper.content);
-    if (!readiness.ready) return null;
-    const record = await prisma.privatePaperProgress.findUnique({ where: key(userId, paperId) });
-    if (!record) return null;
-    if (record.contentHash !== readiness.contentHash) return null;
-    const { answers: clean, dropped } = sanitizeAnswers(record.answers, readiness.questions, false);
-    if (dropped) {
-      await prisma.privatePaperProgress.update({
-        where: key(userId, paperId),
-        data: { answers: clean },
-      });
-    }
-    return toView({ ...record, answers: clean });
-  });
+/** Read-only hydration: never write sanitized old answers back over a newer update. */
+export async function readPrivateProgressSnapshot(userId: string, paperId: string): Promise<PrivateProgressSnapshot> {
+  identity(userId, paperId);
+  return database(() => prisma.$transaction(async tx => {
+    const ready = await lockPaper(tx, userId, paperId);
+    if (!ready.ready) throw new PrivatePaperProgressStoreError("NOT_READY", "paper is not ready", { reason: ready.reason });
+    const row = await tx.privatePaperProgress.findUnique({ where: key(userId, paperId) });
+    if (!row) return { progress: null, revision: 0, invalidated: false };
+    const invalidated = row.contentHash !== ready.contentHash || row.progressVersion !== 1;
+    return { progress: invalidated ? null : view(row, ready.questions), revision: row.revision, invalidated };
+  }));
 }
+export async function getPrivatePaperProgress(userId: string, paperId: string) { return (await readPrivateProgressSnapshot(userId, paperId)).progress; }
 
-/**
- * 条件写入进度。事务内先查后写。
- * - not ready → NOT_READY；contentHash 不匹配 → CONTENT_CHANGED。
- * - attemptId 不匹配 → CONFLICT(attempt_mismatch)；revision 不匹配 → CONFLICT(revision_conflict)。
- * 返回新 revision 与 updatedAt。
- */
-export async function putPrivatePaperProgress(
-  userId: string,
-  paperId: string,
-  input: unknown,
-): Promise<PutPrivatePaperProgressResult> {
-  owner(userId);
-  checkPaperId(paperId);
-  if (!isRecord(input)) invalid("request body must be a JSON object");
-
-  const attemptId = input.attemptId;
-  if (typeof attemptId !== "string" || !attemptId.trim() || attemptId.length > 200) {
-    invalid("attemptId must be a non-empty string");
-  }
-
-  const clientContentHash = input.contentHash;
-  if (typeof clientContentHash !== "string" || !clientContentHash) {
-    invalid("contentHash must be a string");
-  }
-
-  if (typeof input.currentIndex !== "number" || !Number.isSafeInteger(input.currentIndex)) {
-    invalid("currentIndex must be a safe integer");
-  }
-
-  if (typeof input.submitted !== "boolean") {
-    invalid("submitted must be a boolean");
-  }
-
-  let baseRevision: number;
-  if (input.baseRevision === undefined || input.baseRevision === null) {
-    baseRevision = 0;
-  } else if (typeof input.baseRevision !== "number" || !Number.isSafeInteger(input.baseRevision) || input.baseRevision < 0) {
-    invalid("baseRevision must be a non-negative safe integer");
-  } else {
-    baseRevision = input.baseRevision;
-  }
-
-  return database(async () => {
-    const paper = await getPrivatePaper(userId, paperId);
-    const readiness = checkPrivatePaperReadiness(paper.content);
-    if (!readiness.ready) {
-      throw new PrivatePaperProgressStoreError("NOT_READY", "paper is not ready", { reason: readiness.reason });
+export async function putPrivatePaperProgress(userId: string, paperId: string, input: unknown): Promise<PutPrivatePaperProgressResult> {
+  identity(userId, paperId);
+  if (!record(input)) invalid("request object required");
+  const { attemptId, mutationId, contentHash, currentIndex, submitted, baseRevision } = input;
+  const mode = input.mode ?? "save";
+  if (input.progressVersion !== 1) invalid("progressVersion=1 required");
+  if (typeof attemptId !== "string" || !attemptId.trim() || attemptId.length > 200) invalid("attemptId required");
+  if (typeof mutationId !== "string" || !mutationId.trim() || mutationId.length > 200) invalid("mutationId required");
+  if (typeof contentHash !== "string" || !contentHash) invalid("contentHash required");
+  if (!Number.isSafeInteger(currentIndex)) invalid("currentIndex must be a safe integer");
+  if (typeof submitted !== "boolean") invalid("submitted must be boolean");
+  if (!Number.isSafeInteger(baseRevision) || Number(baseRevision) < 0) invalid("baseRevision required");
+  if (mode !== "save" && mode !== "restart") invalid("invalid mode");
+  return database(() => prisma.$transaction(async tx => {
+    const readiness = await lockPaper(tx, userId, paperId);
+    if (!readiness.ready) throw new PrivatePaperProgressStoreError("NOT_READY", "paper is not ready", { reason: readiness.reason });
+    if (contentHash !== readiness.contentHash) throw new PrivatePaperProgressStoreError("CONTENT_CHANGED", "content changed");
+    const answers = answersFor(input.answers, readiness.questions, true);
+    const index = Math.max(0, Math.min(Number(currentIndex), readiness.questions.length - 1));
+    const canonical = JSON.stringify({ paperId, mode, attemptId, contentHash, answers, currentIndex: index, submitted, baseRevision, progressVersion: 1 });
+    const receipt = await tx.syncMutation.findUnique({ where: { userId_mutationId: { userId, mutationId: String(mutationId) } } });
+    if (receipt) {
+      if (receipt.entityType !== "privateProgress" || receipt.entityId !== paperId || !record(receipt.payload) || receipt.payload.request !== canonical || !record(receipt.payload.result)) invalid("mutationId reused with different request");
+      return { revision: Number(receipt.payload.result.revision), updatedAt: String(receipt.payload.result.updatedAt) };
     }
-    const currentHash = readiness.contentHash;
-    if (clientContentHash !== currentHash) {
-      throw new PrivatePaperProgressStoreError("CONTENT_CHANGED", "content hash mismatch");
-    }
-
-    const total = readiness.questions.length;
-    const currentIndex = Math.max(0, Math.min(input.currentIndex as number, total - 1));
-    const { answers: cleanAnswers } = sanitizeAnswers(input.answers, readiness.questions, true);
-
-    return prisma.$transaction(async (tx) => {
-      const existing = await tx.privatePaperProgress.findUnique({ where: key(userId, paperId) });
-
-      if (!existing) {
-        // 首次创建。要求 baseRevision ≤ 1；客户端误以为有更高版本则视为冲突。
-        if (baseRevision > 1) {
-          throw new PrivatePaperProgressStoreError("CONFLICT", "revision conflict", {
-            conflictType: "revision_conflict",
-            currentRevision: 0,
-            serverProgress: null,
-          });
-        }
-        const created = await tx.privatePaperProgress.create({
-          data: {
-            userId,
-            paperId,
-            attemptId: attemptId as string,
-            contentHash: currentHash,
-            answers: cleanAnswers as Prisma.InputJsonObject,
-            currentIndex,
-            submitted: input.submitted as boolean,
-            revision: baseRevision >= 1 ? baseRevision + 1 : 1,
-          },
-        });
-        return { revision: created.revision, updatedAt: created.updatedAt.toISOString() };
-      }
-
-      if (existing.attemptId !== attemptId) {
-        throw new PrivatePaperProgressStoreError("CONFLICT", "attempt id mismatch", {
-          conflictType: "attempt_mismatch",
-          currentAttemptId: existing.attemptId,
-        });
-      }
-
-      if (existing.revision !== baseRevision) {
-        const { answers: existingClean } = sanitizeAnswers(existing.answers, readiness.questions, false);
-        throw new PrivatePaperProgressStoreError("CONFLICT", "revision conflict", {
-          conflictType: "revision_conflict",
-          currentRevision: existing.revision,
-          serverProgress: toView({ ...existing, answers: existingClean }),
-        });
-      }
-
-      const updated = await tx.privatePaperProgress.update({
-        where: key(userId, paperId),
-        data: {
-          contentHash: currentHash,
-          answers: cleanAnswers as Prisma.InputJsonObject,
-          currentIndex,
-          submitted: input.submitted as boolean,
-          revision: existing.revision + 1,
-        },
-      });
-      return { revision: updated.revision, updatedAt: updated.updatedAt.toISOString() };
-    });
-  });
+    const existing = await tx.privatePaperProgress.findUnique({ where: key(userId, paperId) });
+    const conflict = (kind: "revision_conflict" | "attempt_mismatch"): never => {
+      throw new PrivatePaperProgressStoreError("CONFLICT", "progress conflict", { conflictType: kind, currentRevision: existing?.revision ?? 0, currentAttemptId: existing?.attemptId, serverProgress: existing && existing.contentHash === contentHash ? view(existing, readiness.questions) : null });
+    };
+    if ((existing?.revision ?? 0) !== baseRevision) conflict("revision_conflict");
+    if (existing && mode === "save" && (existing.attemptId !== attemptId || existing.contentHash !== contentHash || existing.progressVersion !== 1)) conflict("attempt_mismatch");
+    if (existing && mode === "restart" && existing.attemptId === attemptId) invalid("restart requires a new attemptId");
+    const data = { attemptId: String(attemptId), contentHash: String(contentHash), answers: answers as Prisma.InputJsonObject, currentIndex: index, submitted: Boolean(submitted), progressVersion: 1, revision: Number(baseRevision) + 1 };
+    const saved = existing
+      ? await tx.privatePaperProgress.update({ where: key(userId, paperId), data })
+      : await tx.privatePaperProgress.create({ data: { userId, paperId, ...data } });
+    const result = { revision: saved.revision, updatedAt: saved.updatedAt.toISOString() };
+    await tx.syncMutation.create({ data: { userId, mutationId: String(mutationId), entityType: "privateProgress", entityId: paperId, operation: "upsert", payload: { request: canonical, result }, status: "applied" } });
+    return result;
+  }));
 }

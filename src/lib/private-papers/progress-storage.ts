@@ -1,7 +1,7 @@
 /** Tab-local PRIVATE progress, with strict validation and explicit failure states. */
 import { PRIVATE_STUDY_PROGRESS_VERSION, type PrivateFlatQuestion } from "./readiness";
 export type ProgressLoadStatus = "loaded" | "no_archive" | "corrupted" | "content_changed" | "owner_mismatch" | "storage_read_failed" | "storage_write_failed";
-export interface StudyProgressState { answers: Record<number, string>; currentIndex: number; submitted: boolean; attemptId?: string; }
+export interface StudyProgressState { answers: Record<number, string>; currentIndex: number; submitted: boolean; attemptId?: string; revision?: number; dirty?: boolean; mode?: "save" | "restart"; }
 export interface ProgressLoadResult extends StudyProgressState { status: ProgressLoadStatus; message?: string; }
 export const INITIAL_PROGRESS: StudyProgressState = { answers: {}, currentIndex: 0, submitted: false };
 const storageKey = (userId: string, paperId: string) => `private-study:${userId}:${paperId}`;
@@ -20,6 +20,8 @@ export function loadStudyProgress(userId: string, paperId: string, contentHash: 
   if (parsed.paperId !== paperId) return reject("corrupted");
   if (parsed.contentHash !== contentHash) return reject("content_changed");
   if (typeof parsed.submitted !== "boolean" || !record(parsed.answers) || !Number.isSafeInteger(parsed.currentIndex)) return reject("corrupted");
+  if (parsed.revision !== undefined && (!Number.isSafeInteger(parsed.revision) || Number(parsed.revision) < 0)) return reject("corrupted");
+  if (parsed.dirty !== undefined && typeof parsed.dirty !== "boolean") return reject("corrupted");
   const answers: Record<number, string> = {};
   const byIndex = new Map(questions.map(q => [q.index, q]));
   for (const [key, value] of Object.entries(parsed.answers)) {
@@ -29,11 +31,11 @@ export function loadStudyProgress(userId: string, paperId: string, contentHash: 
     if (typeof value !== "string" || !question.options.some(o => o.id === value)) return reject("corrupted");
     answers[Number(key)] = value;
   }
-  return { status: "loaded", answers, currentIndex: Math.min(Math.max(0, Number(parsed.currentIndex)), Math.max(0, questions.length - 1)), submitted: parsed.submitted, attemptId: typeof parsed.attemptId === "string" ? parsed.attemptId : undefined };
+  return { status: "loaded", answers, currentIndex: Math.min(Math.max(0, Number(parsed.currentIndex)), Math.max(0, questions.length - 1)), submitted: parsed.submitted, attemptId: typeof parsed.attemptId === "string" && parsed.attemptId ? parsed.attemptId : undefined, revision: typeof parsed.revision === "number" ? parsed.revision : 0, dirty: parsed.dirty === true, mode: parsed.mode === "restart" ? "restart" : "save" };
 }
 export function saveStudyProgress(userId: string, paperId: string, contentHash: string, state: StudyProgressState): boolean {
   try {
-    window.sessionStorage.setItem(storageKey(userId, paperId), JSON.stringify({ version: PRIVATE_STUDY_PROGRESS_VERSION, userId, paperId, contentHash, answers: state.answers, currentIndex: state.currentIndex, submitted: state.submitted, attemptId: state.attemptId, savedAt: new Date().toISOString() }));
+    window.sessionStorage.setItem(storageKey(userId, paperId), JSON.stringify({ version: PRIVATE_STUDY_PROGRESS_VERSION, userId, paperId, contentHash, answers: state.answers, currentIndex: state.currentIndex, submitted: state.submitted, attemptId: state.attemptId, revision: state.revision, dirty: state.dirty, mode: state.mode, savedAt: new Date().toISOString() }));
     return true;
   } catch { return false; }
 }

@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth/config";
 import { privateRequest, readPrivateBody } from "@/lib/private-papers/http";
 import {
-  getPrivatePaperProgress,
+  readPrivateProgressSnapshot,
   putPrivatePaperProgress,
   PrivatePaperProgressStoreError,
 } from "@/content/private-paper-progress-store";
@@ -58,7 +58,7 @@ function progressErrorResponse(error: PrivatePaperProgressStoreError): Response 
         { status: 409 },
       );
     case "CONTENT_CHANGED":
-      return Response.json({ error: "content_changed" }, { status: 409 });
+      return Response.json({ error: "content_changed" }, { status: 410 });
     case "INTERNAL_ERROR":
     default:
       return Response.json({ error: "internal_error" }, { status: 500 });
@@ -84,8 +84,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
     async (owner) =>
       withProgressErrorMapping(async () => {
         const paperId = (await params).paperId;
-        const progress = await getPrivatePaperProgress(owner, paperId);
-        return Response.json({ exists: progress !== null, progress });
+        const snapshot = await readPrivateProgressSnapshot(owner, paperId);
+        return Response.json({ exists: snapshot.progress !== null, ...snapshot });
       }),
   );
 }

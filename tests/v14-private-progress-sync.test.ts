@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setSyncUserId } from "../src/lib/sync/adapters";
-import { loadQueue } from "../src/lib/sync/client";
 import {
   enqueuePrivateProgress,
   loadPrivateProgressQueue,
@@ -52,6 +51,7 @@ function putOk(revision: number) {
 function remoteView(paperId: string): Record<string, unknown> {
   return {
     paperId,
+    progressVersion: 1,
     attemptId: "attempt-remote",
     contentHash: "hash-1",
     answers: { "0": "C", "3": "D" },
@@ -85,14 +85,14 @@ test("enqueuePrivateProgress stores a privateProgress mutation; repeat enqueue o
   setSyncUserId(null);
 });
 
-test("enqueue only writes the user-scoped v12 queue key (no XP/session/daily-plan keys)", () => {
+test("enqueue only writes the dedicated owner-scoped PRIVATE queue key (no XP/session/daily-plan keys)", () => {
   const storage = installBrowser();
   setSyncUserId("U2");
   enqueuePrivateProgress("paper-x", payload());
   const keys: string[] = [];
   for (let i = 0; i < storage.length; i++) keys.push(storage.key(i) as string);
-  assert.deepEqual(keys, ["cet-daily:v12:sync-queue:U2"], "only the v12 user queue key is touched");
-  const queue = loadQueue("U2");
+  assert.deepEqual(keys, ["cet-daily:v14:private-progress-queue:U2"], "only the PRIVATE user queue key is touched");
+  const queue = loadPrivateProgressQueue("U2");
   assert.ok(queue.every((m) => m.entityType === "privateProgress"), "no other entity types enqueued");
   setSyncUserId(null);
 });
@@ -141,7 +141,7 @@ test("404 (paper deleted) removes the mutation from the queue", async () => {
   setSyncUserId(null);
 });
 
-test("409 attempt_mismatch (stale round) removes the mutation from the queue", async () => {
+test("409 attempt_mismatch preserves local draft for explicit conflict resolution", async () => {
   installBrowser();
   setSyncUserId("U6");
   enqueuePrivateProgress("paper-attempt", payload());
@@ -153,7 +153,8 @@ test("409 attempt_mismatch (stale round) removes the mutation from the queue", a
   });
   assert.equal(result.applied, 0);
   assert.equal(result.failed, 0);
-  assert.equal(loadPrivateProgressQueue("U6").length, 0, "stale attempt mutation dropped");
+  assert.equal(loadPrivateProgressQueue("U6").length, 1, "local draft is preserved");
+  assert.deepEqual(result.conflicts, ["paper-attempt"]);
   setSyncUserId(null);
 });
 
@@ -230,26 +231,22 @@ test("fetchRemoteProgress returns normalized RemoteProgress on a healthy respons
   assert.deepEqual(Object.keys(res!.answers).map(Number).sort(), [0, 3]);
 });
 
-test("fetchRemoteProgress returns null on 404", async () => {
+test("deleted paper is not mistaken for an empty cloud record", async () => {
   installBrowser();
-  const res = await fetchRemoteProgress("paper-nope", async () =>
-    new Response("{}", { status: 404 }),
-  );
-  assert.equal(res, null);
+  await assert.rejects(() => fetchRemoteProgress("paper-nope", async () => new Response("{}", { status: 404 })));
 });
 
 test("fetchRemoteProgress returns null when server says exists:false (contentHash mismatch / no record)", async () => {
   installBrowser();
   const res = await fetchRemoteProgress("paper-stale", async () =>
-    new Response(JSON.stringify({ exists: false, progress: null }), {
+    new Response(JSON.stringify({ exists: false, progress: null, revision: 0, invalidated: false }), {
       status: 200, headers: { "content-type": "application/json" },
     }),
   );
   assert.equal(res, null);
 });
 
-test("fetchRemoteProgress swallows network errors and returns null", async () => {
+test("cloud read failure is distinct from an empty cloud record", async () => {
   installBrowser();
-  const res = await fetchRemoteProgress("paper-err", async () => { throw new Error("down"); });
-  assert.equal(res, null);
+  await assert.rejects(() => fetchRemoteProgress("paper-err", async () => { throw new Error("down"); }));
 });

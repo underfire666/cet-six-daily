@@ -52,7 +52,7 @@ function notifyQueue(userId: string | null, pendingCount: number) {
 export function publishSyncStatus(userId: string, status: SyncStatus) {
   if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
   window.dispatchEvent(new CustomEvent<SyncEventDetail>(SYNC_STATUS_EVENT, {
-    detail: { userId, status, pendingCount: loadQueue(userId).length },
+    detail: { userId, status, pendingCount: loadGlobalQueue(userId).length },
   }));
 }
 
@@ -90,11 +90,13 @@ export function loadQueue(userId?: string | null): QueuedMutation[] {
   }
 }
 
+export function loadGlobalQueue(userId?: string | null): QueuedMutation[] { return loadQueue(userId).filter(m => m.entityType !== "privateProgress"); }
+
 export function saveQueue(queue: QueuedMutation[], userId?: string | null) {
   if (typeof window === "undefined") return;
   const owner = userId === undefined ? activeUserId() : userId;
   localStorage.setItem(queueKey(owner), JSON.stringify(queue));
-  notifyQueue(owner, queue.length);
+  notifyQueue(owner, queue.filter(m => m.entityType !== "privateProgress").length);
 }
 
 export function enqueueMutation(m: Omit<QueuedMutation, "mutationId" | "createdAt" | "attempts" | "status">): QueuedMutation {
@@ -185,7 +187,7 @@ async function pushQueueForUser(userId: string | null, options?: {
   fetchImpl?: typeof fetch;
 }): Promise<{ applied: number; failed: number }> {
   const fetchImpl = options?.fetchImpl ?? fetch;
-  const queue = loadQueue(userId).filter((m) => m.status !== "syncing");
+  const queue = loadGlobalQueue(userId).filter((m) => m.status !== "syncing");
   if (queue.length === 0) return { applied: 0, failed: 0 };
 
   // Never send a captured account queue after the browser switched accounts.
@@ -214,7 +216,7 @@ async function pushQueueForUser(userId: string | null, options?: {
     const appliedSet = new Set([...data.applied, ...data.skipped]);
     const remaining = loadQueue(userId).filter((m) => !appliedSet.has(m.mutationId));
     saveQueue(remaining, userId);
-    options?.onStatus?.(remaining.length === 0 ? "synced" : "pending");
+    options?.onStatus?.(loadGlobalQueue(userId).length === 0 ? "synced" : "pending");
     return { applied: appliedSet.size, failed: 0 };
   } catch {
     const attempted = new Set(queue.map((m) => m.mutationId));

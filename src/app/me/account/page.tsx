@@ -3,7 +3,7 @@
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { loadQueue, pushQueue, pullRemote, SYNC_QUEUE_EVENT, SYNC_STATUS_EVENT, type SyncEventDetail, type SyncStatus } from "@/lib/sync/client";
+import { loadGlobalQueue, pushQueue, pullRemote, SYNC_QUEUE_EVENT, SYNC_STATUS_EVENT, type SyncEventDetail, type SyncStatus } from "@/lib/sync/client";
 import { isManualSyncBusy, runManualSync } from "@/lib/sync/manual";
 import { hydrateFromPull } from "@/lib/sync/hydrate";
 import { buildGuestMigrationPlan, type GuestMigrationPlan } from "@/lib/sync/migration";
@@ -53,7 +53,7 @@ export default function AccountPage() {
     if (!userId) return;
     let mounted = true;
     const refresh = () => {
-      const count = loadQueue(userId).length;
+      const count = loadGlobalQueue(userId).length;
       setPendingCount(count);
       return count;
     };
@@ -97,7 +97,7 @@ export default function AccountPage() {
   const hasLocalData = Boolean(stats?.hasData);
 
   function refreshPending(): number {
-    const count = loadQueue(userId).length;
+    const count = loadGlobalQueue(userId).length;
     setPendingCount(count);
     return count;
   }

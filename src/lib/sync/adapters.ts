@@ -16,7 +16,10 @@ import type { DailyPlan } from "@/types/dailyPlan";
 // can enqueue without threading a hook through every function.
 let currentUserId: string | null = null;
 
+let syncIdentityGeneration = 0;
+export function getSyncIdentityGeneration() { return syncIdentityGeneration; }
 export function setSyncUserId(userId: string | null) {
+  if (currentUserId !== userId) syncIdentityGeneration++;
   currentUserId = userId;
   if (typeof window !== "undefined") {
     (window as unknown as { __CET_SYNC_USER_ID?: string }).__CET_SYNC_USER_ID = userId ?? undefined;

@@ -10,11 +10,15 @@ import { prisma } from "../src/lib/db/prisma";
 import { createPrivatePaper } from "../src/content/private-paper-store";
 import {
   getPrivatePaperProgress,
-  putPrivatePaperProgress,
+  putPrivatePaperProgress as writeProgress,
   PrivatePaperProgressStoreError,
 } from "../src/content/private-paper-progress-store";
 import { checkPrivatePaperReadiness } from "../src/lib/private-papers/readiness";
 import { privateRequest } from "../src/lib/private-papers/http";
+
+async function putPrivatePaperProgress(userId: string, paperId: string, input: Record<string, unknown>) {
+  return writeProgress(userId, paperId, { progressVersion: 1, mutationId: randomUUID(), ...input });
+}
 
 async function createTestUser(prefix: string) {
   const id = randomUUID();
@@ -193,7 +197,7 @@ test("2c. PUT：revision 冲突 + 服务端进度", async () => {
   } finally { await prisma.user.delete({ where: { id: user.id } }); }
 });
 
-test("2d. PUT 幂等：重复 baseRevision → revision_conflict", async () => {
+test("2d. PUT：不同请求使用旧 baseRevision → revision_conflict", async () => {
   const user = await createTestUser("prog-id");
   try {
     const { paperId, contentHash } = await createReadyPaper(user.id, "id-paper");
