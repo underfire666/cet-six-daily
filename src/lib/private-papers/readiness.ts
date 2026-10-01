@@ -45,7 +45,12 @@ const SUPPORTED_GROUP_TYPE = "careful_reading";
 const SUPPORTED_QUESTION_TYPE = "choice";
 
 /** 存档版本号，用于未来格式迁移时识别旧存档 */
-export const PRIVATE_STUDY_PROGRESS_VERSION = 2;
+export const PRIVATE_STUDY_PROGRESS_VERSION = 3;
+
+/** Shared deterministic tie-break rule for fingerprints and displayed questions. */
+function compareOrder(orderA: number, idA: string, orderB: number, idB: string): number {
+  return orderA - orderB || (idA < idB ? -1 : idA > idB ? 1 : 0);
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -129,7 +134,7 @@ export function computePrivateContentHash(content: Record<string, unknown>): str
         });
       }
       // 按 order 排序后再序列化
-      questions.sort((a, b) => a.questionOrder - b.questionOrder || a.questionId.localeCompare(b.questionId));
+      questions.sort((a, b) => compareOrder(a.questionOrder, a.questionId, b.questionOrder, b.questionId));
       groups.push({
         groupId: String(grpRaw.groupId ?? ""),
         groupOrder: grpOrder,
@@ -138,7 +143,7 @@ export function computePrivateContentHash(content: Record<string, unknown>): str
         questions,
       });
     }
-    groups.sort((a, b) => a.groupOrder - b.groupOrder || a.groupId.localeCompare(b.groupId));
+    groups.sort((a, b) => compareOrder(a.groupOrder, a.groupId, b.groupOrder, b.groupId));
     fingerprint.push({
       sectionId: String(secRaw.sectionId ?? ""),
       sectionOrder: secOrder,
@@ -146,10 +151,10 @@ export function computePrivateContentHash(content: Record<string, unknown>): str
       groups,
     });
   }
-  fingerprint.sort((a, b) => a.sectionOrder - b.sectionOrder || a.sectionId.localeCompare(b.sectionId));
+  fingerprint.sort((a, b) => compareOrder(a.sectionOrder, a.sectionId, b.sectionOrder, b.sectionId));
 
   const serialized = JSON.stringify(fingerprint);
-  return `v2:${fnv1a64(serialized)}`;
+  return `v3:${fnv1a64(serialized)}`;
 }
 
 /**
@@ -199,7 +204,7 @@ export function checkPrivatePaperReadiness(content: Record<string, unknown>): Pr
     .sort((a, b) => {
       const orderA = isRecord(sectionsArr[a]) ? Number(sectionsArr[a].order) || 0 : 0;
       const orderB = isRecord(sectionsArr[b]) ? Number(sectionsArr[b].order) || 0 : 0;
-      return orderA - orderB;
+      return compareOrder(orderA, String((sectionsArr[a] as Record<string, unknown>).sectionId), orderB, String((sectionsArr[b] as Record<string, unknown>).sectionId));
     });
 
   const questions: PrivateFlatQuestion[] = [];
@@ -228,7 +233,7 @@ export function checkPrivatePaperReadiness(content: Record<string, unknown>): Pr
       .sort((a, b) => {
         const orderA = isRecord(groupsArr[a]) ? Number(groupsArr[a].order) || 0 : 0;
         const orderB = isRecord(groupsArr[b]) ? Number(groupsArr[b].order) || 0 : 0;
-        return orderA - orderB;
+        return compareOrder(orderA, String((groupsArr[a] as Record<string, unknown>).groupId), orderB, String((groupsArr[b] as Record<string, unknown>).groupId));
       });
 
     for (const gi of groupIndices) {
@@ -264,7 +269,7 @@ export function checkPrivatePaperReadiness(content: Record<string, unknown>): Pr
         .sort((a, b) => {
           const orderA = isRecord(questionsArr[a]) ? Number(questionsArr[a].order) || 0 : 0;
           const orderB = isRecord(questionsArr[b]) ? Number(questionsArr[b].order) || 0 : 0;
-          return orderA - orderB;
+          return compareOrder(orderA, String((questionsArr[a] as Record<string, unknown>).questionId), orderB, String((questionsArr[b] as Record<string, unknown>).questionId));
         });
 
       for (const qi of questionIndices) {
@@ -375,7 +380,7 @@ export function countValidAnswers(
   let count = 0;
   for (const q of questions) {
     const v = answers[q.index];
-    if (typeof v === "string" && v.length > 0) count++;
+    if (typeof v === "string" && q.options.some(option => option.id === v)) count++;
   }
   return count;
 }

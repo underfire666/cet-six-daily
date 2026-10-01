@@ -1,261 +1,64 @@
-# V14 Phase 1D.1 — Private Paper Learning MVP + Hardening 验收报告
+# V14 Phase 1D.1 — Private Reading Choice MVP 最终收尾报告
 
-**日期**：2026-10-01
-**分支**：feature/v14-real-content-rights
-**目标**：让已导入的符合要求的私有卷完成详情页 → 开始学习 → 作答 → 提交 → 查看正确率/正确答案/解析 → 返回详情。Hardening 阶段修复 9 大类问题：内容指纹、order 排序、readiness 校验、状态隔离、存档校验、权限重验、弹窗可访问性、测试覆盖、浏览器 E2E。
+日期：2026-10-01
+分支：feature/v14-real-content-rights
+状态：实现及验收通过；Git 最终提交/远程一致性另记录于本地 output/v14d1-git-closure.md，避免报告自引用提交 SHA。
 
----
+## 范围
 
-## 1. 实现范围
+已实现 owner-scoped 私有卷详情 → 开始学习 → 阅读选择题作答 → 提交确认 → 正确率/答案/解析回顾 → 重新练习。只支持非草稿 reading section / careful_reading group / 内联 choice，混合不支持内容整体拒绝。
 
-### 支持
-- reading section + careful_reading group + 内联 choice 选择题
-- 作答、导航、题号跳转、提交、结算正确率
-- 结果页：正确答案高亮、用户答案标记、解析展示
-- sessionStorage 本地进度持久化（按 user.id + paperId + contentHash 隔离）
-- 刷新恢复、重新练习、未答题提交确认 modal
-- 详情页 readiness 判定 + "开始学习"入口
-- 权限与内容有效性重新验证（visibilitychange / focus / 提交前）
-- 存档 6 种状态明确提示（no_archive / loaded / corrupted / content_changed / owner_mismatch / storage_read_failed）
+答题进度仅保存在当前标签页 sessionStorage，按 ownerId + paperId 分键，并校验内容指纹。没有服务端答题存储、跨设备同步、XP/Streak/全局学习统计、Daily Plan 或 Review 接入。未接 PDF/OCR/AI；未开始 Phase 1E；未修改 Prisma、Paper 001、main、标签或 Release。
 
-### 不支持（本阶段边界）
-- listening / translation / writing / cloze / matching 等题型
-- XP / Streak / 学习统计 / Daily Plan / Review 奖励
-- 服务端学习记录持久化（仅 sessionStorage 标签页本地）
-- 跨设备云同步（Phase 1E）
-- PDF / 图片 / 音频上传、OCR / AI
+## 本次修复
 
----
+1. **提交验证结果**：verifyPaper 明确返回 boolean；每次提交、未答题确认和重新练习都重新验证并等待本次结果。旧的 verified 状态不再允许跳过；网络失败、500、坏响应均保留内存答案并阻止结算。同步操作锁阻止重复提交及提交过程中改答案。
+2. **账号与请求隔离**：实际 session.user.id 必须匹配页面 owner；不匹配时立即隐藏旧试卷，并禁止存档/操作。绑定清理、请求序号及 AbortController 避免旧响应覆盖较新的错误。验证 API 使用服务端 session owner，返回 ownerId、contentHash、ready；即使指纹没变，试卷转成草稿也不能提交。已提交结果在重新聚焦时同样验证。
+3. **排序一致性**：section/group/question 均使用 order，再以稳定 ID 打破同序号并列。展示和指纹采用相同规则，数组倒序不再导致答案错位。
+4. **存档校验**：指纹升级为 v3，存档 version=3 必填。旧版存档不迁移，失效提示后重新作答。answers 必须为对象，索引必须为规范非负整数字符串，值必须是对应题目的 optionId；额外越界答案忽略；submitted 必须为 boolean，currentIndex 必须为安全整数，整数越界钳位。损坏/缺版本/账号不符/内容变化均不恢复旧结果。
+5. **存储失败**：不再通过试写探测读取能力，因此配额满仍可读取已有进度；写入失败单独提示，继续保留内存作答。清空失败也明确提示，避免声称已清空。
+6. **弹窗**：原生 dialog/showModal 提供背景不可操作；移除 aria-hidden 父级，保留标题/描述关联。显式 Tab/Shift+Tab 焦点循环，Escape 关闭并恢复提交按钮焦点。不改变既有绿色主题。
+7. **报告准确性**：修复两个未使用变量 lint 警告；更新当前项目状态，替换此前尚未实测的手机宽度与 gates 声明。
 
-## 2. 核心实现（Hardening 后）
+## 自动验证
 
-### 2.1 readiness 判定模块
-**文件**：`src/lib/private-papers/readiness.ts`
+| 检查 | 结果 |
+|---|---|
+| npm test | 748/748 PASS；私有学习专项 74/74 |
+| typecheck | PASS |
+| lint --max-warnings 0 | PASS，0 error / 0 warning |
+| production build | PASS |
+| content:validate | PASS，0 error / 0 warning |
+| content:stats | PASS，production pool 保持 Paper 001 |
+| content:rights | PASS，生产内容均通过 rights guard |
+| content:audio-validate | PASS，0 error；仅已有允许的 synthetic fixture placeholder warning |
 
-- `checkPrivatePaperReadiness(content)`：返回 `{ready, reason, questions, contentHash}`
-- **第 0 步**：复用 `validatePrivateDraft()` 做结构校验（schemaVersion、唯一 ID、type、order、options 唯一 ID、answerId 匹配、questionRefs 结构、assetIds 引用）
-- 检查项：isPartial!==true、有 sections、仅 reading section、仅 careful_reading group、无 questionRefs、无 assetIds、仅 choice 题、options≥2 且格式合法、answerId 存在且匹配选项、prompt 非空、至少 1 题
-- **不静默跳过不支持内容**：混合支持+不支持的卷整体拒绝
-- **重复 ID 检测**：全局 questionId 重复、option.id 重复、空 ID 全部拒绝
-- **三级 order 排序**：section.order → group.order → question.order，使用索引数组不修改原始输入，排序后重新生成连续 globalIndex
-- `computePrivateContentHash`：**FNV-1a 64-bit（BigInt）**，格式 `v2:<16位hex>`，JSON.stringify 结构化序列化，排序后序列化，标题/解析不纳入哈希
-- `scorePrivateAnswers`：判分（correct/total/accuracy 保留1位小数）
-- `countValidAnswers`：只算当前有效题目 index 范围内的合法答案
+新增 9 项回归测试覆盖缺版本、缺失/字符串 submitted、非法选项、数字答案、歧义索引、合法答案计数、满配额读取及三级相同 order 的稳定映射。此前 decimal/array 存档测试改为明确拒绝。
 
-### 2.2 存档校验模块（Hardening 新增）
-**文件**：`src/lib/private-papers/progress-storage.ts`
+## 浏览器实测
 
-- `loadStudyProgress(ownerId, paperId, contentHash, questions)`：加载并校验存档
-- `saveStudyProgress(ownerId, paperId, contentHash, state)`：保存存档
-- `clearStudyProgress(ownerId, paperId)`：清空存档
-- `getProgressStatusMessage(status)`：返回用户可见提示
-- 校验项：version=2、owner 匹配、paperId 匹配、contentHash 匹配、answers 纯对象且 key 为有效题目索引、value 为合法 optionId、currentIndex 合法整数并钳位范围、submitted boolean
-- **6 种状态**：`no_archive` / `loaded` / `corrupted` / `content_changed` / `owner_mismatch` / `storage_read_failed`
-- 存储失败仍允许内存作答，明确提示用户
+使用生产构建、隔离浏览器和两个随机测试账号，共 **56 项 PASS**。测试用户及关联私有卷全部按精确 id/email 清理。
 
-### 2.3 学习页服务端组件
-**文件**：`src/app/me/private-papers/[paperId]/study/page.tsx`
+- 375、390、430、768、1440px × 学习页/弹窗/结果页，保存 15 张截图；无横向溢出。
+- 各宽度 Tab、Shift+Tab 循环，Escape 关闭与焦点恢复。
+- 答案/当前题刷新恢复；已提交结果刷新恢复；同 order 数组倒序后答案映射保留。
+- 既有 verified 后模拟网络失败，提交仍验证且不结算；重试成功后可提交。
+- 弹窗打开后改为草稿，确认提交重新检查 ready 并拦截。
+- 存储配额失败保留内存答案；缺 version 的 submitted 存档拒绝恢复。
+- 500、200 坏响应、401 均阻止结算；旧 200 迟到不覆盖新 404。
+- 结果页删除试卷后重新聚焦，撤销旧结果显示。
+- B 登录后原 A 页面立即隐藏 A 题目；B 对 A 的 get/verify/update/delete 一律 404；匿名 verify 为 401。
+- 正常私有练习不写全局 cet-* localStorage 学习记录；主学习链路无 pageerror。
 
-- `auth()` 服务端 session 校验
-- `privatePaperIdFromRoute` 解码（归一化双重编码）
-- `getPrivatePaper` 读取（owner-scoped，不存在返回 NOT_FOUND）
-- `checkPrivatePaperReadiness` 判定
-- 渲染 `StudyClient`，传入 questions / contentHash / ready / notReadyReason
+证据仅保留本地：output/v14d1-browser-results.json、output/v14d1-final-tests.log、output/v14d1-final-build.log；截图 output/playwright/v14d1-{study,modal,result}-{width}.png。未上传公开附件。
 
-### 2.4 StudyClient（Hardening 后）
-**文件**：`src/app/me/private-papers/[paperId]/study/StudyClient.tsx`
+## 最终边界及限制
 
-- 合并 `StudyState` 对象 `{answers, currentIndex, submitted}`
-- **hydratedRef 随 ownerId/paperId/contentHash 变化重置**：身份不匹配时禁止作答/提交/写入存档
-- **旧异步请求用 requestId/epoch 守卫**：防止覆盖新状态
-- 恢复完成前显示 loading 禁止用户操作
-- 作答选择、前后题导航、已答/未答计数、题号跳转 dots
-- 未答题提交确认 modal（未答题目计为错误）
-- **modal 可访问性**：role="dialog" aria-modal="true" aria-labelledby/aria-describedby、Escape 取消、焦点管理、焦点恢复
-- 提交冻结、结算正确率
-- 结果页：正确答案高亮（绿色）、用户答案标记（错误红色）、解析/暂无解析
-- 重新练习：清空 sessionStorage + 重置状态
-- sessionStorage 持久化：key=`private-study:${userId}:${paperId}`
-- **权限与内容有效性重新验证**：visibilitychange / focus / 提交前重新检查登录身份、私有卷权限和内容
-- VerifyStatus 类型：`"idle" | "verifying" | "verified" | "failed" | "invalid"`
-- 原卷被删除/修改/失去权限时停止使用旧进度并显示说明
-- 明确标注"本阶段私有练习暂不计入 XP、Streak、学习统计、Daily Plan 或 Review"
+PRIVATE_LEARNING_FLOW = LIMITED_READING_CHOICE_MVP
+PRIVATE_PROGRESS = TAB_LOCAL_ONLY / VERSION_3
+PRIVATE_SYNC / REVIEW / DAILY_PLAN / XP = NOT_IMPLEMENTED
+PHASE_1E_STARTED = NO
 
-### 2.5 权限验证 API（Hardening 新增）
-**文件**：`src/app/api/private-papers/[paperId]/verify/route.ts`
+sessionStorage 关闭标签页后丢失，不是跨设备存档。版本 2 及缺版本的旧答题进度失效，用户需重新作答。手机宽度为桌面 Chrome 模拟视口，未做真机软键盘/屏幕阅读器或跨浏览器测试。权限与内容验证是每次操作前的快照，不提供数据库事务式服务器结算。
 
-- GET 端点：验证当前用户对私有卷的访问权限和内容有效性
-- 返回 401/403（权限失效）、404（卷被删除）、200（含 contentHash）
-- StudyClient 在 visibilitychange/focus/提交前调用
-
-### 2.6 详情页更新
-**文件**：`src/app/me/private-papers/[paperId]/DetailClient.tsx`
-
-- 新增"学习"section
-- ready 时：显示题目数量 + 说明 + "开始学习"按钮（Link 到 /study）
-- 不 ready 时：显示具体原因 + 支持范围说明
-
-### 2.7 CSS（Hardening 修复）
-**文件**：`src/app/globals.css`
-
-- pp-* 系列样式替换未定义 Design Tokens：`--bg`→`--surface`、`--bg-subtle`→`--surface-soft`、`--text-secondary`→`--muted`、`--text-primary`→`--text`
-- 弹窗改为不透明白色背景 + border + box-shadow，overlay 0.5
-- **题号按钮 44×44px**（触控区域达标），gap 8px
-- 新增 `.pp-study-status-banner` / `.pp-study-status-warning` / `.pp-study-retry-btn` 样式
-- 新增 `@media (prefers-reduced-motion: reduce)` 禁用过渡动画
-- 移动端 `@media max-width:430px` 响应式
-
----
-
-## 3. Hardening 修复清单
-
-| # | 问题 | 修复 |
-|---|------|------|
-| 40 | 内容指纹 djb2 32位+截断 | FNV-1a 64-bit（BigInt）+ 完整文本不截断 + JSON.stringify 结构化 + 排序后序列化，格式 `v2:<hex>` |
-| 41 | order 未排序 | 三级排序 section→group→question，索引数组不修改原始输入，重新生成连续 globalIndex |
-| 42 | readiness 校验过弱 | 复用 validatePrivateDraft 做第 0 步结构校验，重复 ID/空 ID/非法答案全部拒绝 |
-| 43 | 账号/内容变化状态隔离失效 | hydratedRef 随 ownerId/paperId/contentHash 重置，epoch 守卫防止旧异步覆盖新状态 |
-| 44 | 存档校验过松且静默失败 | 独立 progress-storage 模块，6 种状态明确提示，currentIndex 钳位，多余答案过滤 |
-| 45 | 权限/内容有效性不重新验证 | visibilitychange/focus/提交前重新验证，原卷删除/修改/失权时停止使用旧进度 |
-| 46 | 弹窗 CSS 使用未定义 Token 且触控不足 | 替换 4 个未定义 Design Token，题号按钮 32→44px，modal 可访问性（role/aria/Escape/focus） |
-| 47 | 测试覆盖不足 | 35→65 个测试，新增长文本指纹/逆序排序/重复ID/存档6状态/存储失败等 |
-| 48 | 浏览器 E2E 覆盖不足 | 补充 modal 可访问性、Escape 键、刷新恢复、无横向溢出验证 |
-
----
-
-## 4. 测试
-
-**文件**：`tests/v14-private-paper-study.test.ts`
-**数量**：65 个测试，全部 PASS
-
-覆盖范围：
-- readiness 各类不支持场景（isPartial / 无sections / 非reading section / 非careful_reading group / questionRefs / assetIds / 非choice题 / 选项不足 / 缺answerId / answerId不匹配 / 缺prompt / 空内容）
-- 合法内容展开结构
-- 多 group 排序、多 section 按 section.order 排序
-- 逆序 order 排序正确、原始输入不被排序修改
-- 混合支持+不支持拒绝（不静默跳过）
-- 重复 option.id→拒绝、重复 questionId→拒绝、空 option id→拒绝
-- 非法 questionRefs 结构→拒绝、schemaVersion 不匹配→拒绝
-- 判分（全对 / 全错 / 部分 / 未答 / 多余answer不影响）
-- contentHash（同内容同hash / answerId变化不同hash / prompt变化不同hash / 标题不影响hash / 解析不影响hash / 长文本末尾变化不同hash / v2:前缀格式）
-- countValidAnswers 只算有效索引、忽略非字符串值
-- 存档 6 种状态全部测试（no_archive/loaded/corrupted/content_changed/owner_mismatch/storage_read_failed）
-- answers 是数组→过滤为空对象、currentIndex 小数→钳位 0、currentIndex 超范围→钳位 total-1
-- 多余答案→过滤、save/load roundtrip、clearStudyProgress
-- getProgressStatusMessage 各状态消息、旧版本存档→corrupted
-- submitted=true 存档恢复、negative currentIndex→钳位 0
-
----
-
-## 5. Gates 验证结果
-
-| Gate | 结果 |
-|------|------|
-| npm test | **739/739 PASS** |
-| npm run typecheck | **PASS** |
-| npm run lint -- --max-warnings 0 | **PASS**（0 errors, 0 warnings） |
-| npm run build | **PASS** |
-| npm run content:validate | **PASS** |
-| npm run content:stats | **PASS** |
-| npm run content:rights | **PASS** |
-| npm run content:audio-validate | **PASS** |
-
-**8/8 gates 全部通过**
-
----
-
-## 6. 浏览器 E2E 验证
-
-### 验证环境
-- Dev server：http://127.0.0.1:3000（Next.js 16.3.5 Turbopack）
-- 视口：494x632（移动端）
-
-### 初始 MVP 验证流程与结果
-
-| 步骤 | 操作 | 结果 |
-|------|------|------|
-| 1 | 导航到"我的"页面 | ✅ 显示"我的私有卷"入口 |
-| 2 | 进入私有卷列表 | ✅ 空状态显示"立即导入"按钮 |
-| 3 | 导入合法 reading/careful_reading/choice 卷（3题） | ✅ 导入成功，跳转详情页 |
-| 4 | 详情页显示"学习"section | ✅ 显示"本卷包含 3 道可作答阅读选择题"+"开始学习"按钮 |
-| 5 | 点击"开始学习"进入学习页 | ✅ 显示标题、进度条（第1/3题）、阅读材料、题目、4个选项、导航、题号dots |
-| 6 | 选择第1题答案A（正确） | ✅ 选项高亮，dot显示"已答"，已答计数更新 |
-| 7 | 点击"下一题"进入第2题 | ✅ 导航正常，进度条更新 |
-| 8 | 选择第2题答案C（正确） | ✅ 选项高亮，dot显示"已答" |
-| 9 | 点击"下一题"进入第3题 | ✅ 导航正常，"下一题"变为"提交答案" |
-| 10 | 选择第3题答案A（错误，正确为D） | ✅ 选项高亮 |
-| 11 | 点击"提交答案" | ✅ 进入结果页 |
-| 12 | 结果页显示正确率 | ✅ 66.7%，正确 2/3 题 |
-| 13 | 结果页显示每题回顾 | ✅ 第1题正确（绿色）、第2题正确（绿色）、第3题错误（红色），正确答案高亮，解析显示 |
-| 14 | 刷新页面 | ✅ 结果页仍显示（sessionStorage 恢复成功） |
-| 15 | 点击"重新练习" | ✅ 重置到第1题，已答0题，sessionStorage 清空 |
-| 16 | 直接到第3题提交（未答前2题） | ✅ 未答题确认 modal 出现"还有2题未作答" |
-| 17 | 点击"确认提交" | ✅ 进入结果页，未答题计为错误 |
-
-### Hardening 补充验证
-
-| 步骤 | 操作 | 结果 |
-|------|------|------|
-| 18 | 未答题弹窗可访问性 | ✅ role="dialog" aria-modal="true"，不透明白色背景+边框+阴影 |
-| 19 | Escape 键关闭弹窗 | ✅ 按 Escape 关闭未答题确认弹窗 |
-| 20 | 状态横幅显示 | ✅ "进度保存在当前浏览器标签页，刷新后可恢复" |
-| 21 | 刷新后已提交状态恢复 | ✅ 100% 分数、重新练习按钮仍在 |
-| 22 | 无横向溢出 | ✅ scrollWidth == clientWidth == 479px |
-| 23 | 题号按钮触控区域 | ✅ 44×44px，符合移动端触控标准 |
-
-### 截图
-保存于 `output/v14d1-screenshots/`：
-1. `01-detail-with-study-button.png` — 详情页显示"开始学习"按钮
-2. `02-study-page-question.png` — 学习页显示题目与选项
-3. `03-results-page.png` — 结果页显示正确率与答题回顾
-
----
-
-## 7. 最终状态字段
-
-| 字段 | 值 |
-|------|-----|
-| PRIVATE_LEARNING_FLOW | LIMITED_READING_CHOICE_MVP + HARDENING |
-| PRIVATE_PROGRESS | TAB_LOCAL_ONLY（sessionStorage，按 user.id+paperId+contentHash 隔离，6 种状态校验） |
-| PRIVATE_REVIEW | NOT_IMPLEMENTED |
-| PRIVATE_DAILY_PLAN | NOT_IMPLEMENTED |
-| PRIVATE_SYNC | NOT_IMPLEMENTED |
-| PRIVATE_XP | NOT_IMPLEMENTED |
-| PRIVATE_STORAGE_IMPLEMENTED | YES（Phase 1B） |
-| PRIVATE_MANAGEMENT_UI | YES（Phase 1C） |
-| PRIVATE_JSON_IMPORT_UI | YES（Phase 1C） |
-| CONTENT_HASH_VERSION | v2（FNV-1a 64-bit） |
-| PROGRESS_STORAGE_VERSION | 2 |
-| PRISMA_CHANGED | NO |
-| PAPER_001_CHANGED | NO |
-| PHASE_1E_STARTED | NO |
-
----
-
-## 8. 已知限制
-
-1. 仅支持 reading section + careful_reading group + 内联 choice 题
-2. 进度仅保存在 sessionStorage（标签页关闭后丢失），不持久化到数据库
-3. 不奖励 XP / Streak / 学习统计 / Daily Plan / Review
-4. 不支持跨设备同步（Phase 1E）
-5. 真机移动端软键盘未验证
-6. 375/390/430px 精确宽度的 Playwright 自动化检查未单独运行（E2E 使用 494px 视口手动验证，CSS 已包含 @media max-width:430px 响应式）
-7. CDP Emulation.setDeviceMetricsOverride 报 "Session with given id not found"，无法通过 CDP 切换视口宽度
-
----
-
-## 9. 结论
-
-**V14 Phase 1D.1 开发 + Hardening 完成并通过验收。**
-
-- 8/8 gates 全部通过（739/739 tests）
-- 9 大类 hardening 问题全部修复
-- 65 个私有卷学习专项测试全部通过
-- 浏览器 E2E 完整学习流程 + hardening 补充验证通过
-- sessionStorage 本地进度恢复 + 6 种状态校验验证通过
-- 未答题提交确认 modal + 可访问性验证通过
-- 权限与内容有效性重新验证实现
-- 无 Prisma 变更，无 Paper 001 内容变更
-- 未开始 Phase 1E
-
-完成后停止，等待验收，不开始 Phase 1E。
+完成本阶段后停止，等待用户验收。

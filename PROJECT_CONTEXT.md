@@ -1,8 +1,17 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1C.1（Private Paper Management + JSON Import UI，收尾验收通过，2026-10-01）
+## 当前工作版本：V14 Phase 1D.1（Private Reading Choice MVP，收尾验收通过，2026-10-01）
 
-当前工作分支 feature/v14-real-content-rights。PRIVATE 存储/CRUD/管理 UI（列表/导入/详情）已实现；专项 sync、私有卷答题流程、PDF/图片/音频上传、OCR/AI 未实现。JSON 文件选择与浏览器读取已实现，不存储文件原件。Phase 1C.1 完成后停止，不开始 Phase 1D。以下 V13/V14 旧章节保留为历史记录。
+当前工作分支 feature/v14-real-content-rights。PRIVATE 存储/CRUD/管理 UI/JSON 导入及有限阅读选择题学习流程已实现。私有练习不接 XP、Streak、全局学习统计、Review、Daily Plan 或 sync；服务端答题记录、跨设备同步、PDF/图片/音频上传、OCR/AI 未实现。完成 Phase 1D.1 后停止，不开始 Phase 1E，也不合并 main 或发布标签。
+
+### Phase 1D.1 最终收尾
+
+- 每次提交、未答题确认及重新练习都等待本次服务器验证结果；检查 session owner、内容指纹及 readiness。焦点/可见性恢复也验证已提交结果；请求序号与取消保护阻止旧响应覆盖新结果。
+- session 用户与页面 owner 不一致时立即隐藏旧试卷，禁止恢复、写入或继续提交。
+- 三级排序统一为 order + 稳定 ID；指纹 v3 / 存档 version=3，旧格式失效并明确提示重新作答。严格校验版本、答案对象/选项、提交布尔值及整数索引；读取与写入失败分别提示。
+- 原生 dialog、显式 Tab / Shift+Tab 循环、Escape 关闭及提交按钮焦点恢复。
+- 验证：748/748 tests；typecheck、lint（0/0）、build、四项 content gates 通过。56 项隔离浏览器检查；375/390/430/768/1440px 学习页、弹窗、结果页，无横向溢出；包含双账号、刷新、存储配额失败、401/404/500、坏响应及迟到响应检查。两个测试账号均已清理。
+- 报告：V14_PHASE1D1_REPORT.md。截图及完整验证日志仅保留 output/ 本地。最终 Git closure 记录在 output/v14d1-git-closure.md；不上传报告附件。以下旧章节为历史记录，当前状态以本节及最新报告为准。
 
 ### V13.0.1 发布收尾
 

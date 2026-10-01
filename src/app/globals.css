@@ -1194,6 +1194,8 @@ button:disabled {
 
 /* Modal */
 .pp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
+.pp-modal::backdrop { background: rgba(0,0,0,0.5); }
 .pp-modal { background: var(--surface); border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); border: 1px solid var(--border); }
 .pp-modal h3 { font-size: 18px; margin-bottom: 8px; }
 .pp-modal p { font-size: 14px; color: var(--muted); margin-bottom: 20px; }

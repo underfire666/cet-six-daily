@@ -432,8 +432,8 @@ test("38. long option text change at position 100+ → different hash", () => {
 
 test("39. hash uses v2 prefix (FNV-1a 64-bit)", () => {
   const h = computePrivateContentHash(makeValidContent());
-  assert.ok(h.startsWith("v2:"));
-  assert.equal(h.length, 19); // "v2:" + 16 hex chars
+  assert.ok(h.startsWith("v3:"));
+  assert.equal(h.length, 19); // "v3:" + 16 hex chars
 });
 
 test("40. answer change → different hash", () => {
@@ -593,7 +593,7 @@ function setupMockStorage(): MockSessionStorage {
 }
 
 test("51. no archive → no_archive status", () => {
-  const mock = setupMockStorage();
+  setupMockStorage();
   const result = checkPrivatePaperReadiness(makeValidContent());
   const loaded = loadStudyProgress("user1", "paper1", result.contentHash, result.questions);
   assert.equal(loaded.status, "no_archive");
@@ -667,7 +667,7 @@ test("55. owner mismatch → owner_mismatch status", () => {
   assert.equal(loaded.status, "owner_mismatch");
 });
 
-test("56. answers is array → filtered to valid object", () => {
+test("56. answers is array → corrupted archive", () => {
   const mock = setupMockStorage();
   const result = checkPrivatePaperReadiness(makeValidContent());
   mock.setItem("private-study:user1:paper1", JSON.stringify({
@@ -681,11 +681,11 @@ test("56. answers is array → filtered to valid object", () => {
     savedAt: new Date().toISOString(),
   }));
   const loaded = loadStudyProgress("user1", "paper1", result.contentHash, result.questions);
-  assert.equal(loaded.status, "loaded");
+  assert.equal(loaded.status, "corrupted");
   assert.deepEqual(loaded.answers, {}); // array is rejected, answers empty
 });
 
-test("57. currentIndex decimal → clamped to integer 0", () => {
+test("57. currentIndex decimal → corrupted archive", () => {
   const mock = setupMockStorage();
   const result = checkPrivatePaperReadiness(makeValidContent());
   mock.setItem("private-study:user1:paper1", JSON.stringify({
@@ -699,7 +699,7 @@ test("57. currentIndex decimal → clamped to integer 0", () => {
     savedAt: new Date().toISOString(),
   }));
   const loaded = loadStudyProgress("user1", "paper1", result.contentHash, result.questions);
-  assert.equal(loaded.status, "loaded");
+  assert.equal(loaded.status, "corrupted");
   assert.equal(loaded.currentIndex, 0); // decimal rejected → 0
 });
 
@@ -741,7 +741,7 @@ test("59. extra answers beyond valid indices → filtered out", () => {
 });
 
 test("60. save and load roundtrip", () => {
-  const mock = setupMockStorage();
+  setupMockStorage();
   const result = checkPrivatePaperReadiness(makeValidContent());
   const state = { answers: { 0: "B" }, currentIndex: 1, submitted: false };
   const saved = saveStudyProgress("user1", "paper1", result.contentHash, state);
@@ -820,4 +820,62 @@ test("65. negative currentIndex → clamped to 0", () => {
   }));
   const loaded = loadStudyProgress("user1", "paper1", result.contentHash, result.questions);
   assert.equal(loaded.currentIndex, 0);
+});
+
+
+for (const [label, changes] of [
+  ["missing version", { version: undefined }],
+  ["missing submitted", { submitted: undefined }],
+  ["string submitted", { submitted: "false" }],
+  ["illegal option", { answers: { 0: "Z" } }],
+  ["numeric option", { answers: { 0: 1 } }],
+  ["ambiguous index", { answers: { "00": "A" } }],
+] as const) {
+  test(`strict archive rejects ${label} and removes the invalid record`, () => {
+    const storage = setupMockStorage();
+    const r = checkPrivatePaperReadiness(makeValidContent());
+    storage.setItem("private-study:u:p", JSON.stringify({ version: PRIVATE_STUDY_PROGRESS_VERSION, userId: "u", paperId: "p", contentHash: r.contentHash, answers: {}, currentIndex: 0, submitted: false, ...changes }));
+    const loaded = loadStudyProgress("u", "p", r.contentHash, r.questions);
+    assert.equal(loaded.status, "corrupted");
+    assert.deepEqual(loaded.answers, {});
+    assert.equal(loaded.submitted, false);
+    assert.equal(storage.getItem("private-study:u:p"), null);
+  });
+}
+test("valid options alone count as answered", () => {
+  const r = checkPrivatePaperReadiness(makeValidContent());
+  assert.equal(countValidAnswers(r.questions, { 0: "Z", 1: "C" }), 1);
+});
+test("full storage can still read existing progress; writes report failure", () => {
+  const storage = setupMockStorage();
+  const r = checkPrivatePaperReadiness(makeValidContent());
+  saveStudyProgress("u", "p", r.contentHash, { answers: { 0: "A" }, currentIndex: 0, submitted: false });
+  storage.setItem = () => { throw new Error("QuotaExceededError"); };
+  assert.equal(loadStudyProgress("u", "p", r.contentHash, r.questions).answers[0], "A");
+  assert.equal(saveStudyProgress("u", "p", r.contentHash, { answers: {}, currentIndex: 0, submitted: false }), false);
+  assert.ok(getProgressStatusMessage("storage_write_failed")?.includes("保存"));
+});
+test("equal-order sections, groups and questions share stable fingerprint/display order", () => {
+  const original = makeValidContent() as { sections: Array<{ sectionId: string; order: number; groups: Array<{ groupId: string; order: number; questions: Array<{ questionId: string; order: number }> }> }> };
+  const section = original.sections[0];
+  section.groups[0].questions.forEach(q => q.order = 0);
+  const secondGroup = structuredClone(section.groups[0]);
+  secondGroup.groupId = "careful-2";
+  secondGroup.questions.forEach(q => q.questionId += "-g2");
+  section.groups.push(secondGroup);
+  const secondSection = structuredClone(section);
+  secondSection.sectionId = "reading-2";
+  secondSection.groups.forEach(g => { g.groupId += "-s2"; g.questions.forEach(q => q.questionId += "-s2"); });
+  original.sections.push(secondSection);
+  const reversed = structuredClone(original);
+  reversed.sections.reverse().forEach(s => s.groups.reverse().forEach(g => g.questions.reverse()));
+  const a = checkPrivatePaperReadiness(original);
+  const b = checkPrivatePaperReadiness(reversed);
+  assert.equal(a.ready, true);
+  assert.equal(b.ready, true);
+  assert.equal(a.contentHash, b.contentHash);
+  assert.deepEqual(a.questions, b.questions);
+  setupMockStorage();
+  saveStudyProgress("u", "p", a.contentHash, { answers: { 0: "A" }, currentIndex: 0, submitted: false });
+  assert.equal(loadStudyProgress("u", "p", b.contentHash, b.questions).answers[0], "A");
 });

@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth/config";
 import { getPrivatePaper, PrivatePaperStoreError } from "@/content/private-paper-store";
-import { computePrivateContentHash } from "@/lib/private-papers/readiness";
+import { checkPrivatePaperReadiness } from "@/lib/private-papers/readiness";
 import { privateRequest } from "@/lib/private-papers/http";
 
 interface RouteParams {
@@ -20,11 +20,14 @@ export async function GET(_request: Request, { params }: RouteParams) {
       const { paperId } = await params;
       try {
         const paper = await getPrivatePaper(owner, paperId);
-        const contentHash = computePrivateContentHash(paper.content);
+        const readiness = checkPrivatePaperReadiness(paper.content);
         return Response.json({
           exists: true,
           accessible: true,
-          contentHash,
+          ownerId: owner,
+          contentHash: readiness.contentHash,
+          ready: readiness.ready,
+          reason: readiness.reason,
           paperTitle: paper.title,
         });
       } catch (err) {
