@@ -1257,3 +1257,25 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
 .pp-study-start .pp-primary-btn { align-self: flex-start; }
 .pp-study-not-ready .pp-field-error { display: flex; align-items: center; gap: 6px; }
 
+
+/* -- V14 Phase 1E.1: cloud sync status banner -- */
+.pp-sync-status-banner { display: flex; align-items: center; gap: 8px; padding: 8px 16px; margin: 0 16px 12px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); background: var(--surface-soft); color: var(--muted); }
+.pp-sync-status-banner span { flex: 1; }
+.pp-sync-status-local_saved { color: var(--muted); }
+.pp-sync-status-pending { color: var(--muted); }
+.pp-sync-status-synced { background: rgba(77, 152, 46, 0.08); border-color: var(--success); color: var(--success); }
+.pp-sync-status-failed { background: rgba(220, 38, 38, 0.08); border-color: #dc2626; color: #dc2626; }
+.pp-sync-status-conflict { background: rgba(177, 136, 75, 0.1); border-color: var(--warning); color: var(--warning); }
+
+/* -- V14 Phase 1E.1: conflict resolution dialog -- */
+.pp-conflict-dialog h3 { display: flex; align-items: center; gap: 8px; }
+.pp-conflict-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.pp-conflict-col { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); }
+.pp-conflict-col strong { display: block; margin-bottom: 6px; font-size: 13px; }
+.pp-conflict-col p { margin: 2px 0; font-size: 13px; color: var(--text); }
+.pp-conflict-col .pp-preview-note { font-size: 12px; color: var(--muted); }
+
+@media (max-width: 430px) {
+  .pp-conflict-compare { grid-template-columns: 1fr; }
+  .pp-sync-status-banner { margin: 0 12px 10px; }
+}

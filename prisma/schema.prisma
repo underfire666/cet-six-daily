@@ -30,6 +30,7 @@ model User {
   syncMutations SyncMutation[]
   migrationRecords MigrationRecord[]
   privatePapers PrivatePaper[]
+  privatePaperProgress PrivatePaperProgress[]
 }
 
 model Profile {
@@ -214,6 +215,25 @@ model PrivatePaper {
   content   Json     // full CET6Paper object (authenticity=user_import, visibility=private)
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, paperId])
+  @@index([userId])
+}
+
+model PrivatePaperProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paperId         String   // matches PrivatePaper.paperId (private namespace)
+  progressVersion Int      @default(1)
+  contentHash     String
+  attemptId       String
+  answers         Json     // Record<number, string> — questionIndex -> optionId
+  currentIndex    Int      @default(0)
+  submitted       Boolean  @default(false)
+  revision        Int      @default(1)  // optimistic concurrency
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 
   @@unique([userId, paperId])
   @@index([userId])

@@ -1,7 +1,7 @@
 /** Tab-local PRIVATE progress, with strict validation and explicit failure states. */
 import { PRIVATE_STUDY_PROGRESS_VERSION, type PrivateFlatQuestion } from "./readiness";
 export type ProgressLoadStatus = "loaded" | "no_archive" | "corrupted" | "content_changed" | "owner_mismatch" | "storage_read_failed" | "storage_write_failed";
-export interface StudyProgressState { answers: Record<number, string>; currentIndex: number; submitted: boolean; }
+export interface StudyProgressState { answers: Record<number, string>; currentIndex: number; submitted: boolean; attemptId?: string; }
 export interface ProgressLoadResult extends StudyProgressState { status: ProgressLoadStatus; message?: string; }
 export const INITIAL_PROGRESS: StudyProgressState = { answers: {}, currentIndex: 0, submitted: false };
 const storageKey = (userId: string, paperId: string) => `private-study:${userId}:${paperId}`;
@@ -29,11 +29,11 @@ export function loadStudyProgress(userId: string, paperId: string, contentHash: 
     if (typeof value !== "string" || !question.options.some(o => o.id === value)) return reject("corrupted");
     answers[Number(key)] = value;
   }
-  return { status: "loaded", answers, currentIndex: Math.min(Math.max(0, Number(parsed.currentIndex)), Math.max(0, questions.length - 1)), submitted: parsed.submitted };
+  return { status: "loaded", answers, currentIndex: Math.min(Math.max(0, Number(parsed.currentIndex)), Math.max(0, questions.length - 1)), submitted: parsed.submitted, attemptId: typeof parsed.attemptId === "string" ? parsed.attemptId : undefined };
 }
 export function saveStudyProgress(userId: string, paperId: string, contentHash: string, state: StudyProgressState): boolean {
   try {
-    window.sessionStorage.setItem(storageKey(userId, paperId), JSON.stringify({ version: PRIVATE_STUDY_PROGRESS_VERSION, userId, paperId, contentHash, ...state, savedAt: new Date().toISOString() }));
+    window.sessionStorage.setItem(storageKey(userId, paperId), JSON.stringify({ version: PRIVATE_STUDY_PROGRESS_VERSION, userId, paperId, contentHash, answers: state.answers, currentIndex: state.currentIndex, submitted: state.submitted, attemptId: state.attemptId, savedAt: new Date().toISOString() }));
     return true;
   } catch { return false; }
 }

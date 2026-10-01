@@ -98,6 +98,8 @@ export async function deletePrivatePaper(userId: string, paperId: string): Promi
   return database(async () => {
     const result = await prisma.privatePaper.deleteMany({ where: { userId, paperId } });
     if (!result.count) throw new PrivatePaperStoreError("NOT_FOUND", "paper not found");
+    // Cascade-delete associated progress (no FK constraint; paperId is a string reference).
+    await prisma.privatePaperProgress.deleteMany({ where: { userId, paperId } }).catch(() => { /* progress deletion is best-effort */ });
     return { success: true };
   });
 }

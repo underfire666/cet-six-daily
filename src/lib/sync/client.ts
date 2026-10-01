@@ -75,6 +75,7 @@ const MERGE_POLICY: Record<string, MergePolicy> = {
   dailyPlan: "accumulative",
   wordbook: "state",
   reviewItem: "state",
+  privateProgress: "snapshot",
 };
 
 export function loadQueue(userId?: string | null): QueuedMutation[] {
