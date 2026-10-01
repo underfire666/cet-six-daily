@@ -36,7 +36,8 @@ export default async function StudyPage({ params }: { params: Promise<{ paperId:
 
   return (
     <StudyClient
-      key={paperId}
+      key={`${session.user.id}:${paperId}:${readiness.contentHash}`}
+      ownerId={session.user.id}
       paperId={paperId}
       paperTitle={paper.title}
       questions={questions}
