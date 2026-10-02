@@ -63,6 +63,106 @@ async function paperForRead(tx: Prisma.TransactionClient, userId: string, paperI
   if (!papers[0]) throw new PrivateWrongItemStoreError("NOT_FOUND", "paper not found");
   return papers[0];
 }
+export interface PrivateReviewQuestion {
+  questionId: string;
+  prompt: string;
+  options: Array<{ id: string; text: string }>;
+  passage?: string;
+}
+export interface PrivateReviewBatch {
+  reviewBatchId: string;
+  contentHash: string;
+  questions: PrivateReviewQuestion[];
+}
+/** Select at most `limit` active wrong items whose content version is still valid.
+ *  Deterministic order: lastSeenAt desc, then id asc. Returns questions without answers. */
+export async function selectReviewItems(userId: string, paperId: string, limit = 5): Promise<PrivateReviewBatch> {
+  identity(userId, paperId);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid review limit");
+  return database(() => prisma.$transaction(async tx => {
+    const paper = await paperForRead(tx, userId, paperId);
+    const ready = checkPrivatePaperReadiness(paper.content as Record<string, unknown>);
+    if (!ready.ready) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "paper content is not ready for review");
+    const items = await tx.privateWrongItem.findMany({
+      where: { userId, paperId, contentHash: ready.contentHash, status: "active" },
+      orderBy: [{ lastSeenAt: "desc" }, { questionId: "asc" }],
+      take: limit,
+    });
+    const byQ = new Map(ready.questions.map(q => [q.questionId, q]));
+    const questions: PrivateReviewQuestion[] = [];
+    for (const item of items) {
+      const q = byQ.get(item.questionId);
+      if (!q) continue;
+      questions.push({
+        questionId: q.questionId,
+        prompt: q.prompt,
+        options: q.options.map(o => ({ id: o.id, text: o.text })),
+        ...(q.passage ? { passage: q.passage } : {}),
+      });
+    }
+    if (questions.length === 0) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "no valid wrong items for review");
+    return { reviewBatchId: `rb_${ready.contentHash.slice(0, 12)}_${Date.now().toString(36)}`, contentHash: ready.contentHash, questions };
+  }));
+}
+/** Read-only grading: validates owner, paper, contentHash, question membership, then scores.
+ *  Does NOT modify wrongCount, progress, XP, or any other state. */
+export interface PrivateReviewGradeResult {
+  contentHash: string;
+  total: number;
+  correct: number;
+  unanswered: number;
+  results: Array<{ questionId: string; userAnswer: string | null; correctAnswer: string; isCorrect: boolean; shortExplanation?: string; detailedExplanation?: string; prompt: string; options: Array<{ id: string; text: string }>; passage?: string }>;
+}
+export async function gradeReviewItems(
+  userId: string,
+  paperId: string,
+  contentHash: string,
+  answers: Record<string, string>,
+): Promise<PrivateReviewGradeResult> {
+  identity(userId, paperId);
+  if (!contentHash?.trim() || contentHash.length > 200) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid contentHash");
+  if (typeof answers !== "object" || answers === null || Array.isArray(answers)) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid answers");
+  const questionIds = Object.keys(answers);
+  if (questionIds.length === 0) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "no answers provided");
+  if (questionIds.length > 5) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "too many questions in review batch");
+  const uniqueIds = [...new Set(questionIds)];
+  if (uniqueIds.length !== questionIds.length) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "duplicate questionIds in review batch");
+  return database(() => prisma.$transaction(async tx => {
+    const paper = await paperForRead(tx, userId, paperId);
+    const ready = checkPrivatePaperReadiness(paper.content as Record<string, unknown>);
+    if (!ready.ready || ready.contentHash !== contentHash) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "content version mismatch or paper no longer ready");
+    const items = await tx.privateWrongItem.findMany({
+      where: { userId, paperId, contentHash, status: "active", questionId: { in: uniqueIds } },
+      select: { questionId: true },
+    });
+    const validIds = new Set(items.map(i => i.questionId));
+    const byQ = new Map(ready.questions.map(q => [q.questionId, q]));
+    const results: PrivateReviewGradeResult["results"] = [];
+    let correct = 0, unanswered = 0;
+    for (const qid of uniqueIds) {
+      if (!validIds.has(qid)) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", `question ${qid} is not a valid active wrong item`);
+      const q = byQ.get(qid);
+      if (!q) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", `question ${qid} not found in current content`);
+      const raw = answers[qid];
+      const userAnswer = raw === "" || raw === null || raw === undefined ? null : String(raw);
+      const isCorrect = userAnswer !== null && userAnswer === q.answerId;
+      if (isCorrect) correct++;
+      if (userAnswer === null) unanswered++;
+      results.push({
+        questionId: qid,
+        userAnswer,
+        correctAnswer: q.answerId,
+        isCorrect,
+        prompt: q.prompt,
+        options: q.options.map(o => ({ id: o.id, text: o.text })),
+        ...(q.passage ? { passage: q.passage } : {}),
+        ...(q.shortExplanation ? { shortExplanation: q.shortExplanation } : {}),
+        ...(q.detailedExplanation ? { detailedExplanation: q.detailedExplanation } : {}),
+      });
+    }
+    return { contentHash, total: results.length, correct, unanswered, results };
+  }));
+}
 export async function listPrivateWrongItems(userId: string, paperId: string): Promise<PrivateWrongItemView[]> {
   identity(userId, paperId);
   return database(() => prisma.$transaction(async tx => {

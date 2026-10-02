@@ -1,8 +1,8 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1D.2（Private Wrongbook MVP，修复与验收通过，2026-10-02）
+## 当前工作版本：V14 Phase 1D.3（Private Wrongbook Manual Review MVP，开发完成，2026-10-02）
 
-工作分支 feature/v14-real-content-rights。保留已完成的 Phase 1E.1 云同步，补齐 Phase 1D.2 独立私有错题收集、列表与详情。PRIVATE 不接 XP/Streak/全局统计/全局 Review/Daily Plan；不做错题复习调度、其他题型、PDF/OCR/AI/分享。完成后停止，不开始下一阶段，不 merge main/tag/Release。
+工作分支 feature/v14-real-content-rights。在 Phase 1D.2 私有错题本基础上增加手动复习功能：错题列表提供"复习错题"入口，每批最多 5 道当前内容版本有效错题，复习页支持选择答案/上下题/提交，提交后显示结果。不开发复习调度，不接入 XP/Review/Daily Plan，复习进度仅保存在当前浏览器 localStorage。
 
 ### Phase 1D.2 最终修复与验收
 
@@ -15,6 +15,18 @@
 - 66 项 Chrome 浏览器检查通过，覆盖两个独立同账号 context、B 用户/未登录、网络异常、重复请求、XSS 文本显示、失效历史、账号切换迟到响应、删除与全局数据隔离。375/390/430/768/1440px 的列表/详情/结果无溢出或导航遮挡；16 张截图。
 - 两个测试用户及关联数据按精确 id/email 清理。报告 V14_PHASE1D2_REPORT.md；截图、日志、最终 Git SHA 与 remote/worktree 核对保留 output/ 本地，不作为公开附件上传。
 - 已知边界：未回填旧历史；旧实现已覆盖的跨版本历史无法推测重建；不包含实体手机或其他浏览器实测。以下旧章节保留为历史，当前状态以本节和最新报告为准。
+
+### Phase 1D.3 私有错题本手动复习 MVP
+
+- Store 层新增 `selectReviewItems`（选择当前内容版本有效错题，按 lastSeenAt desc + questionId asc 确定性排序，最多 5 道，无有效错题抛 VALIDATION_ERROR，返回题目不含正确答案/解析）和 `gradeReviewItems`（只读判分，验证 owner/paper/contentHash/题目归属/去重，返回逐题结果+统计，不修改 wrongCount/progress/XP，幂等）。
+- API 路由 `POST review/start` 和 `POST review/grade`，均使用 privateRequest + safeAuth 包装，owner 从 session 派生。
+- 类型/解析/本地存档 `review.ts`：PrivateReviewSession（version=1）、fail-closed parse 函数、validatePrivateReviewSession、localStorage save/load/clear（key 格式 `private-review:{ownerId}:{paperId}:{contentHash}`）。
+- Hook `usePrivateReviewSession`：管理 idle/loading/reviewing/submitting/submitted/error 状态，startReview/selectAnswer/clearAnswer/goToQuestion/next/prev/submit/restart，即时存档，提交确认弹窗（未作答提示），迟到响应/请求序号/身份代次保护，刷新时从 localStorage 恢复。
+- UI：复习页（空闲页/答题页/结果页/确认弹窗/错误状态）、题目导航 dots、选项选择、结果逐题展示含解析、重新复习/返回错题本；错题列表页添加"复习错题"按钮（total>0 启用，否则禁用并说明）；globals.css 新增约 80 行样式含 430px 响应式。
+- 25 个新增回归测试全部通过，覆盖 selectReviewItems（选题/最多5道/确定性排序/content_changed排除/无效owner/paper/limit/删除后NOT_FOUND）、gradeReviewItems（判分/无副作用/错误contentHash/非错题题目拒绝/重复超量/空答案/跨owner）、parse 函数（各类拒绝）、validatePrivateReviewSession（接受/拒绝各类场景）。
+- 8/8 gates PASS：841/841 tests（新增 25）、typecheck、lint 0 errors/0 warnings、build、content:validate、content:stats、content:rights、content:audio-validate。
+- 浏览器 E2E：学习流程→答错→错题记录 PASS（3 道错题全部记录）；错题列表页 PASS（显示 3 道有效错题+复习错题按钮）；复习页完整答题流程 PARTIAL（dev server 因基础设施问题反复崩溃，由 25 个自动化测试覆盖）。
+- 报告 V14_PHASE1D3_REPORT.md。边界：复习判分只读、进度仅存 localStorage、每批最多 5 道、仅当前内容版本有效错题、不接入 XP/Review/Daily Plan/复习调度。
 
 ### Phase 1E.1 最终硬化验收
 

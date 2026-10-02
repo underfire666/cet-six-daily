@@ -63,9 +63,20 @@ export default function WrongItemsClient({ paperId }: { paperId: string }) {
 
       {!error && items.length > 0 && (
         <>
-          <p className="pp-preview-note" style={{ marginBottom: "12px" }}>
-            共 <strong>{total}</strong> 道有效错题{data?.invalidatedTotal ? `，${data.invalidatedTotal} 道旧版本错题已失效` : ""}。按最近答错时间排序。
-          </p>
+          <div className="pp-wrong-list-header">
+            <p className="pp-preview-note" style={{ margin: 0 }}>
+              共 <strong>{total}</strong> 道有效错题{data?.invalidatedTotal ? `，${data.invalidatedTotal} 道旧版本错题已失效` : ""}。按最近答错时间排序。
+            </p>
+            {total > 0 ? (
+              <Link href={`/me/private-papers/${encodeURIComponent(paperId)}/wrong-items/review`} className="pp-primary-btn pp-wrong-review-btn" style={{ textDecoration: "none", whiteSpace: "nowrap" }}>
+                复习错题
+              </Link>
+            ) : (
+              <span className="pp-wrong-review-disabled" title="当前内容版本没有有效错题">
+                复习错题
+              </span>
+            )}
+          </div>
           <div className="pp-wrong-list">
             {items.map((item, idx) => (
               <Link

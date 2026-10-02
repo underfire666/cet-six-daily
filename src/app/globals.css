@@ -1356,3 +1356,76 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
   .pp-wrong-item-answers { grid-template-columns: 1fr; }
   .pp-wrong-detail-meta { gap: 12px; }
 }
+
+/* V14 Phase 1D.3: private wrongbook manual review */
+.pp-wrong-list-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.pp-wrong-review-btn { padding: 8px 16px; font-size: 14px; }
+.pp-wrong-review-disabled { padding: 8px 16px; font-size: 14px; border-radius: 8px; background: var(--border); color: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
+
+.pp-review-progress { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.pp-review-progress-text { font-size: 14px; font-weight: 500; color: var(--text); }
+.pp-review-dots { display: flex; gap: 6px; }
+.pp-review-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: transparent; cursor: pointer; padding: 0; transition: all 0.15s; min-width: 28px; min-height: 28px; }
+.pp-review-dot.answered { border-color: var(--primary); background: rgba(77, 152, 46, 0.1); }
+.pp-review-dot.active { border-color: var(--primary); background: var(--primary); }
+
+.pp-review-question-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.pp-review-passage { background: rgba(0,0,0,0.02); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+.pp-review-passage h4 { font-size: 13px; color: var(--text-muted); margin: 0 0 8px; }
+.pp-review-passage p { font-size: 14px; line-height: 1.7; color: var(--text); margin: 0; }
+.pp-review-prompt { font-size: 16px; font-weight: 600; line-height: 1.6; margin: 0 0 16px; color: var(--text); }
+
+.pp-review-options { display: flex; flex-direction: column; gap: 10px; }
+.pp-review-option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 2px solid var(--border); border-radius: 10px; background: var(--card-bg); cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; min-height: 44px; }
+.pp-review-option:hover:not(:disabled) { border-color: var(--primary); background: rgba(77, 152, 46, 0.04); }
+.pp-review-option.selected { border-color: var(--primary); background: rgba(77, 152, 46, 0.08); }
+.pp-review-option:disabled { cursor: not-allowed; opacity: 0.7; }
+.pp-review-option-id { font-weight: 700; font-size: 14px; color: var(--primary); flex-shrink: 0; width: 24px; }
+.pp-review-option-text { flex: 1; font-size: 14px; line-height: 1.5; color: var(--text); }
+.pp-review-option-check { color: var(--primary); flex-shrink: 0; }
+.pp-review-clear-answer { margin-top: 12px; background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; text-decoration: underline; padding: 4px 8px; min-height: 32px; }
+.pp-review-clear-answer:hover { color: var(--text); }
+.pp-review-clear-answer:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.pp-review-nav { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.pp-review-nav .pp-secondary-btn, .pp-review-nav .pp-primary-btn { display: flex; align-items: center; gap: 6px; min-height: 44px; }
+.pp-review-unanswered-note { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--warning); margin: 0 0 12px; }
+
+.pp-review-result-summary { text-align: center; padding: 24px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; }
+.pp-review-result-score { display: flex; align-items: baseline; justify-content: center; gap: 6px; margin-bottom: 8px; }
+.pp-review-result-correct { font-size: 48px; font-weight: 800; color: var(--primary); line-height: 1; }
+.pp-review-result-total { font-size: 20px; color: var(--text-muted); font-weight: 500; }
+.pp-review-result-unanswered { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; color: var(--warning); margin: 8px 0 0; }
+
+.pp-review-result-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.pp-review-result-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.pp-review-result-item.correct { border-left: 4px solid var(--success); }
+.pp-review-result-item.wrong { border-left: 4px solid #dc2626; }
+.pp-review-result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.pp-review-result-index { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.pp-review-result-tag { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 12px; }
+.pp-review-result-tag.correct { background: rgba(77, 152, 46, 0.1); color: var(--success); }
+.pp-review-result-tag.wrong { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+.pp-review-result-prompt { font-size: 14px; font-weight: 500; line-height: 1.5; margin: 0 0 12px; color: var(--text); }
+.pp-review-result-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.pp-review-result-explanation { background: rgba(0,0,0,0.02); border-radius: 8px; padding: 10px 14px; }
+.pp-review-result-explanation h4 { font-size: 12px; color: var(--text-muted); margin: 0 0 6px; }
+.pp-review-result-explanation p { font-size: 13px; line-height: 1.6; color: var(--text); margin: 0 0 6px; }
+.pp-review-result-explanation p:last-child { margin-bottom: 0; }
+
+.pp-review-result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+.pp-review-result-actions .pp-primary-btn, .pp-review-result-actions .pp-cancel-btn { display: flex; align-items: center; gap: 6px; min-height: 44px; }
+
+/* Modal */
+.pp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.pp-modal { background: var(--card-bg); border-radius: 16px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.pp-modal h3 { font-size: 18px; font-weight: 700; margin: 0 0 12px; color: var(--text); }
+.pp-modal p { font-size: 14px; line-height: 1.6; color: var(--text); margin: 0 0 20px; }
+.pp-modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+.pp-modal-actions .pp-cancel-btn, .pp-modal-actions .pp-primary-btn { min-height: 44px; }
+
+@media (max-width: 430px) {
+  .pp-review-result-answers { grid-template-columns: 1fr; }
+  .pp-review-question-card { padding: 16px; }
+  .pp-review-result-correct { font-size: 40px; }
+}
