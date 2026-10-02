@@ -35,6 +35,7 @@ function progressErrorResponse(error: PrivatePaperProgressStoreError): Response 
         { status: 422 },
       );
     case "CONFLICT":
+      if (extra.conflictType === "submission_conflict") return Response.json({ error: "submission_conflict", currentRevision: extra.currentRevision, serverProgress: extra.serverProgress }, { status: 409 });
       if (extra.conflictType === "revision_conflict") {
         return Response.json(
           {

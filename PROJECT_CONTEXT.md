@@ -1,8 +1,20 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1E.1（Private Study Progress Cloud Sync MVP，修复与验收通过，2026-10-01）
+## 当前工作版本：V14 Phase 1D.2（Private Wrongbook MVP，修复与验收通过，2026-10-02）
 
-工作分支 feature/v14-real-content-rights。PRIVATE 阅读选择题进度云端保存、跨设备恢复、持久私有队列、冲突三种决策已实现。不接 XP/Streak/全局统计/Review/Daily Plan；不做其他私有题型、PDF/OCR/AI/分享。完成本阶段后停止，不开始 Phase 1E.2，不 merge main/tag/Release。
+工作分支 feature/v14-real-content-rights。保留已完成的 Phase 1E.1 云同步，补齐 Phase 1D.2 独立私有错题收集、列表与详情。PRIVATE 不接 XP/Streak/全局统计/全局 Review/Daily Plan；不做错题复习调度、其他题型、PDF/OCR/AI/分享。完成后停止，不开始下一阶段，不 merge main/tag/Release。
+
+### Phase 1D.2 最终修复与验收
+
+- PRIVATE 选择题错题与提交进度同事务写入，服务端判分；未作答明确记录，草稿不收集，不回填旧历史。同 attempt 重试不重复，新 attempt 同版本再次答错累计，答对不删除历史。
+- 唯一键 userId + paperId + contentHash + questionId；无损迁移保留旧记录。内容更新保留失效历史，新版本独立次数，旧详情链接携带 contentHash，不解释成新题目。有效数量不包含失效历史。
+- 详细解析仅作为文本显示；列表和详情安全处理无 question 的失效记录。共享请求加载、取消、请求序号、身份代次及响应 owner 校验保护旧响应和账号切换；聚焦恢复时刷新有效性。
+- 已提交同一轮答案不可改写或恢复草稿；冲突可采用云端或显式新轮次。服务端提交标记阻止已提交 attempt 重用，原 mutation 回执幂等。内容更新、提交、删除使用同一试卷锁协调，错题写入失败回滚进度和回执。
+- 本轮错题提示绑定 attempt/contentHash，包含重复答错；重新开始或全对不会沿用旧数量，刷新/独立浏览器从服务端恢复，同步失败不宣称已云端收集。
+- 816/816 tests（私有错题 25/25，新增 10 项）、typecheck、lint 0/0、生产 build、四项 content gates 全部通过。音频仅有允许的 synthetic fixture placeholder warning。
+- 66 项 Chrome 浏览器检查通过，覆盖两个独立同账号 context、B 用户/未登录、网络异常、重复请求、XSS 文本显示、失效历史、账号切换迟到响应、删除与全局数据隔离。375/390/430/768/1440px 的列表/详情/结果无溢出或导航遮挡；16 张截图。
+- 两个测试用户及关联数据按精确 id/email 清理。报告 V14_PHASE1D2_REPORT.md；截图、日志、最终 Git SHA 与 remote/worktree 核对保留 output/ 本地，不作为公开附件上传。
+- 已知边界：未回填旧历史；旧实现已覆盖的跨版本历史无法推测重建；不包含实体手机或其他浏览器实测。以下旧章节保留为历史，当前状态以本节和最新报告为准。
 
 ### Phase 1E.1 最终硬化验收
 

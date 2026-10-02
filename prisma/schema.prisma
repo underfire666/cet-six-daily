@@ -257,7 +257,7 @@ model PrivateWrongItem {
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
   updatedAt     DateTime @updatedAt @db.Timestamptz(6)
 
-  @@unique([userId, paperId, questionId])
+  @@unique([userId, paperId, contentHash, questionId])
   @@index([userId, paperId])
   @@index([userId, status])
 }

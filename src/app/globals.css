@@ -1299,6 +1299,9 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
 }
 
 /* -- V14 Phase 1D.2: private wrongbook -- */
+.pp-wrong-refresh { min-width: 44px; min-height: 44px; }
+.pp-wrong-detail-explanation, .pp-wrong-detail-prompt, .pp-wrong-item-prompt, .pp-wrong-option-text { overflow-wrap: anywhere; white-space: pre-wrap; }
+.pp-wrong-option-text { min-width: 0; }
 .pp-secondary-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 14px; cursor: pointer; transition: background 0.15s; }
 .pp-secondary-btn:hover { background: var(--surface-soft); }
 .pp-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; text-align: center; }

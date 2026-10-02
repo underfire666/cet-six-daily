@@ -1,12 +1,13 @@
 /** Owner-scoped PRIVATE progress. Paper row locks serialize writes and deletion. */
 import { Prisma } from "@prisma/client";
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
 import { checkPrivatePaperReadiness, type PrivateFlatQuestion } from "@/lib/private-papers/readiness";
 import { recordWrongItems } from "@/content/private-wrong-item-store";
 
 export type PrivatePaperProgressErrorCode = "NOT_FOUND" | "VALIDATION_ERROR" | "CONFLICT" | "NOT_READY" | "CONTENT_CHANGED" | "INTERNAL_ERROR";
 export interface PrivatePaperProgressConflictInfo {
-  conflictType?: "revision_conflict" | "attempt_mismatch";
+  conflictType?: "revision_conflict" | "attempt_mismatch" | "submission_conflict";
   currentRevision?: number;
   currentAttemptId?: string;
   serverProgress?: unknown;
@@ -18,9 +19,9 @@ export class PrivatePaperProgressStoreError extends Error {
 }
 export interface PrivatePaperProgressView {
   progressVersion: number; paperId: string; attemptId: string; contentHash: string;
-  answers: Record<string, string>; currentIndex: number; submitted: boolean; revision: number; updatedAt: string;
+  answers: Record<string, string>; currentIndex: number; submitted: boolean; revision: number; updatedAt: string; wrongItemsCount?: number;
 }
-export interface PutPrivatePaperProgressResult { revision: number; updatedAt: string; wrongItemsRecorded: number; }
+export interface PutPrivatePaperProgressResult { revision: number; updatedAt: string; wrongItemsRecorded: number; wrongItemsCount: number; }
 export interface PrivateProgressSnapshot { progress: PrivatePaperProgressView | null; revision: number; invalidated: boolean; }
 const key = (userId: string, paperId: string) => ({ userId_paperId: { userId, paperId } });
 const record = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -63,7 +64,8 @@ export async function readPrivateProgressSnapshot(userId: string, paperId: strin
     const row = await tx.privatePaperProgress.findUnique({ where: key(userId, paperId) });
     if (!row) return { progress: null, revision: 0, invalidated: false };
     const invalidated = row.contentHash !== ready.contentHash || row.progressVersion !== 1;
-    return { progress: invalidated ? null : view(row, ready.questions), revision: row.revision, invalidated };
+    const wrongItemsCount = row.submitted && !invalidated ? await tx.privateWrongItem.count({ where: { userId, paperId, contentHash: row.contentHash, attemptId: row.attemptId } }) : 0;
+    return { progress: invalidated ? null : { ...view(row, ready.questions), wrongItemsCount }, revision: row.revision, invalidated };
   }));
 }
 export async function getPrivatePaperProgress(userId: string, paperId: string) { return (await readPrivateProgressSnapshot(userId, paperId)).progress; }
@@ -91,15 +93,25 @@ export async function putPrivatePaperProgress(userId: string, paperId: string, i
     const receipt = await tx.syncMutation.findUnique({ where: { userId_mutationId: { userId, mutationId: String(mutationId) } } });
     if (receipt) {
       if (receipt.entityType !== "privateProgress" || receipt.entityId !== paperId || !record(receipt.payload) || receipt.payload.request !== canonical || !record(receipt.payload.result)) invalid("mutationId reused with different request");
-      return { revision: Number(receipt.payload.result.revision), updatedAt: String(receipt.payload.result.updatedAt), wrongItemsRecorded: Number(receipt.payload.result.wrongItemsRecorded ?? 0) };
+      return { revision: Number(receipt.payload.result.revision), updatedAt: String(receipt.payload.result.updatedAt), wrongItemsRecorded: Number(receipt.payload.result.wrongItemsRecorded ?? 0), wrongItemsCount: Number(receipt.payload.result.wrongItemsCount ?? 0) };
     }
     const existing = await tx.privatePaperProgress.findUnique({ where: key(userId, paperId) });
-    const conflict = (kind: "revision_conflict" | "attempt_mismatch"): never => {
-      throw new PrivatePaperProgressStoreError("CONFLICT", "progress conflict", { conflictType: kind, currentRevision: existing?.revision ?? 0, currentAttemptId: existing?.attemptId, serverProgress: existing && existing.contentHash === contentHash ? view(existing, readiness.questions) : null });
+    const acceptedWrongCount = existing?.submitted ? await tx.privateWrongItem.count({ where: { userId, paperId, contentHash: existing.contentHash, attemptId: existing.attemptId } }) : 0;
+    const conflict = (kind: "revision_conflict" | "attempt_mismatch" | "submission_conflict"): never => {
+      throw new PrivatePaperProgressStoreError("CONFLICT", "progress conflict", { conflictType: kind, currentRevision: existing?.revision ?? 0, currentAttemptId: existing?.attemptId, serverProgress: existing && existing.contentHash === contentHash ? { ...view(existing, readiness.questions), wrongItemsCount: acceptedWrongCount } : null });
     };
     if ((existing?.revision ?? 0) !== baseRevision) conflict("revision_conflict");
     if (existing && mode === "save" && (existing.attemptId !== attemptId || existing.contentHash !== contentHash || existing.progressVersion !== 1)) conflict("attempt_mismatch");
     if (existing && mode === "restart" && existing.attemptId === attemptId) invalid("restart requires a new attemptId");
+    // A submitted round is immutable. Navigation and identical snapshots may still sync.
+    if (existing?.submitted && existing.attemptId === attemptId) {
+      const accepted = answersFor(existing.answers, readiness.questions, false);
+      const sameAnswers = Object.keys(accepted).length === Object.keys(answers).length && Object.entries(accepted).every(([k, v]) => answers[k] === v);
+      if (!submitted || !sameAnswers) conflict("submission_conflict");
+    }
+    const submissionId = "private-wrong-submission:" + createHash("sha256").update(JSON.stringify([paperId, attemptId])).digest("hex");
+    const priorSubmission = await tx.syncMutation.findUnique({ where: { userId_mutationId: { userId, mutationId: submissionId } } });
+    if (priorSubmission && existing?.attemptId !== attemptId) invalid("submitted attemptId cannot be reused");
     const data = { attemptId: String(attemptId), contentHash: String(contentHash), answers: answers as Prisma.InputJsonObject, currentIndex: index, submitted: Boolean(submitted), progressVersion: 1, revision: Number(baseRevision) + 1 };
     const saved = existing
       ? await tx.privatePaperProgress.update({ where: key(userId, paperId), data })
@@ -109,10 +121,13 @@ export async function putPrivatePaperProgress(userId: string, paperId: string, i
     let wrongItemsRecorded = 0;
     const isFirstSubmissionForAttempt = Boolean(submitted) && (!existing?.submitted || existing.attemptId !== attemptId);
     if (isFirstSubmissionForAttempt) {
+      if (priorSubmission) invalid("submitted attemptId cannot be reopened");
       const wr = await recordWrongItems(tx, userId, paperId, String(contentHash), String(attemptId), readiness.questions, answers);
-      wrongItemsRecorded = wr.recorded;
+      wrongItemsRecorded = wr.recorded + wr.updated;
+      await tx.syncMutation.create({ data: { userId, mutationId: submissionId, entityType: "privateWrongSubmission", entityId: paperId, operation: "upsert", payload: { attemptId, contentHash }, status: "applied" } });
     }
-    const result = { revision: saved.revision, updatedAt: saved.updatedAt.toISOString(), wrongItemsRecorded };
+    const wrongItemsCount = submitted ? await tx.privateWrongItem.count({ where: { userId, paperId, contentHash: String(contentHash), attemptId: String(attemptId) } }) : 0;
+    const result = { revision: saved.revision, updatedAt: saved.updatedAt.toISOString(), wrongItemsRecorded, wrongItemsCount };
     await tx.syncMutation.create({ data: { userId, mutationId: String(mutationId), entityType: "privateProgress", entityId: paperId, operation: "upsert", payload: { request: canonical, result }, status: "applied" } });
     return result;
   }));

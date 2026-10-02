@@ -33,7 +33,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
       try {
         const paperId = (await params).paperId;
         const items = await listPrivateWrongItems(owner, paperId);
-        return Response.json({ items, total: items.length });
+        return Response.json({ ownerId: owner, items, total: items.filter(item => item.status === "active" && item.question).length, invalidatedTotal: items.filter(item => item.status !== "active" || !item.question).length });
       } catch (error) {
         return wrongItemErrorResponse(error);
       }

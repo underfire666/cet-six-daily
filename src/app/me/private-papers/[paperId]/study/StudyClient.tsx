@@ -75,7 +75,7 @@ export default function StudyClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   // ── V14 Phase 1E.1: cloud sync state ──
   const [syncStatus, setSyncStatus] = useState<PrivateSyncStatus>("local_saved");
-  const [wrongItemsCount, setWrongItemsCount] = useState(0);
+  const [wrongItemsReceipt, setWrongItemsReceipt] = useState<{ attemptId: string; contentHash: string; count: number } | null>(null);
   const [conflictServerProgress, setConflictServerProgress] = useState<RemoteProgress | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const activeBinding = useRef<string | null>(null);
@@ -96,6 +96,7 @@ export default function StudyClient({
   if (attemptIdRef.current === null) attemptIdRef.current = generateAttemptId();
   const isRestoring = restoredBinding !== binding;
   const { answers, currentIndex, submitted } = studyState;
+  const wrongItemsCount = wrongItemsReceipt?.attemptId === studyState.attemptId && wrongItemsReceipt?.contentHash === contentHash ? wrongItemsReceipt.count : 0;
   const total = questions.length;
   const answeredCount = useMemo(() => countValidAnswers(questions, answers), [questions, answers]);
   const unansweredCount = Math.max(0, total - answeredCount);
@@ -143,11 +144,13 @@ export default function StudyClient({
           attemptIdRef.current = remote.attemptId; knownRevisionRef.current = remote.revision;
           const restored = { answers: remote.answers, currentIndex: remote.currentIndex, submitted: remote.submitted, attemptId: remote.attemptId, revision: remote.revision, dirty: false };
           updateStudy(restored);
+          setWrongItemsReceipt({ attemptId: remote.attemptId, contentHash, count: remote.wrongItemsCount ?? 0 });
           if (!saveStudyProgress(ownerId, paperId, contentHash, restored)) setProgressStatus("storage_write_failed");
         } else if (studyRef.current.submitted || Object.keys(studyRef.current.answers).length) throw new Error("Cloud progress unavailable");
       }
       if (result.revisions[paperId]) knownRevisionRef.current = Math.max(knownRevisionRef.current, result.revisions[paperId]);
-      if (result.wrongItemsRecorded?.[paperId] && studyRef.current.submitted) setWrongItemsCount(result.wrongItemsRecorded[paperId]);
+      const countReceipt = result.wrongItemsCounts[paperId];
+      if (countReceipt?.attemptId === attemptIdRef.current && countReceipt.contentHash === contentHash && studyRef.current.submitted) setWrongItemsReceipt(countReceipt);
       setSyncStatus(result.failed ? "failed" : result.pending ? "pending" : "synced");
     } catch {
       if (current()) setSyncStatus("failed");
@@ -206,6 +209,7 @@ export default function StudyClient({
       attemptIdRef.current = restored.attemptId!;
       knownRevisionRef.current = restored.revision ?? 0;
       updateStudy(restored);
+      setWrongItemsReceipt(remote && remote.attemptId === restored.attemptId && !restored.dirty ? { attemptId: remote.attemptId, contentHash, count: remote.wrongItemsCount ?? 0 } : null);
       setProgressStatus(local.status);
       setRestoredBinding(binding);
       const saved = saveStudyProgress(ownerId, paperId, contentHash, restored);
@@ -226,7 +230,7 @@ export default function StudyClient({
     if (!identityMatches || !ready) return;
     const online = () => { void pushSync(); };
     const acknowledge = (event: Event) => {
-      const detail = (event as CustomEvent<{ userId: string; paperId: string; contentHash: string; attemptId: string; revision: number; wrongItemsRecorded?: number }>).detail;
+      const detail = (event as CustomEvent<{ userId: string; paperId: string; contentHash: string; attemptId: string; revision: number; wrongItemsCount?: number }>).detail;
       if (!detail || detail.userId !== ownerId || detail.paperId !== paperId || detail.contentHash !== contentHash || detail.attemptId !== attemptIdRef.current || activeBinding.current !== binding) return;
       knownRevisionRef.current = Math.max(knownRevisionRef.current, detail.revision);
       try {
@@ -237,9 +241,7 @@ export default function StudyClient({
         if (!saved) setProgressStatus("storage_write_failed");
         setStorageAvailable(saved);
         setSyncStatus(pending ? "pending" : "synced");
-        if (next.submitted && typeof detail.wrongItemsRecorded === "number" && detail.wrongItemsRecorded > 0) {
-          setWrongItemsCount(detail.wrongItemsRecorded);
-        }
+        if (next.submitted) setWrongItemsReceipt({ attemptId: detail.attemptId, contentHash, count: detail.wrongItemsCount ?? 0 });
       } catch { setSyncStatus("failed"); }
     };
     window.addEventListener("online", online);
@@ -391,6 +393,7 @@ export default function StudyClient({
       syncGeneration.current++;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       attemptIdRef.current = generateAttemptId();
+      setWrongItemsReceipt(null);
       knownRevisionRef.current = snapshot.revision;
       clearPrivateProgressForPaper(ownerId, paperId);
       const next: StudyProgressState = { ...INITIAL_PROGRESS, attemptId: attemptIdRef.current, revision: snapshot.revision, mode: "restart", dirty: true };
@@ -412,6 +415,7 @@ export default function StudyClient({
       attemptIdRef.current = remote.attemptId; knownRevisionRef.current = remote.revision;
       const next = { answers: remote.answers, currentIndex: remote.currentIndex, submitted: remote.submitted, attemptId: remote.attemptId, revision: remote.revision, dirty: false };
       updateStudy(next);
+      setWrongItemsReceipt({ attemptId: remote.attemptId, contentHash, count: remote.wrongItemsCount ?? 0 });
       const saved = saveStudyProgress(ownerId, paperId, contentHash, next);
       if (!saved) setProgressStatus("storage_write_failed");
       setStorageAvailable(saved); setShowConflictDialog(false); setConflictServerProgress(null); setSyncStatus("synced");
@@ -424,7 +428,8 @@ export default function StudyClient({
       syncGeneration.current++;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       clearPrivateProgressForPaper(ownerId, paperId);
-      const differentAttempt = attemptIdRef.current !== remote.attemptId;
+      // Keeping a different answer after cloud submission needs a new round.
+      const differentAttempt = attemptIdRef.current !== remote.attemptId || remote.submitted;
       if (differentAttempt) attemptIdRef.current = generateAttemptId();
       knownRevisionRef.current = remote.revision;
       const next: StudyProgressState = { ...studyState, attemptId: attemptIdRef.current!, revision: remote.revision, dirty: true, mode: differentAttempt ? "restart" : "save" };
@@ -542,7 +547,7 @@ export default function StudyClient({
         {wrongItemsCount > 0 && studyState.submitted && (
           <div className="pp-wrongbook-notification" role="status">
             <BookX size={16} />
-            <span>{wrongItemsCount} 道错题已加入私有错题本</span>
+            <span>本次 {wrongItemsCount} 道错题已记录到私有错题本</span>
             <Link href={`/me/private-papers/${encodeURIComponent(paperId)}/wrong-items`} className="pp-wrongbook-link">查看错题本</Link>
           </div>
         )}

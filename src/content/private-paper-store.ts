@@ -77,6 +77,7 @@ export async function updatePrivatePaper(userId: string, paperId: string, update
   if (!isRecord(updates)) invalid("updates object required");
   if (updates.content !== undefined && !isRecord(updates.content)) invalid("content object required");
   return database(() => prisma.$transaction(async tx => {
+    await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "PrivatePaper" WHERE "userId" = ${userId} AND "paperId" = ${paperId} FOR UPDATE`);
     const existing = await tx.privatePaper.findUnique({ where: key(userId, paperId) });
     if (!existing) throw new PrivatePaperStoreError("NOT_FOUND", "paper not found");
     const previous = existing.content as Record<string, unknown>, patch = (updates.content ?? {}) as Record<string, unknown>;

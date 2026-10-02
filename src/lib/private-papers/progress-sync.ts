@@ -5,10 +5,10 @@ export interface PrivateProgressPayload {
   attemptId: string; contentHash: string; answers: Record<number, string>; currentIndex: number;
   submitted: boolean; baseRevision: number; mode?: "save" | "restart";
 }
-export interface RemoteProgress extends PrivateProgressPayload { paperId: string; progressVersion: number; revision: number; updatedAt: string; }
+export interface RemoteProgress extends PrivateProgressPayload { paperId: string; progressVersion: number; revision: number; updatedAt: string; wrongItemsCount?: number; }
 export interface RemoteSnapshot { progress: RemoteProgress | null; revision: number; invalidated: boolean; }
 export type PrivateSyncStatus = "local_saved" | "pending" | "synced" | "failed" | "conflict";
-export interface PushPrivateProgressResult { applied: number; failed: number; conflicts: string[]; revisions: Record<string, number>; invalid: Record<string, string>; pending: number; wrongItemsRecorded: Record<string, number>; }
+export interface PushPrivateProgressResult { applied: number; failed: number; conflicts: string[]; revisions: Record<string, number>; invalid: Record<string, string>; pending: number; wrongItemsRecorded: Record<string, number>; wrongItemsCounts: Record<string, { attemptId: string; contentHash: string; count: number }>; }
 interface PrivateMutation extends QueuedMutation { blocked?: boolean; }
 export const PRIVATE_PROGRESS_SYNC_EVENT = "cet-daily:private-progress-synced";
 const activeUserId = (): string | null => typeof window === "undefined" ? null : (window as unknown as { __CET_SYNC_USER_ID?: string }).__CET_SYNC_USER_ID ?? null;
@@ -54,7 +54,8 @@ export function normalizeRemoteProgress(paperId: string, raw: unknown): RemotePr
     if (!/^(0|[1-9][0-9]*)$/.test(k) || !Number.isSafeInteger(Number(k)) || typeof v !== "string") throw new Error("Invalid cloud answers");
     answers[Number(k)] = v;
   }
-  return { paperId, progressVersion: 1, attemptId: raw.attemptId, contentHash: raw.contentHash, answers, currentIndex: Number(raw.currentIndex), submitted: raw.submitted, revision: Number(raw.revision), baseRevision: Number(raw.revision), updatedAt: raw.updatedAt };
+  if (raw.wrongItemsCount !== undefined && (!Number.isSafeInteger(raw.wrongItemsCount) || Number(raw.wrongItemsCount) < 0)) throw new Error("Invalid wrong item count");
+  return { paperId, progressVersion: 1, attemptId: raw.attemptId, contentHash: raw.contentHash, answers, currentIndex: Number(raw.currentIndex), submitted: raw.submitted, revision: Number(raw.revision), baseRevision: Number(raw.revision), updatedAt: raw.updatedAt, ...(raw.wrongItemsCount !== undefined ? { wrongItemsCount: Number(raw.wrongItemsCount) } : {}) };
 }
 export async function fetchRemoteSnapshot(paperId: string, fetchImpl: typeof fetch = fetch): Promise<RemoteSnapshot> {
   const res = await fetchImpl(progressUrl(paperId), { cache: "no-store" });
@@ -75,7 +76,7 @@ export function pushPrivateProgressQueue(options: { userId: string; paperId?: st
   return task;
 }
 async function pushPrivateQueue({ userId, paperId: onlyPaper, fetchImpl = fetch, onConflict }: { userId: string; paperId?: string; fetchImpl?: typeof fetch; onConflict?: (paperId: string, server: RemoteProgress) => void }): Promise<PushPrivateProgressResult> {
-  const result: PushPrivateProgressResult = { applied: 0, failed: 0, conflicts: [], revisions: {}, invalid: {}, pending: 0, wrongItemsRecorded: {} };
+  const result: PushPrivateProgressResult = { applied: 0, failed: 0, conflicts: [], revisions: {}, invalid: {}, pending: 0, wrongItemsRecorded: {}, wrongItemsCounts: {} };
   if (!userId || activeUserId() !== userId) { result.failed = loadPrivateProgressQueue(userId).length; return result; }
   const generation = getSyncIdentityGeneration();
   const active = () => activeUserId() === userId && getSyncIdentityGeneration() === generation;
@@ -92,7 +93,7 @@ async function pushPrivateQueue({ userId, paperId: onlyPaper, fetchImpl = fetch,
       if (!active()) break;
       const data: unknown = await res.json();
       if (!record(data)) throw new Error("Invalid progress response");
-      if (res.status === 409 && (data.error === "revision_conflict" || data.error === "attempt_mismatch")) {
+      if (res.status === 409 && ["revision_conflict", "attempt_mismatch", "submission_conflict"].includes(String(data.error))) {
         result.conflicts.push(paperId);
         savePrivateQueue(userId, loadPrivateProgressQueue(userId).map(m => m.entityId === paperId ? { ...m, blocked: true, status: "failed" } : m));
         if (data.serverProgress) onConflict?.(paperId, normalizeRemoteProgress(paperId, data.serverProgress));
@@ -105,6 +106,7 @@ async function pushPrivateQueue({ userId, paperId: onlyPaper, fetchImpl = fetch,
         continue;
       }
       if (!res.ok || data.ok !== true || !Number.isSafeInteger(data.revision) || Number(data.revision) < 1) throw new Error("Progress write failed");
+      if (data.wrongItemsCount !== undefined && (!Number.isSafeInteger(data.wrongItemsCount) || Number(data.wrongItemsCount) < 0)) throw new Error("Invalid wrong item count");
       const revision = Number(data.revision);
       const current = loadPrivateProgressQueue(userId);
       // If the user already replaced this practice round, its old reply has no effect.
@@ -118,7 +120,9 @@ async function pushPrivateQueue({ userId, paperId: onlyPaper, fetchImpl = fetch,
       savePrivateQueue(userId, remaining);
       result.applied++; result.revisions[paperId] = revision;
       if (Number.isSafeInteger(data.wrongItemsRecorded) && Number(data.wrongItemsRecorded) > 0) result.wrongItemsRecorded[paperId] = Number(data.wrongItemsRecorded);
-      window.dispatchEvent(new CustomEvent(PRIVATE_PROGRESS_SYNC_EVENT, { detail: { userId, paperId, attemptId: payload.attemptId, contentHash: payload.contentHash, revision, wrongItemsRecorded: Number.isSafeInteger(data.wrongItemsRecorded) ? Number(data.wrongItemsRecorded) : 0 } }));
+      const wrongItemsCount = Number(data.wrongItemsCount ?? 0);
+      result.wrongItemsCounts[paperId] = { attemptId: payload.attemptId, contentHash: payload.contentHash, count: wrongItemsCount };
+      window.dispatchEvent(new CustomEvent(PRIVATE_PROGRESS_SYNC_EVENT, { detail: { userId, paperId, attemptId: payload.attemptId, contentHash: payload.contentHash, revision, wrongItemsCount } }));
     } catch {
       if (!active()) break;
       savePrivateQueue(userId, loadPrivateProgressQueue(userId).map(m => m.mutationId === item.mutationId ? { ...m, status: "failed" } : m));
