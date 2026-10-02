@@ -1,6 +1,6 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1D.3（Private Wrongbook Manual Review MVP，开发完成，2026-10-02）
+## 当前工作版本：V14 Phase 1D.3（Private Wrongbook Manual Review MVP，修复及本地验收通过，2026-10-02）
 
 工作分支 feature/v14-real-content-rights。在 Phase 1D.2 私有错题本基础上增加手动复习功能：错题列表提供"复习错题"入口，每批最多 5 道当前内容版本有效错题，复习页支持选择答案/上下题/提交，提交后显示结果。不开发复习调度，不接入 XP/Review/Daily Plan，复习进度仅保存在当前浏览器 localStorage。
 
@@ -20,13 +20,16 @@
 
 - Store 层新增 `selectReviewItems`（选择当前内容版本有效错题，按 lastSeenAt desc + questionId asc 确定性排序，最多 5 道，无有效错题抛 VALIDATION_ERROR，返回题目不含正确答案/解析）和 `gradeReviewItems`（只读判分，验证 owner/paper/contentHash/题目归属/去重，返回逐题结果+统计，不修改 wrongCount/progress/XP，幂等）。
 - API 路由 `POST review/start` 和 `POST review/grade`，均使用 privateRequest + safeAuth 包装，owner 从 session 派生。
-- 类型/解析/本地存档 `review.ts`：PrivateReviewSession（version=1）、fail-closed parse 函数、validatePrivateReviewSession、localStorage save/load/clear（key 格式 `private-review:{ownerId}:{paperId}:{contentHash}`）。
-- Hook `usePrivateReviewSession`：管理 idle/loading/reviewing/submitting/submitted/error 状态，startReview/selectAnswer/clearAnswer/goToQuestion/next/prev/submit/restart，即时存档，提交确认弹窗（未作答提示），迟到响应/请求序号/身份代次保护，刷新时从 localStorage 恢复。
-- UI：复习页（空闲页/答题页/结果页/确认弹窗/错误状态）、题目导航 dots、选项选择、结果逐题展示含解析、重新复习/返回错题本；错题列表页添加"复习错题"按钮（total>0 启用，否则禁用并说明）；globals.css 新增约 80 行样式含 430px 响应式。
-- 25 个新增回归测试全部通过，覆盖 selectReviewItems（选题/最多5道/确定性排序/content_changed排除/无效owner/paper/limit/删除后NOT_FOUND）、gradeReviewItems（判分/无副作用/错误contentHash/非错题题目拒绝/重复超量/空答案/跨owner）、parse 函数（各类拒绝）、validatePrivateReviewSession（接受/拒绝各类场景）。
-- 8/8 gates PASS：841/841 tests（新增 25）、typecheck、lint 0 errors/0 warnings、build、content:validate、content:stats、content:rights、content:audio-validate。
-- 浏览器 E2E：学习流程→答错→错题记录 PASS（3 道错题全部记录）；错题列表页 PASS（显示 3 道有效错题+复习错题按钮）；复习页完整答题流程 PARTIAL（dev server 因基础设施问题反复崩溃，由 25 个自动化测试覆盖）。
-- 报告 V14_PHASE1D3_REPORT.md。边界：复习判分只读、进度仅存 localStorage、每批最多 5 道、仅当前内容版本有效错题、不接入 XP/Review/Daily Plan/复习调度。
+- 严格校验存档版本、完整题目和答案集合、唯一选项、位置、提交时间和结果一致性；拒绝空结果、未知选项、负数/不一致统计。使用最新批次指针与 updatedAt，不按旧版本 submittedAt 误恢复。
+- 刷新、聚焦和可见性恢复先通过现有 owner-scoped 错题 GET 验证访问权限、contentHash 和题目；已提交结果重新执行服务端只读判分。验证期间隐藏题目；更新/删除/权限失效显示明确状态，不能继续旧批次。
+- 请求取消、序号、scope、身份代次及批次保护位于所有存档写入之前；scope 变化也取消请求。状态更新函数内不执行存储副作用；提交失败保留答案并提示未确认，存储错误独立显示。失败的重新复习不提前清除原批次。
+- API 开始接口严格拒绝非法 limit/JSON，服务层最多 5 道；UUID 批次避免碰撞。判分拒绝异常答案类型和未知选项，响应绑定 owner/paper/hash/batch。服务端批次仍为只读无状态模式，没有持久化批次注册表。
+- 原生 dialog + 显式 Tab/Shift+Tab 首尾循环、Escape、关闭后焦点恢复；选项提供 aria-pressed、题号提供 aria-current；按钮触控区域至少 44px，题号圆形外观仍为 28px。
+- 私有复习回归 29/29（13 项真实 Prisma 服务测试 + 16 项纯解析/存档测试；本轮增加 4 项并加强现有排序/limit 测试）。完整测试 845/845；typecheck、lint 0/0、生产 build、四项 content gates 全部通过。音频仅有允许的 synthetic fixture placeholder warning。
+- 80 项真实 Chrome 浏览器检查通过（完整流程 70 + 迟到响应/账号切换 10），包括刷新、未答确认、断网重试、存储失败、损坏结果、跨 owner、更新/删除、无全局副作用、迟到成功不覆盖新批次。375/390/430/768/1440px 答题与结果无横向溢出或导航遮挡，10 张截图。
+- 两个隔离测试用户按精确 id/email 清理，关联试卷/进度/错题/回执均为 0。报告 V14_PHASE1D3_REPORT.md；日志、结果、截图仅保留本地 output/。本地生产预览 http://127.0.0.1:3019 已确认可访问。
+- Git：本轮修复尚未提交/推送，不宣称远程同步或 FINALIZED；未 merge main/tag/Release。后续需发布 Git 闭环。本阶段停止，不开始下一阶段。
+- 边界：只读判分、浏览器本地存档、不跨设备同步，不接入 XP/Review/Daily Plan/复习调度；仅 Chrome 模拟宽度，未做实体手机或其他浏览器实测。
 
 ### Phase 1E.1 最终硬化验收
 

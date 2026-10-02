@@ -12,14 +12,18 @@ function optionLabel(id: string, options: Array<{ id: string; text: string }>) {
 export default function ReviewClient({ paperId }: { paperId: string }) {
   const review = usePrivateReviewSession(paperId);
   const [showConfirm, setShowConfirm] = useState(false);
-  const confirmRef = useRef<HTMLDivElement>(null);
+  const confirmRef = useRef<HTMLDialogElement>(null);
 
-  // Close confirm on Escape
+  // Native modal dialogs keep Tab inside, make the background inert and restore focus.
   useEffect(() => {
     if (!showConfirm) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setShowConfirm(false); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const dialog = confirmRef.current;
+    const previous = document.activeElement;
+    dialog?.showModal();
+    return () => {
+      dialog?.close();
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
   }, [showConfirm]);
 
   const handleSubmitClick = () => {
@@ -53,14 +57,18 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
       )}
 
       {/* Error */}
-      {review.status === "error" && (
+      {(review.status === "error" || review.status === "invalid") && (
         <div className="pp-error pp-error-large" role="alert">
           <AlertCircle size={24} />
           <p>{review.error}</p>
-          <button type="button" onClick={() => { void review.startReview(); }} className="pp-primary-btn">重试</button>
+          <button type="button" onClick={() => { void review.recheck(); }} className="pp-primary-btn">重新检查</button>
+          <button type="button" onClick={() => { void review.startReview(); }} className="pp-cancel-btn">重新开始复习</button>
           <Link href={`/me/private-papers/${encodeURIComponent(paperId)}/wrong-items`} className="pp-cancel-btn">返回错题本</Link>
         </div>
       )}
+
+      {review.storageError && <p className="pp-error" role="alert">{review.storageError}</p>}
+      {review.status === "reviewing" && review.error && <p className="pp-error" role="alert">{review.error}</p>}
 
       {/* Idle — not started */}
       {review.status === "idle" && (
@@ -95,6 +103,8 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
                   onClick={() => review.goToQuestion(i)}
                   className={`pp-review-dot ${i === session.currentIndex ? "active" : ""} ${session.answers[q.questionId] ? "answered" : ""}`}
                   aria-label={`第 ${i + 1} 题`}
+                  aria-current={i === session.currentIndex ? "step" : undefined}
+                  disabled={review.status === "submitting"}
                 />
               ))}
             </div>
@@ -119,6 +129,7 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
                     onClick={() => review.selectAnswer(currentQ.questionId, opt.id)}
                     className={`pp-review-option ${selected ? "selected" : ""}`}
                     disabled={review.status === "submitting"}
+                    aria-pressed={selected}
                   >
                     <span className="pp-review-option-id">{opt.id}</span>
                     <span className="pp-review-option-text">{opt.text}</span>
@@ -235,8 +246,14 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
 
       {/* Confirm submit dialog */}
       {showConfirm && (
-        <div className="pp-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-          <div className="pp-modal" ref={confirmRef}>
+        <dialog ref={confirmRef} className="pp-modal" aria-labelledby="confirm-title" onCancel={() => setShowConfirm(false)} onKeyDown={event => {
+          if (event.key !== "Tab") return;
+          const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+          const first = buttons[0], last = buttons.at(-1);
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        }}>
+          <div>
             <h3 id="confirm-title">确认提交复习？</h3>
             <p>还有 <strong>{review.unansweredCount}</strong> 题未作答，提交后将计为错误。提交后本批答案不可修改。</p>
             <div className="pp-modal-actions">
@@ -248,7 +265,7 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
               </button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
 
       <div className="me-spacer" />

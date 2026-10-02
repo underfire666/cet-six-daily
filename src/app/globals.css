@@ -1365,9 +1365,10 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
 .pp-review-progress { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .pp-review-progress-text { font-size: 14px; font-weight: 500; color: var(--text); }
 .pp-review-dots { display: flex; gap: 6px; }
-.pp-review-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: transparent; cursor: pointer; padding: 0; transition: all 0.15s; min-width: 28px; min-height: 28px; }
-.pp-review-dot.answered { border-color: var(--primary); background: rgba(77, 152, 46, 0.1); }
-.pp-review-dot.active { border-color: var(--primary); background: var(--primary); }
+.pp-review-dot { width: 44px; height: 44px; border-radius: 50%; border: none; background: transparent; cursor: pointer; padding: 8px; min-width: 44px; min-height: 44px; }
+.pp-review-dot::before { content: ""; display: block; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); box-sizing: border-box; transition: all 0.15s; }
+.pp-review-dot.answered::before { border-color: var(--primary); background: rgba(77, 152, 46, 0.1); }
+.pp-review-dot.active::before { border-color: var(--primary); background: var(--primary); }
 
 .pp-review-question-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .pp-review-passage { background: rgba(0,0,0,0.02); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
@@ -1383,7 +1384,7 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
 .pp-review-option-id { font-weight: 700; font-size: 14px; color: var(--primary); flex-shrink: 0; width: 24px; }
 .pp-review-option-text { flex: 1; font-size: 14px; line-height: 1.5; color: var(--text); }
 .pp-review-option-check { color: var(--primary); flex-shrink: 0; }
-.pp-review-clear-answer { margin-top: 12px; background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; text-decoration: underline; padding: 4px 8px; min-height: 32px; }
+.pp-review-clear-answer { margin-top: 12px; background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; text-decoration: underline; padding: 4px 8px; min-height: 44px; }
 .pp-review-clear-answer:hover { color: var(--text); }
 .pp-review-clear-answer:disabled { cursor: not-allowed; opacity: 0.5; }
 
@@ -1415,10 +1416,12 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
 
 .pp-review-result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
 .pp-review-result-actions .pp-primary-btn, .pp-review-result-actions .pp-cancel-btn { display: flex; align-items: center; gap: 6px; min-height: 44px; }
+.pp-review-question-card, .pp-review-result-item, .pp-review-option-text { min-width: 0; overflow-wrap: anywhere; }
+.pp-review-dot:focus-visible, .pp-review-option:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
 
 /* Modal */
 .pp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-.pp-modal { background: var(--card-bg); border-radius: 16px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.pp-modal { background: var(--surface); border-radius: 16px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
 .pp-modal h3 { font-size: 18px; font-weight: 700; margin: 0 0 12px; color: var(--text); }
 .pp-modal p { font-size: 14px; line-height: 1.6; color: var(--text); margin: 0 0 20px; }
 .pp-modal-actions { display: flex; gap: 12px; justify-content: flex-end; }

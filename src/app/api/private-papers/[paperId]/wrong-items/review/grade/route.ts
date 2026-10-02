@@ -29,11 +29,13 @@ export async function POST(request: Request, { params }: RouteParams) {
         const paperId = (await params).paperId;
         const body = await readPrivateBody(request);
         const contentHash = typeof body.contentHash === "string" ? body.contentHash : "";
+        const reviewBatchId = body.reviewBatchId;
+        if (typeof reviewBatchId !== "string" || !/^rb_[a-zA-Z0-9_-]{1,200}$/.test(reviewBatchId)) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid review batch");
         const answers = typeof body.answers === "object" && body.answers !== null && !Array.isArray(body.answers)
-          ? body.answers as Record<string, string>
+          ? body.answers as Record<string, unknown>
           : {};
         const result = await gradeReviewItems(owner, paperId, contentHash, answers);
-        return Response.json({ ownerId: owner, ...result });
+        return Response.json({ ownerId: owner, paperId, reviewBatchId, ...result });
       } catch (error) {
         return wrongItemErrorResponse(error);
       }

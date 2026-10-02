@@ -1,5 +1,6 @@
 /** Owner-scoped wrong questions. Writes run inside the locked progress transaction. */
 import { Prisma, type PrivateWrongItem } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
 import { checkPrivatePaperReadiness, type PrivateFlatQuestion } from "@/lib/private-papers/readiness";
 
@@ -75,10 +76,10 @@ export interface PrivateReviewBatch {
   questions: PrivateReviewQuestion[];
 }
 /** Select at most `limit` active wrong items whose content version is still valid.
- *  Deterministic order: lastSeenAt desc, then id asc. Returns questions without answers. */
+ *  Deterministic order: lastSeenAt desc, then questionId asc. Returns questions without answers. */
 export async function selectReviewItems(userId: string, paperId: string, limit = 5): Promise<PrivateReviewBatch> {
   identity(userId, paperId);
-  if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid review limit");
+  if (!Number.isInteger(limit) || limit < 1 || limit > 5) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid review limit");
   return database(() => prisma.$transaction(async tx => {
     const paper = await paperForRead(tx, userId, paperId);
     const ready = checkPrivatePaperReadiness(paper.content as Record<string, unknown>);
@@ -101,7 +102,7 @@ export async function selectReviewItems(userId: string, paperId: string, limit =
       });
     }
     if (questions.length === 0) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "no valid wrong items for review");
-    return { reviewBatchId: `rb_${ready.contentHash.slice(0, 12)}_${Date.now().toString(36)}`, contentHash: ready.contentHash, questions };
+    return { reviewBatchId: `rb_${randomUUID()}`, contentHash: ready.contentHash, questions };
   }));
 }
 /** Read-only grading: validates owner, paper, contentHash, question membership, then scores.
@@ -117,7 +118,7 @@ export async function gradeReviewItems(
   userId: string,
   paperId: string,
   contentHash: string,
-  answers: Record<string, string>,
+  answers: Record<string, unknown>,
 ): Promise<PrivateReviewGradeResult> {
   identity(userId, paperId);
   if (!contentHash?.trim() || contentHash.length > 200) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid contentHash");
@@ -144,7 +145,9 @@ export async function gradeReviewItems(
       const q = byQ.get(qid);
       if (!q) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", `question ${qid} not found in current content`);
       const raw = answers[qid];
-      const userAnswer = raw === "" || raw === null || raw === undefined ? null : String(raw);
+      if (raw !== null && typeof raw !== "string") throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid answer type");
+      const userAnswer = raw === "" || raw === null ? null : raw;
+      if (userAnswer !== null && !q.options.some(o => o.id === userAnswer)) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid answer option");
       const isCorrect = userAnswer !== null && userAnswer === q.answerId;
       if (isCorrect) correct++;
       if (userAnswer === null) unanswered++;

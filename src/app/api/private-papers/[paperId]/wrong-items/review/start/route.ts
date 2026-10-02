@@ -27,11 +27,9 @@ export async function POST(request: Request, { params }: RouteParams) {
     async (owner) => {
       try {
         const paperId = (await params).paperId;
-        let limit = 5;
-        try {
-          const body = await readPrivateBody(request);
-          if (typeof body.limit === "number") limit = Math.min(5, Math.max(1, Math.floor(body.limit)));
-        } catch { /* empty body is fine, use default */ }
+        const body = await readPrivateBody(request);
+        const limit = body.limit === undefined ? 5 : body.limit;
+        if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1 || limit > 5) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid review limit");
         const batch = await selectReviewItems(owner, paperId, limit);
         return Response.json({ ownerId: owner, ...batch });
       } catch (error) {

@@ -22,6 +22,8 @@ import {
   validatePrivateReviewSession,
   PRIVATE_REVIEW_STORAGE_VERSION,
   type PrivateReviewSession,
+  savePrivateReviewSession,
+  restorePrivateReviewSession,
 } from "../src/lib/private-papers/review";
 
 async function createTestUser(prefix: string) {
@@ -93,6 +95,9 @@ test("review: selectReviewItems returns only active valid items, max 5, determin
     }
     // Deterministic: all selected items must be unique and from the valid set
     const ids = batch.questions.map(q => q.questionId);
+    const second = await selectReviewItems(user.id, paper.paperId, 5);
+    assert.deepEqual(second.questions, batch.questions);
+    assert.notEqual(second.reviewBatchId, batch.reviewBatchId);
     assert.equal(new Set(ids).size, 5);
     for (const id of ids) {
       assert.ok(["q1", "q2", "q3", "q4", "q5", "q6", "q7"].includes(id), `unexpected questionId: ${id}`);
@@ -137,6 +142,7 @@ test("review: selectReviewItems rejects invalid limit", async () => {
     await submitAllWrong(user.id, paper.paperId, content, 2);
     await assert.rejects(() => selectReviewItems(user.id, paper.paperId, 0), PrivateWrongItemStoreError);
     await assert.rejects(() => selectReviewItems(user.id, paper.paperId, 21), PrivateWrongItemStoreError);
+    await assert.rejects(() => selectReviewItems(user.id, paper.paperId, 6), PrivateWrongItemStoreError);
   } finally { await cleanupUser(user.id); }
 });
 
@@ -250,7 +256,7 @@ test("review: gradeReviewItems rejects question not in active wrong items", asyn
   } finally { await cleanupUser(user.id); }
 });
 
-test("review: gradeReviewItems rejects duplicate questionIds", async () => {
+test("review: gradeReviewItems rejects more than five questionIds", async () => {
   const user = await createTestUser("rv9");
   try {
     const content = makeReadyContent(2);
@@ -378,4 +384,76 @@ test("review: validatePrivateReviewSession accepts submitted session with result
   assert.ok(result);
   assert.equal(result.submitted, true);
   assert.ok(result.result);
+});
+
+function validSession(): PrivateReviewSession {
+  return { version: 1, ownerId: "me", paperId: "paper:1", reviewBatchId: "rb_test", contentHash: "h1", questions: [{ questionId: "q1", prompt: "p", options: [{ id: "A", text: "a" }, { id: "B", text: "b" }] }], answers: { q1: "A" }, currentIndex: 0, submitted: false };
+}
+function validGrade() {
+  return { ownerId: "me", paperId: "paper:1", reviewBatchId: "rb_test", contentHash: "h1", total: 1, correct: 1, unanswered: 0, results: [{ ...validSession().questions[0], userAnswer: "A", correctAnswer: "A", isCorrect: true }] };
+}
+
+test("review: sessions reject invalid options, missing answers, duplicate options and malformed results", () => {
+  const base = validSession();
+  for (const session of [
+    { ...base, answers: { q1: "INVALID" } },
+    { ...base, answers: {} },
+    { ...base, questions: [{ ...base.questions[0], options: [{ id: "A", text: "a" }, { id: "A", text: "duplicate" }] }] },
+    { ...base, submitted: true, submittedAt: new Date().toISOString(), result: {} },
+    { ...base, submitted: true, submittedAt: "invalid", result: validGrade() },
+    { ...base, submitted: true, submittedAt: new Date().toISOString(), result: { ...validGrade(), results: [{ ...validGrade().results[0], userAnswer: "B", isCorrect: false }], correct: 0 } },
+    { ...base, result: validGrade() },
+  ]) assert.equal(validatePrivateReviewSession(session, "me", "paper:1"), null);
+});
+
+test("review: grading parser rejects negative or inconsistent totals, wrong options and wrong batch", () => {
+  const base = validGrade();
+  for (const raw of [
+    { ...base, correct: -1 }, { ...base, unanswered: -1 }, { ...base, correct: 0 },
+    { ...base, results: [{ ...base.results[0], correctAnswer: "INVALID" }] },
+    { ...base, results: [{ ...base.results[0], userAnswer: "INVALID" }] },
+    { ...base, results: [{ ...base.results[0], isCorrect: false }] },
+    { ...base, paperId: "other" }, { ...base, reviewBatchId: "rb_other" },
+    { ...base, results: [{ ...base.results[0], options: [{id:"A",text:"a"},{id:"A",text:"dup"}] }] },
+  ]) assert.throws(() => parsePrivateReviewGrade(raw, "me", "paper:1", "h1", ["q1"], "rb_test"));
+  assert.equal(parsePrivateReviewGrade(base, "me", "paper:1", "h1", ["q1"], "rb_test").correct, 1);
+});
+
+test("review: local restoration prefers explicit latest batch and warns on corrupt or inaccessible storage", () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const entries = new Map<string, string>();
+  const storage = { get length() { return entries.size; }, key: (i: number) => [...entries.keys()][i] ?? null, getItem: (k: string) => entries.get(k) ?? null, setItem: (k: string, v: string) => { entries.set(k, v); }, removeItem: (k: string) => { entries.delete(k); } };
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { localStorage: storage } });
+  try {
+    const old: PrivateReviewSession = { ...validSession(), submitted: true, submittedAt: "2026-10-01T00:00:00Z", result: validGrade(), updatedAt: "2026-10-01T00:00:00Z" };
+    savePrivateReviewSession(old);
+    const newer: PrivateReviewSession = { ...validSession(), reviewBatchId: "rb_new", contentHash: "h2", answers: {q1:null}, updatedAt: "2026-10-02T00:00:00Z" };
+    savePrivateReviewSession(newer);
+    assert.equal(restorePrivateReviewSession("me", "paper:1").session?.reviewBatchId, "rb_new");
+    entries.set("private-review:me:paper:1:h2", JSON.stringify({ ...newer, questions: [] }));
+    assert.equal(restorePrivateReviewSession("me", "paper:1").session, null);
+    assert.ok(restorePrivateReviewSession("me", "paper:1").warning);
+    assert.equal(restorePrivateReviewSession("other", "paper:1").session, null);
+    Object.defineProperty(globalThis, "window", { configurable: true, value: { get localStorage() { throw new Error("denied"); } } });
+    assert.ok(restorePrivateReviewSession("me", "paper:1").warning);
+    assert.throws(() => savePrivateReviewSession(newer));
+  } finally {
+    if (original) Object.defineProperty(globalThis, "window", original);
+    else Reflect.deleteProperty(globalThis, "window");
+  }
+});
+
+test("review: server rejects malformed answer values without changing any wrong items or progress", async () => {
+  const user = await createTestUser("rv-invalid-answer");
+  try {
+    const content = makeReadyContent(2);
+    const paper = await createReadyPaper(user.id, "invalid-answers", content);
+    await submitAllWrong(user.id, paper.paperId, content, 2);
+    const before = { items: await listPrivateWrongItems(user.id, paper.paperId), progress: await getPrivatePaperProgress(user.id, paper.paperId) };
+    for (const answer of [42, {}, [], true, undefined, "INVALID_OPTION"]) {
+      await assert.rejects(() => gradeReviewItems(user.id, paper.paperId, computePrivateContentHash(content), {q1:answer}), (e: unknown) => e instanceof PrivateWrongItemStoreError && e.code === "VALIDATION_ERROR");
+    }
+    assert.deepEqual(await listPrivateWrongItems(user.id, paper.paperId), before.items);
+    assert.deepEqual(await getPrivatePaperProgress(user.id, paper.paperId), before.progress);
+  } finally { await cleanupUser(user.id); }
 });
