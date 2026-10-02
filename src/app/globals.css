@@ -1392,6 +1392,13 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
 .pp-review-nav .pp-secondary-btn, .pp-review-nav .pp-primary-btn { display: flex; align-items: center; gap: 6px; min-height: 44px; }
 .pp-review-unanswered-note { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--warning); margin: 0 0 12px; }
 
+.pp-sync-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 8px; border-radius: 10px; margin-left: auto; font-weight: 500; }
+.pp-sync-saving { background: var(--primary-light); color: var(--primary); }
+.pp-sync-saved { background: var(--success-light); color: var(--success); }
+.pp-sync-error { background: var(--error-light); color: var(--error); }
+.pp-sync-conflict { background: var(--warning-light); color: var(--warning); }
+.pp-sync-idle { background: var(--muted); color: var(--text-secondary); }
+
 .pp-review-result-summary { text-align: center; padding: 24px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; }
 .pp-review-result-score { display: flex; align-items: baseline; justify-content: center; gap: 6px; margin-bottom: 8px; }
 .pp-review-result-correct { font-size: 48px; font-weight: 800; color: var(--primary); line-height: 1; }
@@ -1454,7 +1461,7 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
 .pp-wrong-removed-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(108, 117, 125, 0.15); color: #6c757d; font-weight: 600; }
 
 /* Dialog modal layout */
-dialog.pp-modal { padding: 0; overflow: hidden; }
+dialog.pp-remove-dialog { padding: 0; overflow: hidden; }
 .pp-modal-content { display: flex; flex-direction: column; max-height: 85vh; }
 .pp-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 12px; }
 .pp-modal-header h3 { margin: 0; font-size: 18px; font-weight: 700; }
@@ -1468,6 +1475,9 @@ dialog.pp-modal { padding: 0; overflow: hidden; }
 .pp-danger-btn { padding: 10px 20px; font-size: 14px; font-weight: 600; color: #fff; background: #dc2626; border: none; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
 .pp-danger-btn:hover:not(:disabled) { background: #b91c1c; }
 .pp-danger-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pp-wrong-removed-link { display: flex; align-items: center; min-height: 44px; color: inherit; }
+.pp-wrong-item-card, .pp-remove-dialog, .pp-modal-item-preview { overflow-wrap: anywhere; }
+.pp-remove-dialog .pp-icon-btn { min-height: 44px; min-width: 44px; }
 
 @media (max-width: 430px) {
   .pp-wrong-item-actions { flex-direction: column; }

@@ -31,6 +31,7 @@ model User {
   migrationRecords MigrationRecord[]
   privatePapers PrivatePaper[]
   privatePaperProgress PrivatePaperProgress[]
+  privateReviewProgress PrivateReviewProgress[]
   privateWrongItems PrivateWrongItem[]
 }
 
@@ -235,6 +236,26 @@ model PrivatePaperProgress {
   revision        Int      @default(1)  // optimistic concurrency
   createdAt       DateTime @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, paperId])
+  @@index([userId])
+}
+
+model PrivateReviewProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paperId       String   // matches PrivatePaper.paperId (private namespace)
+  reviewBatchId String   // server-generated batch id (rb_...)
+  contentHash   String   // content version this review batch belongs to
+  questionIds   Json     // ordered array of questionIds, max 5
+  answers       Json     // Record<questionId, optionId | null>
+  currentIndex  Int      @default(0)
+  submitted     Boolean  @default(false)
+  result        Json?    // grading result (only when submitted)
+  revision      Int      @default(1)  // optimistic concurrency
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
 
   @@unique([userId, paperId])
   @@index([userId])

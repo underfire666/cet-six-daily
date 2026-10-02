@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth/config";
-import { privateRequest, privateErrorResponse, readPrivateBody } from "@/lib/private-papers/http";
-import { submitPrivateReviewProgress, PrivateReviewProgressStoreError } from "@/content/private-review-progress-store";
+import { privateRequest, privateErrorResponse } from "@/lib/private-papers/http";
+import { readPrivateReviewProgressSnapshot, PrivateReviewProgressStoreError } from "@/content/private-review-progress-store";
 
 interface RouteParams {
   params: Promise<{ paperId: string }>;
@@ -18,17 +18,16 @@ function reviewErrorResponse(error: unknown): Response {
   return privateErrorResponse(error);
 }
 
-// POST /api/private-papers/[paperId]/wrong-items/review/grade
-// Server grades and persists submitted result. CAS revision check.
-export async function POST(request: Request, { params }: RouteParams) {
+// GET /api/private-papers/[paperId]/wrong-items/review/progress
+// Read-only hydration of current review progress. Returns invalidated state if content/batch changed.
+export async function GET(_request: Request, { params }: RouteParams) {
   return privateRequest(
     () => safeAuth(),
     async (owner) => {
       try {
         const paperId = (await params).paperId;
-        const body = await readPrivateBody(request);
-        const submitted = await submitPrivateReviewProgress(owner, paperId, body);
-        return Response.json({ ownerId: owner, ...submitted });
+        const snapshot = await readPrivateReviewProgressSnapshot(owner, paperId);
+        return Response.json({ ownerId: owner, paperId, ...snapshot });
       } catch (error) {
         return reviewErrorResponse(error);
       }

@@ -1,85 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, AlertCircle, Loader2, BookX, RefreshCw, ChevronRight, Trash2, RotateCcw, X } from "lucide-react";
+import { usePrivateWrongManagement } from "@/lib/private-papers/use-wrong-management";
+import { WrongItemRemoveDialog } from "@/components/private-papers/WrongItemRemoveDialog";
 import { usePrivateWrongItems } from "@/lib/private-papers/use-wrong-items";
 import { formatPrivateWrongDate as formatDate, type PrivateWrongItemView } from "@/lib/private-papers/wrong-items";
 
 function optionLabel(id: string, options: Array<{id: string; text: string}>) { return options.find(o => o.id === id)?.text ?? id; }
 
-interface RemoveDialogState { item: PrivateWrongItemView; }
+interface RemoveDialogState { scope: string; item: PrivateWrongItemView; }
 
 export default function WrongItemsClient({ paperId }: { paperId: string }) {
-  const { data, loading, error, refresh } = usePrivateWrongItems(paperId);
+  const { data, loading, error, refresh, scope, ownerId } = usePrivateWrongItems(paperId);
   const items = data?.items ?? [];
   const counts = data?.counts ?? { active: 0, removed: 0, contentChanged: 0, total: 0 };
   const refreshing = loading;
 
   const [removeDialog, setRemoveDialog] = useState<RemoveDialogState | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const confirmBtnRef = useRef<HTMLButtonElement>(null);
-
+  const management = usePrivateWrongManagement(scope, ownerId, refresh);
+  const actionLoading = management.busy, actionError = management.error;
   const activeItems = items.filter(item => item.removedAt === null && item.status === "active" && item.question);
   const removedItems = items.filter(item => item.removedAt !== null);
   const invalidItems = items.filter(item => item.removedAt === null && (item.status !== "active" || !item.question));
 
-  useEffect(() => {
-    if (removeDialog && dialogRef.current) {
-      dialogRef.current.showModal();
-      setTimeout(() => confirmBtnRef.current?.focus(), 50);
-    }
-  }, [removeDialog]);
-
-  const closeDialog = useCallback(() => {
-    dialogRef.current?.close();
-    setRemoveDialog(null);
-  }, [setRemoveDialog]);
-
-  const doRemove = useCallback(async (item: PrivateWrongItemView) => {
-    setActionLoading(item.id);
-    setActionError(null);
-    try {
-      const res = await fetch(`/api/private-papers/${encodeURIComponent(paperId)}/wrong-items/${encodeURIComponent(item.questionId)}/remove`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentHash: item.contentHash, revision: item.revision }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || (res.status === 409 ? "该错题已被其他操作修改，请刷新后重试" : "移出错题本失败，请重试"));
-      }
-      closeDialog();
-      await refresh();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "移出错题本失败，请重试");
-    } finally {
-      setActionLoading(null);
-    }
-  }, [paperId, refresh, closeDialog]);
-
-  const doRestore = useCallback(async (item: PrivateWrongItemView) => {
-    setActionLoading(item.id);
-    setActionError(null);
-    try {
-      const res = await fetch(`/api/private-papers/${encodeURIComponent(paperId)}/wrong-items/${encodeURIComponent(item.questionId)}/restore`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentHash: item.contentHash, revision: item.revision }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || (res.status === 409 ? "该错题已被其他操作修改，请刷新后重试" : "恢复错题失败，请重试"));
-      }
-      await refresh();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "恢复错题失败，请重试");
-    } finally {
-      setActionLoading(null);
-    }
-  }, [paperId, refresh]);
+  const closeDialog = () => { management.cancel(); setRemoveDialog(null); };
+  const doRemove = async (item: PrivateWrongItemView) => { if (await management.run(item, "remove")) closeDialog(); };
+  const doRestore = async (item: PrivateWrongItemView) => { await management.run(item, "restore"); };
+  const dialogItem = !loading && !error && removeDialog?.scope === scope && items.some(i => i.id === removeDialog.item.id && i.revision === removeDialog.item.revision && i.status === "active" && i.removedAt === null) ? removeDialog.item : null;
 
   if (loading) {
     return (
@@ -121,7 +70,7 @@ export default function WrongItemsClient({ paperId }: { paperId: string }) {
         <div className="pp-error" role="alert" style={{ margin: "12px 16px" }}>
           <AlertCircle size={18} />
           <p>{actionError}</p>
-          <button type="button" onClick={() => setActionError(null)} className="pp-icon-btn" aria-label="关闭错误提示"><X size={16} /></button>
+          <button type="button" onClick={() => management.clearError()} className="pp-icon-btn" aria-label="关闭错误提示"><X size={16} /></button>
         </div>
       )}
 
@@ -196,9 +145,9 @@ export default function WrongItemsClient({ paperId }: { paperId: string }) {
                     <div className="pp-wrong-item-actions">
                       <button
                         type="button"
-                        onClick={() => setRemoveDialog({ item })}
+                        onClick={() => setRemoveDialog({ scope, item })}
                         className="pp-secondary-btn pp-wrong-remove-btn"
-                        disabled={actionLoading === item.id}
+                        disabled={actionLoading !== null}
                         aria-label={`移出错题本：${item.question?.prompt ?? item.questionId}`}
                       >
                         {actionLoading === item.id ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
@@ -225,7 +174,7 @@ export default function WrongItemsClient({ paperId }: { paperId: string }) {
                       <span className="pp-wrong-item-count">错误 {item.wrongCount} 次</span>
                       <span className="pp-wrong-removed-badge">已移出</span>
                     </div>
-                    <p className="pp-wrong-item-prompt">{item.question?.prompt ?? "内容已更新，此错题已失效"}</p>
+                    <Link className="pp-wrong-item-prompt pp-wrong-removed-link" href={`/me/private-papers/${encodeURIComponent(paperId)}/wrong-items/${encodeURIComponent(item.questionId)}?contentHash=${encodeURIComponent(item.contentHash)}`}>{item.question?.prompt ?? "内容已更新，此错题已失效"}</Link>
                     <div className="pp-wrong-item-footer">
                       <span className="pp-wrong-item-date">移出时间：{item.removedAt ? formatDate(item.removedAt) : "未知"}</span>
                     </div>
@@ -235,7 +184,7 @@ export default function WrongItemsClient({ paperId }: { paperId: string }) {
                           type="button"
                           onClick={() => { void doRestore(item); }}
                           className="pp-primary-btn pp-wrong-restore-btn"
-                          disabled={actionLoading === item.id}
+                          disabled={actionLoading !== null}
                           aria-label={`恢复到错题本：${item.question?.prompt ?? item.questionId}`}
                         >
                           {actionLoading === item.id ? <Loader2 size={16} className="spin" /> : <RotateCcw size={16} />}
@@ -275,45 +224,7 @@ export default function WrongItemsClient({ paperId }: { paperId: string }) {
         </>
       )}
 
-      <dialog ref={dialogRef} className="pp-modal pp-remove-dialog" onCancel={closeDialog}>
-        <div className="pp-modal-content">
-          <div className="pp-modal-header">
-            <h3>移出错题本</h3>
-            <button type="button" onClick={closeDialog} className="pp-icon-btn" aria-label="关闭"><X size={18} /></button>
-          </div>
-          <div className="pp-modal-body">
-            <p style={{ margin: "0 0 12px" }}>确定要将这道错题移出错题本吗？</p>
-            <div className="pp-modal-warning">
-              <AlertCircle size={18} />
-              <div>
-                <p style={{ margin: "0 0 4px", fontWeight: 600 }}>移出仅隐藏，不代表已掌握</p>
-                <p style={{ margin: 0, fontSize: "13px", color: "var(--pp-text-muted)" }}>
-                  以后在原私有卷的新一轮学习中再次答错，这道题会重新进入错题本。同一次提交的重试不会重新收录。
-                </p>
-              </div>
-            </div>
-            {removeDialog?.item.question?.prompt && (
-              <div className="pp-modal-item-preview">
-                <p style={{ margin: 0, fontSize: "13px", color: "var(--pp-text-muted)" }}>题目：</p>
-                <p style={{ margin: "4px 0 0", fontWeight: 500 }}>{removeDialog.item.question.prompt}</p>
-              </div>
-            )}
-          </div>
-          <div className="pp-modal-footer">
-            <button type="button" onClick={closeDialog} className="pp-cancel-btn">取消</button>
-            <button
-              type="button"
-              ref={confirmBtnRef}
-              onClick={() => removeDialog && void doRemove(removeDialog.item)}
-              className="pp-danger-btn"
-              disabled={actionLoading !== null}
-            >
-              {actionLoading !== null ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
-              确认移出
-            </button>
-          </div>
-        </div>
-      </dialog>
+      <WrongItemRemoveDialog item={dialogItem} busy={actionLoading !== null} error={actionError} onClose={closeDialog} onConfirm={() => { if (dialogItem) void doRemove(dialogItem); }} />
 
       <div className="me-spacer" />
     </main>

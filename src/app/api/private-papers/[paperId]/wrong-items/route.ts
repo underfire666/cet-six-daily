@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth/config";
 import { privateRequest, privateErrorResponse } from "@/lib/private-papers/http";
-import { listPrivateWrongItems, countWrongItems, PrivateWrongItemStoreError } from "@/content/private-wrong-item-store";
+import { listPrivateWrongItems, countPrivateWrongItemViews, PrivateWrongItemStoreError } from "@/content/private-wrong-item-store";
 
 interface RouteParams {
   params: Promise<{ paperId: string }>;
@@ -33,10 +33,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
     async (owner) => {
       try {
         const paperId = (await params).paperId;
-        const [items, counts] = await Promise.all([
-          listPrivateWrongItems(owner, paperId),
-          countWrongItems(owner, paperId),
-        ]);
+        const items = await listPrivateWrongItems(owner, paperId);
+        const counts = countPrivateWrongItemViews(items);
         return Response.json({ ownerId: owner, items, counts });
       } catch (error) {
         return wrongItemErrorResponse(error);

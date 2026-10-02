@@ -1,10 +1,12 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/lib/auth/config";
 import WrongItemDetailClient from "./WrongItemDetailClient";
-import { privatePaperIdFromRoute } from "@/lib/private-papers/validation";
+import { privatePaperIdFromRoute, privateQuestionIdFromPageRoute } from "@/lib/private-papers/validation";
 
 export default async function Page({ params, searchParams }: { params: Promise<{ paperId: string; questionId: string }>; searchParams: Promise<{ contentHash?: string }> }) {
-  const { paperId: routeId, questionId } = await params;
+  const { paperId: routeId, questionId: questionSegment } = await params;
+  let questionId: string;
+  try { questionId = privateQuestionIdFromPageRoute(questionSegment); } catch { notFound(); }
   const { contentHash } = await searchParams;
   const returnSegment = routeId.startsWith("private:") ? encodeURIComponent(routeId) : routeId;
   if (!(await auth())?.user?.id) redirect("/login?callbackUrl=" + encodeURIComponent(`/me/private-papers/${returnSegment}/wrong-items/${encodeURIComponent(questionId)}`));

@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth/config";
-import { privateRequest, privateErrorResponse } from "@/lib/private-papers/http";
+import { privateRequest, privateErrorResponse, readPrivateBody } from "@/lib/private-papers/http";
 import { removeWrongItem, PrivateWrongItemStoreError } from "@/content/private-wrong-item-store";
 
 interface RouteParams {
@@ -28,19 +28,15 @@ export async function POST(request: Request, { params }: RouteParams) {
     async (owner) => {
       try {
         const { paperId, questionId } = await params;
-        const body = await request.json().catch(() => null);
-        if (!body || typeof body !== "object") {
-          return Response.json({ error: "invalid request body", code: "VALIDATION_ERROR" }, { status: 422 });
-        }
-        const { contentHash, revision } = body as Record<string, unknown>;
+        const { contentHash, revision } = await readPrivateBody(request);
         if (typeof contentHash !== "string" || !contentHash.trim()) {
           return Response.json({ error: "contentHash is required", code: "VALIDATION_ERROR" }, { status: 422 });
         }
-        if (typeof revision !== "number" || !Number.isInteger(revision) || revision < 0) {
+        if (typeof revision !== "number" || !Number.isSafeInteger(revision) || revision < 0 || revision >= 2147483647) {
           return Response.json({ error: "revision must be a non-negative integer", code: "VALIDATION_ERROR" }, { status: 422 });
         }
-        const item = await removeWrongItem(owner, paperId, contentHash, decodeURIComponent(questionId), revision);
-        return Response.json({ item });
+        const item = await removeWrongItem(owner, paperId, contentHash, questionId, revision);
+        return Response.json({ ownerId: owner, item });
       } catch (error) {
         return wrongItemErrorResponse(error);
       }

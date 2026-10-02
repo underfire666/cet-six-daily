@@ -42,5 +42,5 @@ export function usePrivateWrongItems(paperId: string) {
     return () => { clearTimeout(timer); requests.controller?.abort(); requests.id++; window.removeEventListener("focus", focus); document.removeEventListener("visibilitychange", visible); };
   }, [refresh, status, router]);
   const currentState = state?.scope === scope ? state : undefined;
-  return { status, data: currentState?.data, error: currentState?.error, loading: status !== "authenticated" || !currentState || currentState.loading, refresh };
+  return { status, ownerId, scope, data: currentState?.data, error: currentState?.error, loading: status !== "authenticated" || !currentState || currentState.loading, refresh };
 }

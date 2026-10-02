@@ -33,6 +33,14 @@ export function validateLocalPaperId(id: string): string | null {
   return null;
 }
 
+/** This installed Next.js supplies encoded page params (API route params are decoded).
+ * Decode a page question segment exactly once; literal % and %25 remain distinct. */
+export function privateQuestionIdFromPageRoute(segment: string): string {
+  const decoded = decodeURIComponent(segment);
+  if (!decoded.trim() || decoded.length > 200 || /[\x00-\x1f\x7f]/.test(decoded)) throw new Error("invalid question route");
+  return decoded;
+}
+
 export function validateTitle(title: string): string | null {
   if (!title.trim()) return "标题不能为空";
   if (title.length > 200) return "标题不能超过 200 字符";

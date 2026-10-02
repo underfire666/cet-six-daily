@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth/config";
 import { privateRequest, privateErrorResponse, readPrivateBody } from "@/lib/private-papers/http";
-import { submitPrivateReviewProgress, PrivateReviewProgressStoreError } from "@/content/private-review-progress-store";
+import { savePrivateReviewProgress, PrivateReviewProgressStoreError } from "@/content/private-review-progress-store";
 
 interface RouteParams {
   params: Promise<{ paperId: string }>;
@@ -18,8 +18,8 @@ function reviewErrorResponse(error: unknown): Response {
   return privateErrorResponse(error);
 }
 
-// POST /api/private-papers/[paperId]/wrong-items/review/grade
-// Server grades and persists submitted result. CAS revision check.
+// POST /api/private-papers/[paperId]/wrong-items/review/progress/save
+// Save in-progress answers/currentIndex. CAS revision check. Does not grade or submit.
 export async function POST(request: Request, { params }: RouteParams) {
   return privateRequest(
     () => safeAuth(),
@@ -27,8 +27,8 @@ export async function POST(request: Request, { params }: RouteParams) {
       try {
         const paperId = (await params).paperId;
         const body = await readPrivateBody(request);
-        const submitted = await submitPrivateReviewProgress(owner, paperId, body);
-        return Response.json({ ownerId: owner, ...submitted });
+        const result = await savePrivateReviewProgress(owner, paperId, body);
+        return Response.json({ ownerId: owner, paperId, ...result });
       } catch (error) {
         return reviewErrorResponse(error);
       }

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, AlertCircle, Loader2, BookOpen, CheckCircle2, XCircle, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2, BookOpen, CheckCircle2, XCircle, RotateCcw, ChevronLeft, ChevronRight, Cloud, CloudOff, RefreshCw } from "lucide-react";
 import { usePrivateReviewSession } from "@/lib/private-papers/use-review-session";
 
 function optionLabel(id: string, options: Array<{ id: string; text: string }>) {
@@ -13,6 +13,7 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
   const review = usePrivateReviewSession(paperId);
   const [showConfirm, setShowConfirm] = useState(false);
   const confirmRef = useRef<HTMLDialogElement>(null);
+  const conflictRef = useRef<HTMLDialogElement>(null);
 
   // Native modal dialogs keep Tab inside, make the background inert and restore focus.
   useEffect(() => {
@@ -25,6 +26,19 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
     };
   }, [showConfirm]);
+
+  // Show conflict dialog when syncStatus becomes conflict
+  useEffect(() => {
+    if (review.syncStatus !== "conflict") return;
+    const dialog = conflictRef.current;
+    if (!dialog || dialog.open) return;
+    const previous = document.activeElement;
+    dialog.showModal();
+    return () => {
+      dialog.close();
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
+  }, [review.syncStatus]);
 
   const handleSubmitClick = () => {
     if (review.unansweredCount > 0) {
@@ -49,6 +63,15 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
           <ArrowLeft size={20} />
         </Link>
         <h1>错题复习</h1>
+        {(review.status === "reviewing" || review.status === "submitting" || review.status === "submitted") && (
+          <span className={`pp-sync-badge pp-sync-${review.syncStatus}`} aria-live="polite">
+            {review.syncStatus === "saving" && <><Loader2 size={12} className="spin" /> 同步中</>}
+            {review.syncStatus === "saved" && <><Cloud size={12} /> 已同步</>}
+            {review.syncStatus === "error" && <><CloudOff size={12} /> 同步失败</>}
+            {review.syncStatus === "conflict" && <><RefreshCw size={12} /> 有冲突</>}
+            {review.syncStatus === "idle" && <><Cloud size={12} style={{ opacity: 0.4 }} /> 本地</>}
+          </span>
+        )}
       </header>
 
       {/* Loading */}
@@ -76,7 +99,7 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
           <BookOpen size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
           <h3 style={{ margin: "0 0 8px" }}>开始错题复习</h3>
           <p className="pp-preview-note" style={{ maxWidth: "340px", textAlign: "center" }}>
-            每次最多复习 5 道当前内容版本仍有效的错题，按最近答错时间排序。复习进度仅保存在当前浏览器，不影响原学习记录、错题次数或 XP。
+            每次最多复习 5 道当前内容版本仍有效的错题，按最近答错时间排序。复习进度自动同步到云端，可在其他设备继续；不影响原学习记录、错题次数或 XP。
           </p>
           <button type="button" onClick={() => { void review.startReview(); }} className="pp-primary-btn" style={{ marginTop: "16px" }}>
             开始复习
@@ -198,7 +221,7 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
               </p>
             )}
             <p className="pp-preview-note" style={{ fontSize: "12px", marginTop: "8px" }}>
-              复习结果仅保存在当前浏览器，不修改错题次数、学习进度或 XP。
+              复习结果已同步到云端，不修改错题次数、学习进度或 XP。
             </p>
           </div>
 
@@ -262,6 +285,36 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
               </button>
               <button type="button" onClick={handleConfirmSubmit} className="pp-primary-btn">
                 确认提交
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
+
+      {review.syncError && review.syncStatus !== "conflict" && (
+        <p className="pp-error" role="alert" style={{ fontSize: "13px" }}>
+          <CloudOff size={14} /> {review.syncError}
+        </p>
+      )}
+
+      {/* Conflict dialog */}
+      {review.syncStatus === "conflict" && (
+        <dialog ref={conflictRef} className="pp-modal" aria-labelledby="conflict-title" onCancel={() => review.resolveConflict("cloud")} onKeyDown={event => {
+          if (event.key !== "Tab") return;
+          const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+          const first = buttons[0], last = buttons.at(-1);
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        }}>
+          <div>
+            <h3 id="conflict-title">复习进度冲突</h3>
+            <p>{review.syncError || "检测到其他设备有更新的复习进度。请选择如何处理："}</p>
+            <div className="pp-modal-actions">
+              <button type="button" onClick={() => review.resolveConflict("cloud")} className="pp-cancel-btn" autoFocus>
+                采用云端进度
+              </button>
+              <button type="button" onClick={() => review.resolveConflict("local")} className="pp-primary-btn">
+                保留本地作答
               </button>
             </div>
           </div>

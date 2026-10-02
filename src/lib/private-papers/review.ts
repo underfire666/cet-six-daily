@@ -10,6 +10,7 @@ export interface PrivateReviewStartResponse {
   reviewBatchId: string;
   contentHash: string;
   questions: PrivateReviewQuestion[];
+  revision?: number;
 }
 
 export interface PrivateReviewGradeResponse extends PrivateReviewGradeResult {

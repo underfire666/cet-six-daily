@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { version, appPhase } from "../../../../package.json";
 
 export default function AboutPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function AboutPage() {
       </header>
       <section className="me-section">
         <h3>CET-6 Daily</h3>
-        <p>Version 0.11 / V11</p>
+        <p>版本 {version} · {appPhase}</p>
         <p className="me-note">六级日常：日历里的六级学习路线，每天一点，慢慢靠近目标。</p>
       </section>
     </main>

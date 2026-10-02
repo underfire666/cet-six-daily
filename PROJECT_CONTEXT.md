@@ -1,8 +1,10 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1D.4（Private Wrongbook Manual Remove/Restore MVP，8/8 gates 通过，浏览器 E2E 验证完成，2026-10-02）
+## 当前工作版本：V14 Phase 1E.2（私有错题复习进度云同步，8/8 gates 通过，浏览器 E2E 核心流程验证通过，2026-10-02）
 
-工作分支 feature/v14-real-content-rights。在 Phase 1D.3 私有错题手动复习基础上增加错题本手动移出与恢复：用户可将错题"移出错题本"（软移出，保留记录），也可在"已移出"区域恢复；再次答错会重新激活。不开发自动移出、掌握评分、复习调度或 XP 接入。
+应用版本：`14.6.5`（V14 Phase 1E.2）。版本与阶段统一配置于 `package.json` 的 `version` / `appPhase`；”关于”页面直接读取，`package-lock.json` 根版本同步。后续版本迭代须及时更新这两项配置和锁文件，保持页面与当前工作版本一致。应用版本不等于题目 contentVersion 或存储 schemaVersion，也不代表已创建 GitHub Release。
+
+工作分支 feature/v14-real-content-rights。在 Phase 1D.3 私有错题手动复习（仅 localStorage）基础上，增加服务端持久化与跨浏览器云同步：同一账号在另一个浏览器打开同一私有卷错题复习页，可恢复当前批次、答案、题号及已提交结果。新增 PrivateReviewProgress 表、4 个 Store 函数、2 个 API 路由、客户端云同步 Hook 重写、同步状态徽章与冲突对话框。复习操作不修改错题次数、学习进度或 XP。
 
 ### Phase 1D.2 最终修复与验收
 
@@ -28,22 +30,24 @@
 - 私有复习回归 29/29（13 项真实 Prisma 服务测试 + 16 项纯解析/存档测试；本轮增加 4 项并加强现有排序/limit 测试）。完整测试 845/845；typecheck、lint 0/0、生产 build、四项 content gates 全部通过。音频仅有允许的 synthetic fixture placeholder warning。
 - 80 项真实 Chrome 浏览器检查通过（完整流程 70 + 迟到响应/账号切换 10），包括刷新、未答确认、断网重试、存储失败、损坏结果、跨 owner、更新/删除、无全局副作用、迟到成功不覆盖新批次。375/390/430/768/1440px 答题与结果无横向溢出或导航遮挡，10 张截图。
 - 两个隔离测试用户按精确 id/email 清理，关联试卷/进度/错题/回执均为 0。报告 V14_PHASE1D3_REPORT.md；日志、结果、截图仅保留本地 output/。本地生产预览 http://127.0.0.1:3019 已确认可访问。
-- Git：本轮修复尚未提交/推送，不宣称远程同步或 FINALIZED；未 merge main/tag/Release。后续需发布 Git 闭环。本阶段停止，不开始下一阶段。
+- Git 历史：D3 修复已包含在 ff5fbd8 提交中，当前本地基线为后续 D4 提交；本轮未重新核对该历史提交的远程状态。
 - 边界：只读判分、浏览器本地存档、不跨设备同步，不接入 XP/Review/Daily Plan/复习调度；仅 Chrome 模拟宽度，未做实体手机或其他浏览器实测。
 
-### Phase 1D.4 私有错题本手动移出/恢复 MVP
+### Phase 1D.4 私有错题本手动移出/恢复：修复与本地验收
 
-- Prisma `PrivateWrongItem` 模型新增 `removedAt DateTime?`（软移出标记）和 `revision Int @default(0)`（CAS 乐观并发），新增索引 `[userId, paperId, removedAt]`。Migration `20261002051202_add_removed_at_revision_to_private_wrong_item` 已创建并应用。
-- Store 层：`PrivateWrongItemView` 新增 `removedAt` 和 `revision`；`recordWrongItems` 新 attempt 再次答错时，若记录已移出则清除 `removedAt`、`wrongCount+1`、`revision+1`，返回 `reactivated` 计数；同 attempt 重试不重复累计也不撤销移出。
-- `selectReviewItems` 和 `gradeReviewItems` where 条件新增 `removedAt: null`，已移出错题不进入复习。`listPrivateWrongItems` 和 `listAllPrivateWrongItems` 移除 status 过滤，返回所有记录（含已移出/已失效），由 UI 分组。
-- 新增 `removeWrongItem(userId, paperId, contentHash, questionId, expectedRevision)`：CAS 检查 revision，幂等（已移出直接返回），设置 removedAt=now() + revision+1。新增 `restoreWrongItem(...)`：CAS 检查，仅 status="active" 可恢复（content_changed 拒绝并说明原因），幂等（未移出直接返回），清除 removedAt + revision+1。新增 `countWrongItems` 返回 `{active, removed, contentChanged, total}`。
-- API 路由：`wrong-items` GET 响应改为 `{counts: {active, removed, contentChanged, total}}`；新建 `wrong-items/[questionId]/remove` 和 `wrong-items/[questionId]/restore` POST 路由，owner 从 session 派生；错误映射支持 CONFLICT→409。
-- 解析器支持 counts/removedAt/revision/paper_deleted status；仅 active 且未移出的 item 才校验 question 结构。修复选项验证 typo（`!==` 应为 `===`）。
-- UI：`WrongItemsClient` 分三个 section（有效错题/已移出/旧版本错题），有效错题卡片含"移出错题本"按钮（flex 布局分离 link 和 actions），已移出错题含"恢复到错题本"按钮（content_changed 显示"内容版本已变更，无法恢复"），移出确认原生 dialog（说明软移出及再次答错规则，含题目预览，Tab/Shift+Tab/Escape/焦点恢复）。`WrongItemDetailClient` 已移出状态显示提示条，导航区含移出/恢复按钮。
-- 复习批次失效衔接：`use-review-session` 的 `recheck` 函数批次验证条件新增 `item.removedAt === null`，固定复习批次中有题目被移出后，刷新/重新聚焦时批次失效并提示重新开始。
-- 回归测试 15 项：移出幂等、CAS 冲突、恢复幂等、content_changed 不可恢复、重新激活、复习排除已移出、counts 统计、API 路由、解析器验证等。完整测试 860/860；typecheck、lint 0/0、生产 build、四项 content gates 全部通过。音频仅有允许的 synthetic fixture placeholder warning。
-- 浏览器 E2E：错题列表页显示有效错题/已移出三段分组，移出确认弹窗含题目预览和规则说明，移出后题目移到"已移出"区域并显示移出时间，刷新持久化，恢复后题目回到有效区域；详情页同样支持移出/恢复，已移出状态显示提示条。384px 宽度无横向溢出，底部导航无遮挡。
-- 边界：软移出不删除行，保留唯一键；revision 用于 CAS 乐观并发；移出状态与内容版本有效性分别表达；不开发自动移出、掌握评分、复习调度或 XP 接入。
+- 沿用 D4 的 removedAt/revision/schema/migration；本轮没有新功能或新迁移。手动移出保留历史，新一轮原卷再次答错可重新激活；同一已接受 mutation 重试不撤销移出或重复累计。
+- 管理操作使用试卷 FOR UPDATE 与学习提交/内容更新/删除协调，并以 owner/paper/hash/revision 条件原子更新。重复请求只在目标状态一致且 revision 为请求值或请求值加一时确认；过期请求不能覆盖恢复、再次移出或重新激活。
+- 列表和 counts 从同一锁定快照推导，active/removed/contentChanged 互斥且相加为 total。已移出失效历史只计 removed；找不到当前题目的物理 active 记录展示为失效并禁止恢复。
+- 解析所有记录，含已移出有效题目；严格验证题目、唯一选项、答案归属、日期、revision、重复 ID 和数量一致性。管理响应绑定 owner/记录/版本/目标状态，验证不应改变的历史字段。
+- API 请求实际超过 1MiB 返回 413，非法 JSON/非对象 400、非法 revision 422。session 派生 owner；401/404/409/422 一致。API 参数不重复解码，页面参数解码一次，百分号与中文 ID 的链接/直访/刷新保持原题目身份。
+- 列表/详情共享取消、请求序号、scope、身份代次及同步 pending 锁；所有成功、失败、finally 检查当前请求。旧成功不能关闭新弹窗、解锁新操作或在账号切换后显示旧内容。弹窗内显示错误，失败可重试，冲突刷新权威状态。
+- 已移出有效题目支持详情；共享原生 dialog 支持 Tab/Shift+Tab/Escape 和焦点恢复；管理按钮至少 44px。padding 样式仅作用于移出弹窗，保留原视觉并避免影响 D3 复习弹窗。
+- 移出后固定复习批次失效，旧批次不能判分。移出/恢复不修改原答案、wrongCount、attemptId、历史时间、学习进度、回执、XP 或全局收藏。
+- 870/870 tests，专项 25/25（原 15 项 + 新增 10 项）；typecheck、lint 0/0、生产 build、四项 content gates 全部 PASS。音频仅有允许的 synthetic fixture placeholder warning。
+- 真实 Chrome 浏览器 103 项 PASS（主流程 84 + 异常/竞争 19）：涵盖双 owner/未登录、独立 context、异常请求、损坏响应、失效/删除、迟到响应、账号切换、网络失败、响应丢失重试、复习失效和无全局副作用。375/390/430/768/1440px 列表/详情/弹窗检查无横向溢出、按钮和导航遮挡问题；15 张组合截图及失效/实际视口预览。
+- 两个隔离用户按精确 id/email 清理，用户/试卷/进度/错题/回执均为 0；测试密码文件删除、日志密码替换。报告 V14_PHASE1D4_REPORT.md，结果与截图仅保留本地 output/，不上传公开附件。生产预览 http://127.0.0.1:3020 可访问，测试卷已清理。
+- Git：基线及当前 HEAD 782b799ef59ee4f7a96b1b13a29b28a6d4872a49；本轮修复尚未提交/推送，worktree 有修改。未重新核对远程，不宣称同步或 FINALIZED；未 merge main/tag/Release。
+- 边界：只 Chrome 模拟宽度，未实测实体手机/其他浏览器；不开发自动移出、掌握评分、复习调度、XP 或下一阶段。
 
 ### Phase 1E.1 最终硬化验收
 
@@ -54,6 +58,21 @@
 - 自动检查：791/791 tests、typecheck、lint 0/0、build、四项 content gates 全部通过。
 - 55 项浏览器检查通过；两个独立 Chrome context；375/390/430/768/1440px 学习/冲突/结果页，无横向溢出或最后按钮遮挡；15 张截图。测试用户及关联数据均按精确 id/email 清理。
 - 最新报告 V14_PHASE1E1_REPORT.md；截图/日志及最终 Git SHA 留在 output/ 本地，不作为公开附件上传。旧章节保留为历史，当前状态以本节及最新报告为准。
+
+### Phase 1E.2 私有错题复习进度云同步
+
+- 新增 PrivateReviewProgress 表（每 owner/paper 一条最新记录），字段含 reviewBatchId、contentHash、questionIds、answers、currentIndex、submitted、result、revision。唯一键 [userId, paperId]，索引 [userId]。Migration `20261002064622_add_private_review_progress` 已应用。
+- Store 层 4 函数：readPrivateReviewProgressSnapshot（paper row 锁 + readiness 校验，内容变化返回 invalidated 不删除）、startPrivateReviewBatch（服务端选题 + upsert，revision 递增）、savePrivateReviewProgress（CAS revision + batchId/contentHash 校验，净化 answers）、submitPrivateReviewProgress（服务端判分 + 持久化 result，CAS 检查）。
+- 关键修复：嵌套事务死锁。selectReviewItems/gradeReviewItems 内部各自创建 prisma.$transaction，嵌套在持有 paper row FOR UPDATE 锁的写事务内会死锁。修复：移到写事务外部调用。修复后 15 个测试全部在 20ms 内完成。
+- API 路由：GET review/progress（读取进度快照）、POST review/progress/save（保存答案，409 冲突映射）、修改 review/start（改用持久化批次）、修改 review/grade（改用持久化提交）。所有路由使用 privateRequest + safeAuth，owner 从 session 派生。
+- 客户端 usePrivateReviewSession Hook 完整重写：syncStatus（idle/saving/saved/error/conflict）、recheck（拉取云端进度，dirty 时提示冲突）、edit（防抖 800ms 保存，携带 baseRevision）、submit（持久化提交）、resolveConflict（cloud/local）、serverRevision/dirty ref 跟踪、focus/visibilitychange 自动 recheck。
+- UI：Header 同步状态徽章（5 种状态颜色）、冲突对话框（原生 dialog，"采用云端进度"/"保留本地作答"）、文案更新（"复习进度自动同步到云端，可在其他设备继续"、"复习结果已同步到云端"）、CSS .pp-sync-badge 样式。
+- 复习操作不修改错题次数、学习进度、XP 或原卷数据；判分/保存是独立的，不影响原学习记录。
+- 885/885 tests（原 870 + 新增 15）、typecheck、lint 0/0、生产 build、四项 content gates 全部通过。音频仅有允许的 synthetic fixture placeholder warning。
+- 浏览器 E2E 核心流程验证通过：开始复习（API 200，3 道题显示）、答题保存（"已同步"绿色徽章）、刷新恢复（答案和进度从云端恢复）、399px 移动端布局无溢出或导航遮挡。
+- 关键修复：Prisma Client 未包含新模型导致 dev server 500。停止 dev server → npx prisma generate → 重启后修复。
+- 报告 V14_PHASE1E2_REPORT.md；设计文档 V14_PHASE1E2_DESIGN.md。
+- 边界：离线硬刷新不保证；真机移动端软键盘未验证；不接入 Daily Plan/全局 Review；不实现复习调度/掌握评分；多宽度和双浏览器完整 E2E 待后续验证。
 
 ### Phase 1D.1 最终收尾
 
