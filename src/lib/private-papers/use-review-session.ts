@@ -74,7 +74,7 @@ export function usePrivateReviewSession(paperId: string): UsePrivateReviewSessio
       }
       const data = parsePrivateWrongItems(await res.json(), ownerId, paperId);
       if (!current()) return;
-      if (candidate && !candidate.questions.every(q => data.items.some(item => item.status === "active" && item.contentHash === candidate.contentHash && item.questionId === q.questionId && item.question && sameReviewQuestion(q, { questionId: item.questionId, ...item.question })))) {
+      if (candidate && !candidate.questions.every(q => data.items.some(item => item.status === "active" && item.removedAt === null && item.contentHash === candidate.contentHash && item.questionId === q.questionId && item.question && sameReviewQuestion(q, { questionId: item.questionId, ...item.question })))) {
         let storageError = restored.warning;
         try { clearPrivateReviewSession(ownerId, paperId, candidate.contentHash); } catch (e) { storageError = e instanceof Error ? e.message : "旧存档清理失败"; }
         commit({ scope, status: "invalid", session: null, storageError, error: "内容版本或错题已变化，此批次失效，请重新开始复习。" });

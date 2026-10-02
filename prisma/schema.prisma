@@ -252,6 +252,8 @@ model PrivateWrongItem {
   correctAnswer String   // correct optionId
   wrongCount    Int      @default(1) // cumulative wrong attempts for this question
   status        String   @default("active") // active | content_changed | paper_deleted
+  removedAt     DateTime? // soft removal: null = in wrongbook, set = manually removed (re-activates on next wrong answer)
+  revision      Int      @default(0) // optimistic concurrency for remove/restore operations
   firstSeenAt   DateTime @default(now()) @db.Timestamptz(6)
   lastSeenAt    DateTime @default(now()) @db.Timestamptz(6)
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
@@ -260,4 +262,5 @@ model PrivateWrongItem {
   @@unique([userId, paperId, contentHash, questionId])
   @@index([userId, paperId])
   @@index([userId, status])
+  @@index([userId, paperId, removedAt])
 }

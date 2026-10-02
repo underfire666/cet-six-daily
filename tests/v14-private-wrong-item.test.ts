@@ -314,8 +314,8 @@ test("content versions preserve separate records, counts, and exact old-version 
     assert.equal(invalid.status, "content_changed"); assert.equal(invalid.question, undefined);
     assert.equal((await getPrivateWrongItemByQuestionId(user.id, paper.paperId, "q1", old.contentHash)).id, old.id);
     assert.equal((await getPrivateWrongItemByQuestionId(user.id, paper.paperId, "q1")).status, "active");
-    const response = parsePrivateWrongItems({ ownerId: user.id, items, total: 1, invalidatedTotal: 1 }, user.id, paper.paperId);
-    assert.equal(response.total, 1); assert.equal(response.invalidatedTotal, 1);
+    const response = parsePrivateWrongItems({ ownerId: user.id, items, counts: { active: 1, removed: 0, contentChanged: 1, total: 2 } }, user.id, paper.paperId);
+    assert.equal(response.counts.active, 1); assert.equal(response.counts.contentChanged, 1);
   } finally { await cleanupUser(user.id); }
 });
 

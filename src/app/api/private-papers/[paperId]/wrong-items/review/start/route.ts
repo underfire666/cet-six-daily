@@ -12,7 +12,7 @@ async function safeAuth(): Promise<{ user?: { id?: string } } | null> {
 
 function wrongItemErrorResponse(error: unknown): Response {
   if (error instanceof PrivateWrongItemStoreError) {
-    const status = { NOT_FOUND: 404, VALIDATION_ERROR: 422, INTERNAL_ERROR: 500 }[error.code];
+    const status = { NOT_FOUND: 404, VALIDATION_ERROR: 422, CONFLICT: 409, INTERNAL_ERROR: 500 }[error.code];
     return Response.json({ error: error.message, code: error.code }, { status });
   }
   return privateErrorResponse(error);

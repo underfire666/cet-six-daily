@@ -8,11 +8,12 @@ export type PrivateWrongItemStatus = "active" | "content_changed" | "paper_delet
 export interface PrivateWrongItemView {
   id: string; paperId: string; contentHash: string; questionId: string; attemptId: string;
   userAnswer: string | null; correctAnswer: string; wrongCount: number; status: PrivateWrongItemStatus;
+  removedAt: string | null; revision: number;
   firstSeenAt: string; lastSeenAt: string; paperTitle?: string;
   question?: { prompt: string; options: Array<{ id: string; text: string }>; shortExplanation?: string; detailedExplanation?: string; passage?: string };
 }
 export class PrivateWrongItemStoreError extends Error {
-  constructor(public code: "NOT_FOUND" | "VALIDATION_ERROR" | "INTERNAL_ERROR", message: string) { super(message); this.name = "PrivateWrongItemStoreError"; }
+  constructor(public code: "NOT_FOUND" | "VALIDATION_ERROR" | "CONFLICT" | "INTERNAL_ERROR", message: string) { super(message); this.name = "PrivateWrongItemStoreError"; }
 }
 function identity(userId: string, paperId?: string) {
   if (!userId?.trim()) throw new PrivateWrongItemStoreError("NOT_FOUND", "user not found");
@@ -24,22 +25,24 @@ async function database<T>(operation: () => Promise<T>): Promise<T> {
     throw new PrivateWrongItemStoreError("INTERNAL_ERROR", "private wrong item storage unavailable");
   }
 }
-export async function recordWrongItems(tx: Prisma.TransactionClient, userId: string, paperId: string, contentHash: string, attemptId: string, questions: PrivateFlatQuestion[], answers: Record<string, string>): Promise<{ recorded: number; updated: number }> {
-  let recorded = 0, updated = 0;
+export async function recordWrongItems(tx: Prisma.TransactionClient, userId: string, paperId: string, contentHash: string, attemptId: string, questions: PrivateFlatQuestion[], answers: Record<string, string>): Promise<{ recorded: number; updated: number; reactivated: number }> {
+  let recorded = 0, updated = 0, reactivated = 0;
   for (const q of questions) {
     const userAnswer = answers[q.index] ?? null;
     if (userAnswer === q.answerId) continue;
     const existing = await tx.privateWrongItem.findUnique({ where: { userId_paperId_contentHash_questionId: { userId, paperId, contentHash, questionId: q.questionId } } });
     if (existing) {
       if (existing.attemptId === attemptId) continue;
-      await tx.privateWrongItem.update({ where: { id: existing.id }, data: { attemptId, userAnswer, correctAnswer: q.answerId, wrongCount: { increment: 1 }, status: "active", lastSeenAt: new Date() } });
+      const wasRemoved = existing.removedAt !== null;
+      await tx.privateWrongItem.update({ where: { id: existing.id }, data: { attemptId, userAnswer, correctAnswer: q.answerId, wrongCount: { increment: 1 }, status: "active", removedAt: null, revision: { increment: 1 }, lastSeenAt: new Date() } });
       updated++;
+      if (wasRemoved) reactivated++;
     } else {
       await tx.privateWrongItem.create({ data: { userId, paperId, contentHash, questionId: q.questionId, attemptId, userAnswer, correctAnswer: q.answerId, wrongCount: 1, status: "active" } });
       recorded++;
     }
   }
-  return { recorded, updated };
+  return { recorded, updated, reactivated };
 }
 export async function markWrongItemsContentChanged(tx: Prisma.TransactionClient, userId: string, paperId: string): Promise<number> {
   return (await tx.privateWrongItem.updateMany({ where: { userId, paperId, status: "active" }, data: { status: "content_changed" } })).count;
@@ -50,11 +53,14 @@ export async function deleteWrongItemsForPaper(tx: Prisma.TransactionClient, use
 type Paper = { title: string; content: Prisma.JsonValue };
 function enrich(item: PrivateWrongItem, paper: Paper): PrivateWrongItemView {
   const ready = checkPrivatePaperReadiness(paper.content as Record<string, unknown>);
-  const q = item.status === "active" && ready.ready && ready.contentHash === item.contentHash ? ready.questions.find(q => q.questionId === item.questionId) : undefined;
+  const contentValid = item.status === "active" && ready.ready && ready.contentHash === item.contentHash;
+  const q = contentValid ? ready.questions.find(q => q.questionId === item.questionId) : undefined;
   return {
     id: item.id, paperId: item.paperId, contentHash: item.contentHash, questionId: item.questionId, attemptId: item.attemptId,
     userAnswer: item.userAnswer, correctAnswer: item.correctAnswer, wrongCount: item.wrongCount,
-    status: q ? "active" : "content_changed", firstSeenAt: item.firstSeenAt.toISOString(), lastSeenAt: item.lastSeenAt.toISOString(), paperTitle: paper.title,
+    status: contentValid ? "active" : (item.status === "active" ? "content_changed" : item.status as PrivateWrongItemStatus),
+    removedAt: item.removedAt ? item.removedAt.toISOString() : null, revision: item.revision,
+    firstSeenAt: item.firstSeenAt.toISOString(), lastSeenAt: item.lastSeenAt.toISOString(), paperTitle: paper.title,
     ...(q ? { question: { prompt: q.prompt, options: q.options.map(o => ({ id: o.id, text: o.text })), shortExplanation: q.shortExplanation, detailedExplanation: q.detailedExplanation, passage: q.passage } } : {}),
   };
 }
@@ -85,7 +91,7 @@ export async function selectReviewItems(userId: string, paperId: string, limit =
     const ready = checkPrivatePaperReadiness(paper.content as Record<string, unknown>);
     if (!ready.ready) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "paper content is not ready for review");
     const items = await tx.privateWrongItem.findMany({
-      where: { userId, paperId, contentHash: ready.contentHash, status: "active" },
+      where: { userId, paperId, contentHash: ready.contentHash, status: "active", removedAt: null },
       orderBy: [{ lastSeenAt: "desc" }, { questionId: "asc" }],
       take: limit,
     });
@@ -133,7 +139,7 @@ export async function gradeReviewItems(
     const ready = checkPrivatePaperReadiness(paper.content as Record<string, unknown>);
     if (!ready.ready || ready.contentHash !== contentHash) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "content version mismatch or paper no longer ready");
     const items = await tx.privateWrongItem.findMany({
-      where: { userId, paperId, contentHash, status: "active", questionId: { in: uniqueIds } },
+      where: { userId, paperId, contentHash, status: "active", removedAt: null, questionId: { in: uniqueIds } },
       select: { questionId: true },
     });
     const validIds = new Set(items.map(i => i.questionId));
@@ -170,7 +176,7 @@ export async function listPrivateWrongItems(userId: string, paperId: string): Pr
   identity(userId, paperId);
   return database(() => prisma.$transaction(async tx => {
     const paper = await paperForRead(tx, userId, paperId);
-    const items = await tx.privateWrongItem.findMany({ where: { userId, paperId, status: { in: ["active", "content_changed"] } }, orderBy: [{ lastSeenAt: "desc" }, { id: "asc" }] });
+    const items = await tx.privateWrongItem.findMany({ where: { userId, paperId }, orderBy: [{ lastSeenAt: "desc" }, { id: "asc" }] });
     return items.map(item => enrich(item, paper));
   }));
 }
@@ -201,7 +207,65 @@ export async function listAllPrivateWrongItems(userId: string, paperId?: string)
   return database(() => prisma.$transaction(async tx => {
     const papers = await tx.$queryRaw<Array<Paper & { paperId: string }>>(Prisma.sql`SELECT "paperId", "title", "content" FROM "PrivatePaper" WHERE "userId" = ${userId} ORDER BY "paperId" FOR SHARE`);
     const byId = new Map(papers.map(paper => [paper.paperId, paper]));
-    const items = await tx.privateWrongItem.findMany({ where: { userId, paperId: { in: [...byId.keys()] }, status: { in: ["active", "content_changed"] } }, orderBy: [{ lastSeenAt: "desc" }, { id: "asc" }] });
+    const items = await tx.privateWrongItem.findMany({ where: { userId, paperId: { in: [...byId.keys()] } }, orderBy: [{ lastSeenAt: "desc" }, { id: "asc" }] });
     return items.map(item => enrich(item, byId.get(item.paperId)!));
   }));
+}
+
+/** Soft-remove a wrong item with optimistic concurrency (CAS).
+ *  Idempotent: removing an already-removed item returns success without changing revision.
+ *  Throws CONFLICT if expectedRevision does not match current revision. */
+export async function removeWrongItem(userId: string, paperId: string, contentHash: string, questionId: string, expectedRevision: number): Promise<PrivateWrongItemView> {
+  identity(userId, paperId);
+  if (!contentHash?.trim() || contentHash.length > 200) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid contentHash");
+  if (!questionId?.trim() || questionId.length > 200) throw new PrivateWrongItemStoreError("NOT_FOUND", "wrong item not found");
+  if (!Number.isInteger(expectedRevision) || expectedRevision < 0) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid revision");
+  return database(() => prisma.$transaction(async tx => {
+    const paper = await paperForRead(tx, userId, paperId);
+    const item = await tx.privateWrongItem.findUnique({ where: { userId_paperId_contentHash_questionId: { userId, paperId, contentHash, questionId } } });
+    if (!item) throw new PrivateWrongItemStoreError("NOT_FOUND", "wrong item not found");
+    if (item.removedAt !== null) return enrich(item, paper);
+    if (item.revision !== expectedRevision) throw new PrivateWrongItemStoreError("CONFLICT", `revision mismatch: expected ${expectedRevision}, current ${item.revision}`);
+    const updated = await tx.privateWrongItem.update({ where: { id: item.id }, data: { removedAt: new Date(), revision: { increment: 1 } } });
+    return enrich(updated, paper);
+  }));
+}
+
+/** Restore a soft-removed wrong item with CAS.
+ *  Only items with status "active" (current content version) can be restored.
+ *  Idempotent: restoring a non-removed item returns success without changing revision.
+ *  Throws CONFLICT if expectedRevision does not match. */
+export async function restoreWrongItem(userId: string, paperId: string, contentHash: string, questionId: string, expectedRevision: number): Promise<PrivateWrongItemView> {
+  identity(userId, paperId);
+  if (!contentHash?.trim() || contentHash.length > 200) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid contentHash");
+  if (!questionId?.trim() || questionId.length > 200) throw new PrivateWrongItemStoreError("NOT_FOUND", "wrong item not found");
+  if (!Number.isInteger(expectedRevision) || expectedRevision < 0) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid revision");
+  return database(() => prisma.$transaction(async tx => {
+    const paper = await paperForRead(tx, userId, paperId);
+    const item = await tx.privateWrongItem.findUnique({ where: { userId_paperId_contentHash_questionId: { userId, paperId, contentHash, questionId } } });
+    if (!item) throw new PrivateWrongItemStoreError("NOT_FOUND", "wrong item not found");
+    if (item.removedAt === null) return enrich(item, paper);
+    if (item.status !== "active") throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "cannot restore: content version has changed; this record belongs to an older version");
+    if (item.revision !== expectedRevision) throw new PrivateWrongItemStoreError("CONFLICT", `revision mismatch: expected ${expectedRevision}, current ${item.revision}`);
+    const updated = await tx.privateWrongItem.update({ where: { id: item.id }, data: { removedAt: null, revision: { increment: 1 } } });
+    return enrich(updated, paper);
+  }));
+}
+
+/** Count wrong items by category for a paper.
+ *  active: current content version, not removed
+ *  removed: manually removed (removedAt not null), regardless of status
+ *  contentChanged: status "content_changed" (old content version), regardless of removedAt */
+export interface PrivateWrongItemCounts { active: number; removed: number; contentChanged: number; total: number; }
+export async function countWrongItems(userId: string, paperId: string): Promise<PrivateWrongItemCounts> {
+  identity(userId, paperId);
+  return database(async () => {
+    const [activeCount, removedCount, contentChangedCount, totalCount] = await Promise.all([
+      prisma.privateWrongItem.count({ where: { userId, paperId, status: "active", removedAt: null } }),
+      prisma.privateWrongItem.count({ where: { userId, paperId, removedAt: { not: null } } }),
+      prisma.privateWrongItem.count({ where: { userId, paperId, status: "content_changed" } }),
+      prisma.privateWrongItem.count({ where: { userId, paperId } }),
+    ]);
+    return { active: activeCount, removed: removedCount, contentChanged: contentChangedCount, total: totalCount };
+  });
 }

@@ -1,8 +1,8 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1D.3（Private Wrongbook Manual Review MVP，修复及本地验收通过，2026-10-02）
+## 当前工作版本：V14 Phase 1D.4（Private Wrongbook Manual Remove/Restore MVP，8/8 gates 通过，浏览器 E2E 验证完成，2026-10-02）
 
-工作分支 feature/v14-real-content-rights。在 Phase 1D.2 私有错题本基础上增加手动复习功能：错题列表提供"复习错题"入口，每批最多 5 道当前内容版本有效错题，复习页支持选择答案/上下题/提交，提交后显示结果。不开发复习调度，不接入 XP/Review/Daily Plan，复习进度仅保存在当前浏览器 localStorage。
+工作分支 feature/v14-real-content-rights。在 Phase 1D.3 私有错题手动复习基础上增加错题本手动移出与恢复：用户可将错题"移出错题本"（软移出，保留记录），也可在"已移出"区域恢复；再次答错会重新激活。不开发自动移出、掌握评分、复习调度或 XP 接入。
 
 ### Phase 1D.2 最终修复与验收
 
@@ -30,6 +30,20 @@
 - 两个隔离测试用户按精确 id/email 清理，关联试卷/进度/错题/回执均为 0。报告 V14_PHASE1D3_REPORT.md；日志、结果、截图仅保留本地 output/。本地生产预览 http://127.0.0.1:3019 已确认可访问。
 - Git：本轮修复尚未提交/推送，不宣称远程同步或 FINALIZED；未 merge main/tag/Release。后续需发布 Git 闭环。本阶段停止，不开始下一阶段。
 - 边界：只读判分、浏览器本地存档、不跨设备同步，不接入 XP/Review/Daily Plan/复习调度；仅 Chrome 模拟宽度，未做实体手机或其他浏览器实测。
+
+### Phase 1D.4 私有错题本手动移出/恢复 MVP
+
+- Prisma `PrivateWrongItem` 模型新增 `removedAt DateTime?`（软移出标记）和 `revision Int @default(0)`（CAS 乐观并发），新增索引 `[userId, paperId, removedAt]`。Migration `20261002051202_add_removed_at_revision_to_private_wrong_item` 已创建并应用。
+- Store 层：`PrivateWrongItemView` 新增 `removedAt` 和 `revision`；`recordWrongItems` 新 attempt 再次答错时，若记录已移出则清除 `removedAt`、`wrongCount+1`、`revision+1`，返回 `reactivated` 计数；同 attempt 重试不重复累计也不撤销移出。
+- `selectReviewItems` 和 `gradeReviewItems` where 条件新增 `removedAt: null`，已移出错题不进入复习。`listPrivateWrongItems` 和 `listAllPrivateWrongItems` 移除 status 过滤，返回所有记录（含已移出/已失效），由 UI 分组。
+- 新增 `removeWrongItem(userId, paperId, contentHash, questionId, expectedRevision)`：CAS 检查 revision，幂等（已移出直接返回），设置 removedAt=now() + revision+1。新增 `restoreWrongItem(...)`：CAS 检查，仅 status="active" 可恢复（content_changed 拒绝并说明原因），幂等（未移出直接返回），清除 removedAt + revision+1。新增 `countWrongItems` 返回 `{active, removed, contentChanged, total}`。
+- API 路由：`wrong-items` GET 响应改为 `{counts: {active, removed, contentChanged, total}}`；新建 `wrong-items/[questionId]/remove` 和 `wrong-items/[questionId]/restore` POST 路由，owner 从 session 派生；错误映射支持 CONFLICT→409。
+- 解析器支持 counts/removedAt/revision/paper_deleted status；仅 active 且未移出的 item 才校验 question 结构。修复选项验证 typo（`!==` 应为 `===`）。
+- UI：`WrongItemsClient` 分三个 section（有效错题/已移出/旧版本错题），有效错题卡片含"移出错题本"按钮（flex 布局分离 link 和 actions），已移出错题含"恢复到错题本"按钮（content_changed 显示"内容版本已变更，无法恢复"），移出确认原生 dialog（说明软移出及再次答错规则，含题目预览，Tab/Shift+Tab/Escape/焦点恢复）。`WrongItemDetailClient` 已移出状态显示提示条，导航区含移出/恢复按钮。
+- 复习批次失效衔接：`use-review-session` 的 `recheck` 函数批次验证条件新增 `item.removedAt === null`，固定复习批次中有题目被移出后，刷新/重新聚焦时批次失效并提示重新开始。
+- 回归测试 15 项：移出幂等、CAS 冲突、恢复幂等、content_changed 不可恢复、重新激活、复习排除已移出、counts 统计、API 路由、解析器验证等。完整测试 860/860；typecheck、lint 0/0、生产 build、四项 content gates 全部通过。音频仅有允许的 synthetic fixture placeholder warning。
+- 浏览器 E2E：错题列表页显示有效错题/已移出三段分组，移出确认弹窗含题目预览和规则说明，移出后题目移到"已移出"区域并显示移出时间，刷新持久化，恢复后题目回到有效区域；详情页同样支持移出/恢复，已移出状态显示提示条。384px 宽度无横向溢出，底部导航无遮挡。
+- 边界：软移出不删除行，保留唯一键；revision 用于 CAS 乐观并发；移出状态与内容版本有效性分别表达；不开发自动移出、掌握评分、复习调度或 XP 接入。
 
 ### Phase 1E.1 最终硬化验收
 

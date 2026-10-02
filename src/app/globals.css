@@ -1432,3 +1432,46 @@ dialog.pp-modal { margin: auto; color: var(--text); width: calc(100% - 40px); }
   .pp-review-question-card { padding: 16px; }
   .pp-review-result-correct { font-size: 40px; }
 }
+
+/* V14 Phase 1D.4: private wrongbook manual remove/restore */
+.pp-wrong-section { margin-bottom: 20px; }
+.pp-wrong-section-title { font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 10px; padding: 0 2px; }
+.pp-wrong-section-removed .pp-wrong-section-title { color: var(--text-muted); }
+.pp-wrong-section-invalid .pp-wrong-section-title { color: var(--text-muted); }
+
+.pp-wrong-item-card-clickable { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.pp-wrong-item-link { display: block; padding: 14px; text-decoration: none; color: inherit; flex: 1; }
+.pp-wrong-item-link:hover { background: rgba(77, 152, 46, 0.02); }
+.pp-wrong-item-actions { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.01); }
+.pp-wrong-remove-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 13px; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.3); background: rgba(220, 38, 38, 0.04); border-radius: 8px; cursor: pointer; min-height: 44px; transition: all 0.15s; }
+.pp-wrong-remove-btn:hover:not(:disabled) { background: rgba(220, 38, 38, 0.08); border-color: rgba(220, 38, 38, 0.5); }
+.pp-wrong-remove-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pp-wrong-restore-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 13px; min-height: 44px; }
+
+.pp-wrong-item-card-removed { opacity: 0.7; }
+.pp-wrong-item-card-removed .pp-wrong-item-prompt { color: var(--text-muted); }
+.pp-wrong-item-card-invalid { opacity: 0.5; }
+.pp-wrong-removed-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(108, 117, 125, 0.15); color: #6c757d; font-weight: 600; }
+
+/* Dialog modal layout */
+dialog.pp-modal { padding: 0; overflow: hidden; }
+.pp-modal-content { display: flex; flex-direction: column; max-height: 85vh; }
+.pp-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 12px; }
+.pp-modal-header h3 { margin: 0; font-size: 18px; font-weight: 700; }
+.pp-modal-body { padding: 0 24px 16px; overflow-y: auto; flex: 1; }
+.pp-modal-body p { font-size: 14px; line-height: 1.6; color: var(--text); }
+.pp-modal-footer { display: flex; gap: 12px; justify-content: flex-end; padding: 16px 24px 20px; border-top: 1px solid var(--border); }
+.pp-modal-footer button { min-height: 44px; display: flex; align-items: center; gap: 6px; }
+.pp-modal-warning { display: flex; gap: 10px; padding: 12px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; margin-bottom: 16px; }
+.pp-modal-warning svg { flex-shrink: 0; color: #f59e0b; margin-top: 2px; }
+.pp-modal-item-preview { padding: 12px; background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); }
+.pp-danger-btn { padding: 10px 20px; font-size: 14px; font-weight: 600; color: #fff; background: #dc2626; border: none; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+.pp-danger-btn:hover:not(:disabled) { background: #b91c1c; }
+.pp-danger-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 430px) {
+  .pp-wrong-item-actions { flex-direction: column; }
+  .pp-wrong-remove-btn, .pp-wrong-restore-btn { width: 100%; justify-content: center; }
+  .pp-modal-footer { flex-direction: column; }
+  .pp-modal-footer button { width: 100%; justify-content: center; }
+}
