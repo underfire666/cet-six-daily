@@ -112,5 +112,8 @@
 ## Git 状态
 
 - 分支：feature/v14-real-content-rights
-- 全部修改未 commit（待 Git closure）
+- Commit：df31c68fe65ab4135b583a0b889a093d4b2f044e
+- Local HEAD == Remote HEAD：YES
+- Worktree：CLEAN
 - v12.0 tag：697772d9412d9d1a4253e099a001734a5230e264（未变化）
+- 已 push 到 origin/feature/v14-real-content-rights
