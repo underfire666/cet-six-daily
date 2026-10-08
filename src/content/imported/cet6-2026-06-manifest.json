@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "importedAt": "2026-10-05T00:00:00.000Z",
+  "documents": [
+    {
+      "set": 1,
+      "documentSha256": "c6092fe72575206a2fdffc8c3abaf546d4ff1dbb1af24b813de5019b32a55dec",
+      "pages": 133,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 68,
+        "matching": 81,
+        "careful1": 102,
+        "careful2": 115,
+        "translation": 127
+      },
+      "readingQuestions": 30,
+      "writingTasks": 1,
+      "translationTasks": 1,
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "set": 2,
+      "documentSha256": "eb5b0d2c978c70a3739710972656a60fd75c119df7f205fde2bf647378cee21f",
+      "pages": 127,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 67,
+        "matching": 80,
+        "careful1": 99,
+        "careful2": 111,
+        "translation": 122
+      },
+      "readingQuestions": 30,
+      "writingTasks": 1,
+      "translationTasks": 1,
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "set": 3,
+      "documentSha256": "f53032336706991cb0ef17544fa4007f13f1994dd6cda88d8eb6ead86b44d97a",
+      "pages": 80,
+      "chapters": {
+        "writing": 9,
+        "cloze": 16,
+        "matching": 29,
+        "careful1": 51,
+        "careful2": 64,
+        "translation": 75
+      },
+      "readingQuestions": 30,
+      "writingTasks": 1,
+      "translationTasks": 1,
+      "listeningStatus": "shared_with_set1"
+    }
+  ],
+  "readingArticles": 12,
+  "readingQuestions": 90,
+  "writingTasks": 3,
+  "translationTasks": 3,
+  "listeningEnabled": false
+}

@@ -4,6 +4,7 @@ interface Props {
   selected: string | null;
   disabled: boolean;
   onSelect: (id: string) => void;
+  label?: string;
 }
 function Choices({ question, selected, disabled, onSelect }: Props) {
   return (
@@ -34,7 +35,7 @@ export function ChoiceQuestion(props: Props) {
   return (
     <>
       <span className="exercise-eyebrow">
-        {props.question.module === "reading" ? "阅读理解" : "词汇理解"}
+        {props.label ?? (props.question.module === "reading" ? "阅读理解" : props.question.module === "listening" ? "听力理解" : "词汇理解")}
       </span>
       <h1 className="exercise-prompt">{props.question.prompt}</h1>
       <Choices {...props} />

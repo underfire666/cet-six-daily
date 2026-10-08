@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         const body = await readPrivateBody(request);
         const limit = body.limit === undefined ? 5 : body.limit;
         if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1 || limit > 5) throw new PrivateReviewProgressStoreError("VALIDATION_ERROR", "invalid review limit");
-        const batch = await startPrivateReviewBatch(owner, paperId, limit);
+        const batch = await startPrivateReviewBatch(owner, paperId, limit, body.resume);
         return Response.json({ ownerId: owner, ...batch });
       } catch (error) {
         return reviewErrorResponse(error);

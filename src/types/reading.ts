@@ -1,7 +1,7 @@
 import type { LessonSession } from "./session";
 
 export type ReadingDifficulty = "easy" | "normal" | "hard";
-export type ReadingSessionMode = "daily" | "extra";
+export type ReadingSessionMode = "daily" | "extra" | "selected";
 
 export interface ReadingLookupEntry {
   word: string;
@@ -36,7 +36,8 @@ export interface ReadingArticle {
   questions: PassageQuestion[];
   /** key = 词在原文中的拼写形式（小写），value = 查词条目 */
   vocabulary: Record<string, ReadingLookupEntry>;
-  sourceType: "mock";
+  sourceType: "mock" | "past_exam";
+  exerciseType?: "cloze" | "matching" | "careful";
 }
 
 export interface ReadingDailyProgress {
@@ -50,7 +51,7 @@ export interface ReadingSession {
   schemaVersion: 1;
   id: string;
   mode: ReadingSessionMode;
-  /** 每日任务的计划日；额外阅读为创建当日 */
+  /** 每日任务的计划日；额外阅读和真题选练为创建当日 */
   planDate: string;
   articleId: string;
   phase: "reading" | "quiz" | "complete";

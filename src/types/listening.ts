@@ -2,17 +2,17 @@ import type { LessonSession } from "./session";
 
 export type ListeningDifficulty = "easy" | "normal" | "hard";
 export type ListeningKind = "sentence" | "dialogue" | "passage";
-export type ListeningSessionMode = "daily" | "extra";
+export type ListeningSessionMode = "daily" | "extra" | "selected";
 export type ListeningRate = 0.8 | 1.0;
 
-/** Mock 材料使用随项目提供的本地音频；保留文本字段供重新生成。 */
+/** Audio is served locally; original recordings and Mock speech remain distinct. */
 export interface ListeningAudio {
   type: "mock-tts" | "file";
   /** mock-tts 时朗读这段文本 */
   text?: string;
   /** file / 未来 remote 时的地址 */
   src?: string;
-  /** 估算时长（秒），仅用于展示，Mock 阶段不做精确进度 */
+  /** 时长（秒）：真题来自录音分段，Mock 为估算值。 */
   duration?: number;
 }
 
@@ -44,6 +44,8 @@ export interface ListeningMaterial {
   id: string;
   title: string;
   kind: ListeningKind;
+  /** Official listening structure, for imported exam material. */
+  listeningSection?: "A" | "B" | "C";
   difficulty: ListeningDifficulty;
   estimatedMinutes: number;
   audio: ListeningAudio;
@@ -53,7 +55,7 @@ export interface ListeningMaterial {
   questions: ListeningQuestion[];
   /** key = 词在原文中的拼写形式（小写），value = 查词条目 */
   vocabulary: Record<string, ListeningLookupEntry>;
-  sourceType: "mock";
+  sourceType: "mock" | "past_exam";
 }
 
 export interface ListeningDailyProgress {
@@ -67,7 +69,7 @@ export interface ListeningSession {
   schemaVersion: 1;
   id: string;
   mode: ListeningSessionMode;
-  /** 每日任务的计划日；额外听力为创建当日 */
+  /** 每日任务的计划日；额外听力和真题选练为创建当日 */
   planDate: string;
   materialId: string;
   phase: "listening" | "question" | "complete";

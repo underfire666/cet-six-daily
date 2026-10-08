@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   mockReadingArticles,
-  readingArticleById,
 } from "../src/data/mockReading";
+import { readingArticleById, getReadingArticles } from "../src/content/learning";
 import { readingWordById } from "../src/data/readingVocabulary";
 import { wordById } from "../src/data/mockVocabulary";
 import { todayInShanghai } from "../src/lib/dates";
@@ -53,7 +53,7 @@ function memory() {
 }
 
 function wrongOption(questionId: string, answerId: string) {
-  const article = mockReadingArticles.find((a) =>
+  const article = getReadingArticles().find((a) =>
     a.questions.some((q) => q.id === questionId),
   )!;
   const q = article.questions.find((x) => x.id === questionId)!;
@@ -287,21 +287,21 @@ test("XP：同一天重复同一篇得 0，不刷分", () => {
     const r = startReading(store, "daily", DAY, NOW, id);
     store = finish(r.store, id, "all-correct");
   }
-  // 3 篇额外把剩余文章读完，之后无新文章可选
-  for (const id of ["x1", "x2", "x3"]) {
+  // Read the actual pool before testing a repeat; imports expand the pool.
+  for (const id of Array.from({ length: getReadingArticles().length - 3 }, (_, i) => `x${i + 1}`)) {
     const r = startReading(store, "extra", DAY, NOW, id);
     store = finish(r.store, id, "all-correct");
   }
   const firstArticle = store.sessions.x1.articleId;
   const before = store.xpLedger[`reading:day:${DAY}:${firstArticle}`];
   assert.ok(before > 0);
-  const repeat = startReading(store, "extra", DAY, NOW, "x4");
+  const repeat = startReading(store, "extra", DAY, NOW, "repeat");
   assert.ok(repeat.id);
-  const repeatedId = repeat.store.sessions.x4.articleId;
+  const repeatedId = repeat.store.sessions.repeat.articleId;
   const repeatedBefore = store.xpLedger[`reading:day:${DAY}:${repeatedId}`];
   assert.ok(repeatedBefore > 0);
-  store = finish(repeat.store, "x4", "all-correct");
-  assert.equal(store.sessions.x4.rewardXp, 0);
+  store = finish(repeat.store, "repeat", "all-correct");
+  assert.equal(store.sessions.repeat.rewardXp, 0);
   assert.equal(store.xpLedger[`reading:day:${DAY}:${repeatedId}`], repeatedBefore);
   assert.equal(
     store.xpLedger[`reading:day:${DAY}:${firstArticle}`],
@@ -451,6 +451,7 @@ test("通用答题校验兼容阅读题：review 模式无 reward 可通过校�
 
 test("生词收藏计入本篇生词统计，且重复收藏不重复计数", () => {
   let store = emptyReadingStore();
+  store.daily[DAY] = { date: DAY, articleIds: [mockReadingArticles[0].id], completedArticleIds: [] };
   const started = startReading(store, "daily", DAY, NOW, "s1");
   const article = readingArticleById(started.store.sessions.s1.articleId)!;
   const key = Object.keys(article.vocabulary)[0];

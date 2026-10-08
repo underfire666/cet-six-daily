@@ -20,7 +20,7 @@ test("registry: builtin packs register and list", () => {
   resetRegistry();
   registerBuiltinPacks();
   const packs = listContentPacks();
-  assert.equal(packs.length, 6);
+  assert.equal(packs.length, 13);
   assert.ok(getContentPack("pack-vocabulary-mock"));
   assert.ok(getContentPack("pack-reading-mock"));
   assert.ok(getContentPack("pack-listening-mock"));

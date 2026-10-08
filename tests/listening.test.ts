@@ -4,8 +4,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   mockListeningMaterials,
-  listeningMaterialById,
 } from "../src/data/mockListening";
+import { listeningMaterialById, getListeningMaterials } from "../src/content/learning";
 import { listeningWordById } from "../src/data/listeningVocabulary";
 import { wordById } from "../src/data/mockVocabulary";
 import { todayInShanghai } from "../src/lib/dates";
@@ -89,7 +89,7 @@ function memory() {
 }
 
 function wrongOption(questionId: string, answerId: string) {
-  const material = mockListeningMaterials.find((m) =>
+  const material = getListeningMaterials().find((m) =>
     m.questions.some((q) => q.id === questionId),
   )!;
   const q = material.questions.find((x) => x.id === questionId)!;

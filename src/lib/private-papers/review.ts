@@ -33,6 +33,9 @@ export interface PrivateReviewSession {
   submittedAt?: string;
   result?: PrivateReviewGradeResult;
   updatedAt?: string;
+  /** Local sync envelope. Kept across refresh, never trusted as server authority. */
+  syncRevision?: number;
+  syncDirty?: boolean;
 }
 
 const record = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -63,7 +66,8 @@ export function parsePrivateReviewStart(raw: unknown, ownerId: string): PrivateR
     if (seen.has(q.questionId)) throw new Error("复习批次存在重复题目");
     seen.add(q.questionId);
   }
-  return { ownerId, reviewBatchId: raw.reviewBatchId, contentHash: raw.contentHash, questions: raw.questions as PrivateReviewQuestion[] };
+  if (raw.revision !== undefined && (!Number.isSafeInteger(raw.revision) || Number(raw.revision) < 1 || Number(raw.revision) >= 2147483647)) throw new Error("复习版本数据异常，请重试");
+  return { ownerId, reviewBatchId: raw.reviewBatchId, contentHash: raw.contentHash, questions: raw.questions as PrivateReviewQuestion[], ...(raw.revision !== undefined ? { revision: Number(raw.revision) } : {}) };
 }
 
 /** Fail closed on wrong-owner or malformed grade response. */
@@ -110,6 +114,8 @@ export function validatePrivateReviewSession(raw: unknown, ownerId: string, pape
   if (raw.ownerId !== ownerId || raw.paperId !== paperId) return null;
   if (!nonempty(raw.reviewBatchId) || !nonempty(raw.contentHash)) return null;
   if (raw.updatedAt !== undefined && !timestamp(raw.updatedAt)) return null;
+  if (raw.syncRevision !== undefined && (!Number.isSafeInteger(raw.syncRevision) || Number(raw.syncRevision) < 0 || Number(raw.syncRevision) >= 2147483647)) return null;
+  if (raw.syncDirty !== undefined && typeof raw.syncDirty !== "boolean") return null;
   if (!Array.isArray(raw.questions) || raw.questions.length === 0 || raw.questions.length > PRIVATE_REVIEW_MAX_QUESTIONS) return null;
   const seen = new Set<string>();
   for (const q of raw.questions) {

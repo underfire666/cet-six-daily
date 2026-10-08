@@ -1,5 +1,6 @@
 import { readingArticleById } from "@/content/learning";
-import { selectContent } from "@/content/selector";
+import { getExamExercise } from "@/content/exam-catalog";
+import { selectPracticeContent as selectContent } from "@/content/selector";
 import { getReadingArticles } from "@/content/learning";
 
 import { todayInShanghai } from "@/lib/dates";
@@ -61,11 +62,12 @@ function pickExtraArticle(
 
 export function startReading(
   store: ReadingStore,
-  mode: ReadingSessionMode,
+  mode: Exclude<ReadingSessionMode, "selected">,
   date: string,
   now: string,
   id: string,
 ): { store: ReadingStore; id?: string } {
+  if (mode !== "daily" && mode !== "extra") return { store };
   const active = Object.values(store.sessions).find(
     (s) =>
       s.phase !== "complete" &&
@@ -108,6 +110,26 @@ export function startReading(
     },
     id,
   };
+}
+
+/** Explicit exam selection stays independent of daily plans and extra practice gates. */
+export function startSelectedReading(
+  store: ReadingStore,
+  contentId: string,
+  date: string,
+  now: string,
+  id: string,
+): { store: ReadingStore; id?: string } {
+  if (!getExamExercise("reading", contentId)) return { store };
+  const content = readingArticleById(contentId);
+  if (!content) return { store };
+  const active = Object.values(store.sessions).find(
+    session => session.mode === "selected" && session.articleId === contentId && session.phase !== "complete",
+  );
+  if (active) return { store, id: active.id };
+  // Canonical IDs also resume the same pending exercise from sets that share content.
+  const session = createReadingSession(id, "selected", date, content, now);
+  return { store: { ...store, sessions: { ...store.sessions, [id]: session } }, id };
 }
 
 export function updateReading(

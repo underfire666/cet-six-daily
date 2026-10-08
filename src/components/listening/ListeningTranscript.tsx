@@ -37,7 +37,7 @@ export function ListeningTranscript({
   return (
     <article className="listening-transcript">
       <div className="listening-meta">
-        <span>{kindLabel[material.kind]}</span>·
+        <span>{material.listeningSection ? { A: "长对话", B: "听力篇章", C: "讲座与讲话" }[material.listeningSection] : kindLabel[material.kind]}</span>·
         <span>{difficultyLabel[material.difficulty]}</span>·
         <span>约 {material.estimatedMinutes} 分钟</span>
       </div>

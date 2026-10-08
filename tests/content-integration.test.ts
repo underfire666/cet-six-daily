@@ -30,7 +30,7 @@ test("draft and archived content stay out of new plans while historical lookup r
   const template=pack.items[0] as object;
   pack.items=[{...template,id:"v10-draft",status:"draft"},{...template,id:"v10-old",status:"deprecated"},{...template,id:"v10-new",status:"active"}];
   registerContentPack(pack);
-  const ids=pickDailyArticles(day,100);
+  const ids=pickDailyArticles(day,readingRepository.all().length);
   assert.ok(ids.includes("v10-new"));assert.ok(!ids.includes("v10-draft"));assert.ok(!ids.includes("v10-old"));
   assert.ok(readingRepository.getById("v10-old"));
   assert.equal(getActiveItems("reading","production").length,0);

@@ -4,7 +4,7 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 import type { ListeningAudio, ListeningRate } from "@/types/listening";
 
 type PlaybackState = "idle" | "loading" | "playing" | "paused" | "error";
-/** Local Mock audio uses native playbackRate, preserving currentTime on speed changes. */
+/** Local audio uses native playbackRate, preserving currentTime on speed changes. */
 export function AudioPlayer({
   audio,
   rate,
@@ -75,6 +75,7 @@ export function AudioPlayer({
         ref={mediaRef}
         src={audio.src}
         preload="metadata"
+        playsInline
         onPlaying={() => {
           clearTimer();
           setState("playing");
@@ -127,7 +128,7 @@ export function AudioPlayer({
                   ? "播放失败"
                   : "准备就绪"}
         </span>
-        {audio.duration ? <small>约 {audio.duration} 秒</small> : null}
+        {audio.duration ? <small>约 {Math.round(audio.duration)} 秒</small> : null}
         {aiGenerated ? (
           <small title="本音频由 AI 语音合成生成，用于学习练习">AI 合成语音</small>
         ) : null}

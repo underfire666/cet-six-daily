@@ -86,7 +86,10 @@ export interface PrivateReviewBatch {
 export async function selectReviewItems(userId: string, paperId: string, limit = 5): Promise<PrivateReviewBatch> {
   identity(userId, paperId);
   if (!Number.isInteger(limit) || limit < 1 || limit > 5) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "invalid review limit");
-  return database(() => prisma.$transaction(async tx => {
+  return database(() => prisma.$transaction(tx => selectReviewItemsInTransaction(tx, userId, paperId, limit)));
+}
+/** Caller must hold the paper lock; never opens a nested transaction. */
+export async function selectReviewItemsInTransaction(tx: Prisma.TransactionClient, userId: string, paperId: string, limit: number): Promise<PrivateReviewBatch> {
     const paper = await paperForRead(tx, userId, paperId);
     const ready = checkPrivatePaperReadiness(paper.content as Record<string, unknown>);
     if (!ready.ready) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "paper content is not ready for review");
@@ -109,7 +112,6 @@ export async function selectReviewItems(userId: string, paperId: string, limit =
     }
     if (questions.length === 0) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "no valid wrong items for review");
     return { reviewBatchId: `rb_${randomUUID()}`, contentHash: ready.contentHash, questions };
-  }));
 }
 /** Read-only grading: validates owner, paper, contentHash, question membership, then scores.
  *  Does NOT modify wrongCount, progress, XP, or any other state. */
@@ -134,7 +136,11 @@ export async function gradeReviewItems(
   if (questionIds.length > 5) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "too many questions in review batch");
   const uniqueIds = [...new Set(questionIds)];
   if (uniqueIds.length !== questionIds.length) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "duplicate questionIds in review batch");
-  return database(() => prisma.$transaction(async tx => {
+  return database(() => prisma.$transaction(tx => gradeReviewItemsInTransaction(tx, userId, paperId, contentHash, answers)));
+}
+/** Caller must hold the paper lock; scoring remains read-only. */
+export async function gradeReviewItemsInTransaction(tx: Prisma.TransactionClient, userId: string, paperId: string, contentHash: string, answers: Record<string, unknown>): Promise<PrivateReviewGradeResult> {
+    const uniqueIds = Object.keys(answers);
     const paper = await paperForRead(tx, userId, paperId);
     const ready = checkPrivatePaperReadiness(paper.content as Record<string, unknown>);
     if (!ready.ready || ready.contentHash !== contentHash) throw new PrivateWrongItemStoreError("VALIDATION_ERROR", "content version mismatch or paper no longer ready");
@@ -170,7 +176,6 @@ export async function gradeReviewItems(
       });
     }
     return { contentHash, total: results.length, correct, unanswered, results };
-  }));
 }
 export async function listPrivateWrongItems(userId: string, paperId: string): Promise<PrivateWrongItemView[]> {
   identity(userId, paperId);

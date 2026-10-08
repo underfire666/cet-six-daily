@@ -155,10 +155,14 @@ export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string;
         {session.phase === "listening" ? (
           <>
             <p className="listening-phase-hint">
-              先听音频，遇到生词可点原文查义。听完点下方按钮开始答题。
+              {material.sourceType === "past_exam"
+                ? "先听原录音，再开始答题。需要时可查看听力原文。"
+                : "先听音频，遇到生词可点原文查义。听完点下方按钮开始答题。"}
             </p>
             <div className="listening-kind-badge">
-              {material.kind === "dialogue"
+              {material.listeningSection
+                ? ({ A: "长对话", B: "听力篇章", C: "讲座与讲话" }[material.listeningSection])
+                : material.kind === "dialogue"
                 ? "短对话"
                 : material.kind === "passage"
                   ? "短篇听力"
@@ -173,12 +177,14 @@ export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string;
             <div className="rate-switch">
               <button
                 className={session.rate === 1.0 ? "is-active" : ""}
+                aria-pressed={session.rate === 1.0}
                 onClick={() => dispatch(id, { type: "set_rate", rate: 1.0 })}
               >
                 1.0×
               </button>
               <button
                 className={session.rate === 0.8 ? "is-active" : ""}
+                aria-pressed={session.rate === 0.8}
                 onClick={() => dispatch(id, { type: "set_rate", rate: 0.8 })}
               >
                 0.8×
@@ -205,9 +211,9 @@ export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string;
           </section>
         ) : (
           <>
-            <span className="exercise-retest-label">
-              {session.lesson.round === "retest" ? "巩固复测" : "听力理解"}
-            </span>
+            {session.lesson.round === "retest" && (
+              <span className="exercise-retest-label">巩固复测</span>
+            )}
             <QuestionRenderer
               question={question}
               selected={session.lesson.selected}
@@ -295,7 +301,7 @@ export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string;
           onExit={() => {
             setDialog(null);
             if (onExit) onExit();
-            else router.push("/practice/listening");
+            else router.push(session.mode === "selected" ? "/practice/exams" : "/practice/listening");
           }}
         />
       )}

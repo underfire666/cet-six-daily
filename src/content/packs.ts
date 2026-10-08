@@ -7,10 +7,18 @@ import { registerContentPack, getContentPack } from "./registry";
 import { MOCK_SOURCE } from "./sources";
 import type { ContentPack } from "./types";
 import { registerMockPaper001 } from "./papers/cet6-mock-paper-001";
+import readingImport from "./imported/cet6-2026-06-reading.json";
+import translationImport from "./imported/cet6-2026-06-translation.json";
+import writingImport from "./imported/cet6-2026-06-writing.json";
+import readingHistory from "./imported/cet6-2022-2025-reading.json";
+import translationHistory from "./imported/cet6-2022-2025-translation.json";
+import writingHistory from "./imported/cet6-2022-2025-writing.json";
+import listeningHistory from "./imported/cet6-2022-2026-listening.json";
 
 /** 把现有 Mock 数据注册为 ContentPack。source.type=mock, license=unknown。 */
 export function registerBuiltinPacks(): void {
-  if (["vocabulary","reading","listening","translation","writing"].every(type => getContentPack(`pack-${type}-mock`))) return;
+  const imports = [readingImport, translationImport, writingImport, readingHistory, translationHistory, writingHistory, listeningHistory] as ContentPack[];
+  if (["vocabulary","reading","listening","translation","writing"].every(type => getContentPack(`pack-${type}-mock`)) && imports.every(pack => getContentPack(pack.id))) return;
   const now = "2026-09-21T00:00:00.000Z";
 
   const vocab: ContentPack = {
@@ -85,5 +93,6 @@ export function registerBuiltinPacks(): void {
 
   // V13 Production: 注册原创模拟卷 Paper 001（status=active，进入 production 池）
   registerMockPaper001();
+  for (const pack of imports) if (!getContentPack(pack.id)) registerContentPack(pack);
 
 }

@@ -1,0 +1,7 @@
+.entries{display:grid;gap:12px;margin-top:16px}
+.entry{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:16px;padding:14px 16px;background:var(--soft-green);color:var(--text);min-height:74px}
+.icon{width:42px;height:42px;border-radius:12px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--primary-dark)}
+.copy{flex:1;min-width:0}
+.copy strong{font-size:15px;color:var(--primary-dark)}
+.copy small{display:block;font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+.arrow{color:var(--primary-dark);font-size:20px}

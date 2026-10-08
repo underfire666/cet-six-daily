@@ -1,8 +1,90 @@
 # 六级日常项目上下文
 
-## 当前工作版本：V14 Phase 1E.2（私有错题复习进度云同步，8/8 gates 通过，浏览器 E2E 核心流程验证通过，2026-10-02）
+## 当前开发版本：V14.10.0 真题学习记录与回顾（14.10.0，本地验收 PASS，2026-10-08）
 
-应用版本：`14.6.5`（V14 Phase 1E.2）。版本与阶段统一配置于 `package.json` 的 `version` / `appPhase`；”关于”页面直接读取，`package-lock.json` 根版本同步。后续版本迭代须及时更新这两项配置和锁文件，保持页面与当前工作版本一致。应用版本不等于题目 contentVersion 或存储 schemaVersion，也不代表已创建 GitHub Release。
+应用版本：14.10.0；阶段：V14.10.0 CET-6 Practice Records & Review。package 与锁文件同步，关于页读取同一版本；不表示已发布 GitHub Release。
+
+- 新增统一学习记录入口 `/practice/exams/records`，从听力、阅读、翻译、写作四项 store 聚合所有 `mode="selected"` 的真题选练会话。
+- 记录列表支持未完成/已完成状态筛选和四项专项筛选，筛选状态通过 URL query 保存。未完成按开始时间倒序，已完成按完成时间倒序。
+- 记录卡片显示专项、题组名称、试卷信息（年份/考期/套卷）、开始/完成时间（Asia/Shanghai）、答题进度、已获得 XP。未完成显示"继续练习"，已完成显示"查看记录"。
+- 继续未完成练习直接跳转到原模块 session 页面，恢复原阶段（听力答题位置/答案/倍速、阅读阶段/答案、翻译写作草稿/待结算结果），不创建替代会话。
+- 已完成记录只读回顾 `/practice/exams/records/{module}/{sessionId}`：客观题展示原文/音频/题目/选项/用户答案/正确答案/解析/作答记录（首次/重试/复测）；主观题展示题目/提交文本/反馈估分/主要问题/详细分析/参考答案/解析。全部只读，不提交/重算/改时间/改 XP。
+- 历史兼容：从现有 selected 会话生成记录，无需迁移；每次重新练习独立 session；账号隔离；无效 module/sessionId/非 selected 会话均有友好错误页。
+- 本轮保持浏览器本地存档，不新增未完成会话云同步；不新增数据库迁移；不增加题库内容、整卷考试、OCR、AI评分或新复习调度。
+
+### 验收与交付
+
+- 1286/1286 tests、typecheck、lint 0/0、build、四项 content gates PASS；保留原 fixture placeholder warning。新增 23 项回归测试，覆盖聚合、筛选、排序、URL 状态、已答题统计、空 store、未 applied XP 等。
+- 分支 feature/v14-real-content-rights；本轮修改尚未提交，未推送/合并/tag/Release/部署。仅 Chrome 模拟宽度。完成后等待用户检查 UI，停止扩展。
+
+## 历史版本：V14 真题浏览与选练（14.9.0，本地验收 PASS，2026-10-08）
+
+应用版本：14.9.0；阶段：V14 CET-6 Exam Browser and Selected Practice。package 与锁文件同步，关于页读取同一版本；不表示已发布 GitHub Release。
+
+- 首页新增“真题题库”入口，地址 `/practice/exams`。保留五项专项、原模拟卷与三项底部导航。
+- 浏览 2022—2026 年 33 套试卷，按年份、考期和套卷筛选。包含 2022 年 9 月、2023 年 3 月考期；空筛选与不存在的套卷有明确返回入口。
+- 每套可选择听力 7 组、阅读 4 组、翻译 1 项、写作 1 项。目录引用既有 manifest 与规范内容 ID；共用套卷共用内容和进度。仍为 311 个独立题组/任务、1381 道题/任务，没有新增或重复导入内容。
+- 四项专项增加 `selected` 会话模式，精确选择当前题组，未完成时继续同一会话。选练绕过每日完成门槛，独立于每日/额外计数；原存档、计划、草稿、XP、生词与学习流程保留。
+- URL 保存筛选、套卷与专项。退出/结算返回原选择，刷新及浏览器后退/前进保持状态。旧格式直接学习/结算链接的选练返回题库；非法或缺失会话可安全返回。
+- 本地保存现有答题阶段、答案、听力速度和主观题草稿。共用题目采用同一个规范 ID，避免重复生成学习记录。完成沿用原 XP 账本：同一天同组题重复练习不再奖励；+0 XP 有原因说明。
+- 保留绿色 Design Tokens、44px 操作区、键盘焦点和减少动态效果支持。浏览页显示保存失败提示，保存失败时不宣称“进度已保存”。底部导航固定，内容预留安全区。
+- `package.json`、锁文件根版本、关于页统一 `14.9.0`，阶段 `V14 CET-6 Exam Browser and Selected Practice`。应用版本不等于内容 schema/contentVersion。
+
+### 验收与交付
+
+- 1263/1263 tests、typecheck、lint 0/0、build、四项 content gates PASS；保留原 fixture placeholder warning。新增 43 项回归，含目录、进度恢复、XP 去重、每日隔离、同步恢复与账号存储隔离。
+- Chrome 248 项检查 PASS（主流程 226 + 补充 22）；375/390/430/768/1440px 无横向溢出，末尾按钮可滚动到导航上方。0 条未预期页面/控制台错误；独立访客测试数据已清空。
+- 本地生产预览 http://127.0.0.1:3033，入口 /practice/exams。报告 V14_CET6_EXAM_BROWSER_REPORT.md，证据与截图留在 output/playwright/exams/。
+- 未完成选练仍以当前浏览器存档为主，不新增跨设备草稿同步；完成会话复用既有同步路径，本轮回归验证恢复，不重新宣称登录云同步实测。没有新内容导入、整卷考试、迁移、OCR 或 AI。
+- 分支 feature/v14-real-content-rights，HEAD fe56fc446fc146c2c76046c842ff2d38cf16bbf5；既有与本轮修改尚未提交，未推送/合并/tag/Release/部署。仅 Chrome 模拟宽度。完成后等待用户检查 UI，停止扩展。
+
+## 历史版本：V14 真题听力练习（14.8.0，本地验收 PASS，2026-10-06）
+
+应用版本：`14.8.0`；阶段：`V14 CET-6 Real Listening Practice`。`package.json` 与锁文件已同步，“我的 → 关于”读取同一版本。不是内容 schema/contentVersion，也不表示已发布 GitHub Release。
+
+### 本轮交付
+
+- 用户选择下一版优先补齐听力原录音并接入练习。2022–2026 年的 19 份不同原录音已下载，按页面起止时间拆为 133 个本地 MP3 篇章，包含 475 道选择题、英文原文、正确答案和中文解析。总音频 212,109,419 字节（约 202.3 MiB）。
+- 33 套试卷共用关系按原卷逐项核对；2024 年 6 月、12 月和 2025 年 6 月第三套共用第二套，其余共用关系也记录在新听力 manifest。475 道题的选项与原始试卷页独立对照通过。
+- 新生成的每日 3 组听力及额外练习优先真题；已有 Mock 计划、会话、ID 和学习进度保留，可继续。可听原录音、查看原文、答题、阅读解析、错题复测及结算 XP。刷新保留倍速、答案、播放次数、任务进度和奖励；刷新后需主动重新播放音频。
+- 播放中的 0.8×/1.0× 切换使用原生 playbackRate，保持当前播放位置；暂停时变速保持暂停。倍速按钮增加状态说明和 44px 点击范围；真题显示长对话/听力篇章/讲座与讲话，题页标注听力理解，不提示不存在的查词能力。
+- `scripts/import-cet6-listening.py`：从公开未加密 HLS 缓存录音，生成本地 MP3/内容 pack/审计 manifest。临时工具及缓存留在忽略的 output/。TypeScript 已排除 output/ 和浏览器产物，防止 MPEG-TS 的 .ts 扩展名被当成源码。
+- 当前共享练习合计 311 组/任务：112 组阅读（840 题）、133 组听力（475 题）、33 翻译、33 写作；共 1381 道题/任务。原 59 个 Mock、Paper 001 和 PRIVATE 功能未改动。题目页面不显示来源文件名/站点，内部指纹、链接及 unknown/unverified 元数据保持真实，正式 production Paper guard 未放宽。
+- 全部测试 1220/1220、typecheck、lint 0/0、生产 build、四项 content gates 已通过；音频检查仅有旧 synthetic fixture 的允许 placeholder warning。19 份录音指纹、3043 个 MPEG-TS 片段的同步字节、133 个 MP3 解码与 HTTP 206/MIME/header 检查通过。浏览器 727 项检查通过（全量音频/解析/倍速/重播/错误重试/刷新/复测/每日三组→额外练习/版本显示）。375/390/430/768/1440px 的音频及答题/展开解析无横向滚动，底部入口可用且无导航覆盖。播放 0.8× 实测时间比约 0.8；零未预期页面/控制台错误，故意阻断音频的 1 条网络错误属于已验证的重试场景。
+- 当前状态仅本地，工作树包含此前及本轮变更；未 push/merge/tag/Release/部署，不声称 Git FINALIZED。预览地址 `http://127.0.0.1:3033`，报告 `V14_CET6_LISTENING_REPORT.md`。完成本轮验收后停止。
+
+### 历史快照说明
+
+旧 PDF 阅读导入 manifest 的 listeningEnabled=false/pendingListeningQuestions 记录导入当时状态；现在以 cet6-listening-manifest.json 为准。下面旧报告/阶段内容作为历史保留。
+
+## 历史版本：V14 五年共享六级题库（本地验收 PASS，8/8 gates + 752 项浏览器检查，2026-10-06）
+
+应用版本：`14.7.1`（`V14 CET-6 Five-Year Shared Practice`）。版本与阶段统一配置于 `package.json` 的 `version` / `appPhase`；“关于”页面直接读取，`package-lock.json` 根版本同步。后续版本迭代须及时更新这两项配置和锁文件，保持页面与当前工作版本一致。应用版本不等于题目 contentVersion 或存储 schemaVersion，也不代表已创建 GitHub Release。
+
+### 当前交付：2022—2026 年 33 套 PDF 的共享练习
+
+- 本地 `cet6题库` 的 33 份整卷解析版均已处理。去除文档中共用题型后，共享池共 112 组阅读（840 道选择题）、33 道翻译、33 道写作，合计 178 组练习、906 道题/任务。比 14.7.0 新增 100 组阅读/750 道选择题、30 道翻译、30 道写作；原 2026 年 6 月三套数据文件保持不变。
+- 五份文档的阅读与同考期第一套共用，清单引用对应的既有题目 ID，不创建重复练习。其余文章全文与词库也独立对照原卷，防止正文里的“30 秒”误判为第 30 题空位、括号中文释义导致丢行、不同选项排版导致漏项；某题解析题面仅为一个空位时，从原文提取对应句子作为题面。
+- 新增转换脚本 `scripts/import-cet6-history.py` 和三个 2022–2025 pack、`cet6-history-manifest.json`；旧转换脚本只处理 2026 年 6 月三套，可在扩充后的目录继续使用。两个脚本重复导入后 8 个数据文件逐字节不变，内容 ID/历史存档不迁移、不覆盖。
+- 无需登录可使用共享练习；新生成的每日阅读、翻译、写作从五年导入池优先选题，既有计划原样保留。参考答案与原 PDF 解析提交后展示，翻译/写作继续使用现有规则估分。既有界面样式和 Paper 001 不变，正式整卷 Paper 发布入口未新增。
+- 19 套独立听力文本共 475 道题已保存本地待接入文件，因无配套音频未启用播放。其余听力注明共用；词汇专项仍用原内容。内部来源/文档指纹与授权 unknown/unverified 字段保持真实，页面不展示 PDF 文件名、出版方或页脚网址。
+- 本轮新增 164 项回归测试，1084/1084 tests、typecheck、lint 0/0、生产 build、四项 content checks 全部 PASS；音频仅保留既有 fixture placeholder warning。独立原卷对照 738/738 PASS（560 个题干/选项、112 个全文/词库、66 个翻译/写作题面）。
+- Chrome 浏览器 752 项 PASS：112 组阅读首题的作答/解析/刷新、全部 66 个翻译/写作任务的草稿/提交/原 PDF 分析、三种阅读题型与主观题的五种宽度、原文弹窗、完整结算、正常每日入口、版本与控制台。26 张截图在 `output/playwright/cet6-history/`。仅模拟尺寸，未实测实体手机/其他浏览器。
+- 最新报告 `V14_CET6_HISTORY_IMPORT_REPORT.md`；本地生产预览 `http://127.0.0.1:3033`，版本 14.7.1。分支/HEAD 仍为 `feature/v14-real-content-rights` / `fe56fc446fc146c2c76046c842ff2d38cf16bbf5`，本轮和已有修改尚未提交/推送；没有 merge/tag/Release/线上部署，不宣称远程同步或 FINALIZED。下方章节为历史快照。
+
+### 前次交付：三套用户提供 PDF 的共享文字练习（14.7.0）
+
+- 由本地确定性转换脚本 `scripts/import-cet6-pdfs.py` 提取用户提供的三套 2026 年 6 月六级 PDF。保留原题、选项、答案、解析、参考译文及范文；页面不展示 PDF 图片、文件名、页脚网址或出版方。内部清单保存文档指纹与章节位置，未将文件内文本当作开发指令。
+- 已接入共享练习池：12 组阅读（90 道选择题，其中选词填空 30、信息匹配 30、仔细阅读 30）、3 道翻译、3 道写作。共 18 组练习、96 道题/任务。无需登录可练习；新生成的每日阅读、翻译、写作优先选择导入内容。既有今日计划、历史、XP 与草稿保留，不强行覆盖为新题。
+- 阅读支持原题类型说明、判分、逐题解析和刷新恢复；翻译/写作在提交后提供原 PDF 的参考答案与详细分析，沿用现有规则估分，并非官方评分。题目 ID 全局唯一，旧 Mock 内容仍可解析旧学习记录。
+- 未提供配套听力音频；两套共 50 道独立听力题及文本已整理至本地待接入文件，第 3 套与第 1 套共用。暂不加入听力播放池，听力继续使用原内容。
+- 导入数据的授权字段保持真实的 `unknown` / `unverified`，没有伪造授权凭证。按用户明确要求接入现有共享练习路径；正式 Paper 的 `getPublishableItems()`、Paper 001、PRIVATE owner 隔离及数据同步契约未改动。本轮不是整卷 Paper 发布或新的上传 UI。
+- 新增 17 项回归测试；920/920 tests、typecheck、lint 0/0、生产 build、四项 content checks 全部通过。音频检查仅保留原 synthetic fixture placeholder warning。原试卷题面与解析题面独立比较 60/60 通过；选词填空另检查空位、15 个选项与答案映射。
+- Chrome 浏览器 91 项 PASS：12 组阅读作答/解析/刷新、完整阅读结算、翻译/写作草稿恢复与提交后解析、版本显示；375/390/430/768/1440px 无横向溢出，阅读主操作可见且至少 44px。17 张练习截图保留在 `output/pdf/cet6-2026-06-import/`。仅模拟宽度，未实测实体手机或其他浏览器。
+- 本地生产预览：`http://127.0.0.1:3033`；启动命令 `npm run start -- --port 3033`（先构建）。报告 `V14_CET6_IMPORT_REPORT.md`；完整证据仅保留本地 `output/`。
+- Git：分支 `feature/v14-real-content-rights`，HEAD `fe56fc446fc146c2c76046c842ff2d38cf16bbf5`；本轮及已有 E2 修复尚未提交，worktree 有修改。未 push / merge / tag / Release / 线上部署，不宣称远程同步或 FINALIZED。
+
+### 之前版本：V14 Phase 1E.2（14.6.6）
 
 工作分支 feature/v14-real-content-rights。在 Phase 1D.3 私有错题手动复习（仅 localStorage）基础上，增加服务端持久化与跨浏览器云同步：同一账号在另一个浏览器打开同一私有卷错题复习页，可恢复当前批次、答案、题号及已提交结果。新增 PrivateReviewProgress 表、4 个 Store 函数、2 个 API 路由、客户端云同步 Hook 重写、同步状态徽章与冲突对话框。复习操作不修改错题次数、学习进度或 XP。
 
@@ -59,20 +141,22 @@
 - 55 项浏览器检查通过；两个独立 Chrome context；375/390/430/768/1440px 学习/冲突/结果页，无横向溢出或最后按钮遮挡；15 张截图。测试用户及关联数据均按精确 id/email 清理。
 - 最新报告 V14_PHASE1E1_REPORT.md；截图/日志及最终 Git SHA 留在 output/ 本地，不作为公开附件上传。旧章节保留为历史，当前状态以本节及最新报告为准。
 
-### Phase 1E.2 私有错题复习进度云同步
+### Phase 1E.2 私有错题复习进度云同步：修复与本地验收
 
-- 新增 PrivateReviewProgress 表（每 owner/paper 一条最新记录），字段含 reviewBatchId、contentHash、questionIds、answers、currentIndex、submitted、result、revision。唯一键 [userId, paperId]，索引 [userId]。Migration `20261002064622_add_private_review_progress` 已应用。
-- Store 层 4 函数：readPrivateReviewProgressSnapshot（paper row 锁 + readiness 校验，内容变化返回 invalidated 不删除）、startPrivateReviewBatch（服务端选题 + upsert，revision 递增）、savePrivateReviewProgress（CAS revision + batchId/contentHash 校验，净化 answers）、submitPrivateReviewProgress（服务端判分 + 持久化 result，CAS 检查）。
-- 关键修复：嵌套事务死锁。selectReviewItems/gradeReviewItems 内部各自创建 prisma.$transaction，嵌套在持有 paper row FOR UPDATE 锁的写事务内会死锁。修复：移到写事务外部调用。修复后 15 个测试全部在 20ms 内完成。
-- API 路由：GET review/progress（读取进度快照）、POST review/progress/save（保存答案，409 冲突映射）、修改 review/start（改用持久化批次）、修改 review/grade（改用持久化提交）。所有路由使用 privateRequest + safeAuth，owner 从 session 派生。
-- 客户端 usePrivateReviewSession Hook 完整重写：syncStatus（idle/saving/saved/error/conflict）、recheck（拉取云端进度，dirty 时提示冲突）、edit（防抖 800ms 保存，携带 baseRevision）、submit（持久化提交）、resolveConflict（cloud/local）、serverRevision/dirty ref 跟踪、focus/visibilitychange 自动 recheck。
-- UI：Header 同步状态徽章（5 种状态颜色）、冲突对话框（原生 dialog，"采用云端进度"/"保留本地作答"）、文案更新（"复习进度自动同步到云端，可在其他设备继续"、"复习结果已同步到云端"）、CSS .pp-sync-badge 样式。
-- 复习操作不修改错题次数、学习进度、XP 或原卷数据；判分/保存是独立的，不影响原学习记录。
-- 885/885 tests（原 870 + 新增 15）、typecheck、lint 0/0、生产 build、四项 content gates 全部通过。音频仅有允许的 synthetic fixture placeholder warning。
-- 浏览器 E2E 核心流程验证通过：开始复习（API 200，3 道题显示）、答题保存（"已同步"绿色徽章）、刷新恢复（答案和进度从云端恢复）、399px 移动端布局无溢出或导航遮挡。
-- 关键修复：Prisma Client 未包含新模型导致 dev server 500。停止 dev server → npx prisma generate → 重启后修复。
-- 报告 V14_PHASE1E2_REPORT.md；设计文档 V14_PHASE1E2_DESIGN.md。
-- 边界：离线硬刷新不保证；真机移动端软键盘未验证；不接入 Daily Plan/全局 Review；不实现复习调度/掌握评分；多宽度和双浏览器完整 E2E 待后续验证。
+- 沿用 PrivateReviewProgress 表和 migration `20261002064622_add_private_review_progress`；本轮无新表/迁移。每 owner/paper 只保留最新批次，不新增云端历史。
+- 修复开始响应 revision 丢失和第二批次保存冲突；已提交刷新从 GET 恢复验证后的持久化结果，不再 POST 重判。相同提交重试幂等返回原结果，改变已提交答案被拒绝。
+- 单一试卷 FOR UPDATE 事务内检查 owner/readiness/hash/批次/revision、选题和判分。共享 TransactionClient 避免嵌套死锁及事务外检查的竞争窗口；保存/提交拒绝失效或已移出批次。
+- 严格验证答案对象、题目/选项归属、索引、revision 和存储结果；读到损坏数据只返回失效，不删除/覆盖记录。GET 错误不当作无记录，不宣称已同步。
+- usePrivateReviewSession 委托独立 PrivateReviewController；本地立即持久化 syncDirty/syncRevision/答案/题号，网络发送防抖 800ms，单个在途保存串行处理新编辑。迟到回复不回滚当前答案，提交等待保存队列。
+- 响应验证 owner/paper/hash/batch/revision/结果；取消、操作序号和身份代次保护账号及路由切换后的旧响应。focus/visibility/online 核对并恢复，失败保留草稿，可“重试同步”。
+- 冲突两种选择均先读最新快照；相同批次按最新 revision 保存本地。云端已提交/换批次时，服务端验证 resume 的 CAS/hash/有效题目，另开新批次保留答案，不改写已提交结果。Escape 只关闭弹窗，不丢弃草稿，可“处理冲突”重开。
+- 复习不修改原卷答案、学习进度、错题次数、XP 或全局 sync/Review/Daily Plan。现有视觉保留，仅补充必要提示和重试入口。
+- 903/903 tests（新增 18，专项 33/33）、typecheck、lint 0/0、生产 build、四项 content gates 全部 PASS；音频仅有允许的 synthetic fixture placeholder warning。
+- 84 项真实 Chrome 检查 PASS（主流程 74 + 异常/账号切换 10）：同账号独立 context、B owner/未登录、快速编辑/慢速保存/提交、刷新草稿/结果、失败重试、断网恢复、两种冲突选择、云端提交后的恢复、异常响应、账号切换迟到保存、无全局副作用。375/390/430/768/1440px 复习/结果/弹窗无横向溢出或导航遮挡，主要按钮至少 44px，15 张截图。
+- 两个随机隔离用户按精确 id/email 清理，用户及 16 类关联数据全部为 0。凭据/生成运行脚本删除，日志测试密码替换。结果/截图/日志仅保留本地 output/reviews/v14-phase1e2/。
+- 报告 V14_PHASE1E2_REPORT.md、设计 V14_PHASE1E2_DESIGN.md 已更新；关于页显示 14.6.6。本地生产预览 http://127.0.0.1:3032 已确认可访问，测试卷已清理。
+- Git：本轮基线 HEAD fe56fc446fc146c2c76046c842ff2d38cf16bbf5；修复尚未提交/推送，worktree 有修改。基线远程核对一致不能代表新修复已交付；不宣称发布 FINALIZED。v12.0 保持 697772d9412d9d1a4253e099a001734a5230e264；未 merge main/tag/Release。
+- 边界：离线硬刷新不保证；未实测实体手机/软键盘/其他浏览器，不接全局复习、调度或自动移出；不增加真实题库。完成本阶段修复后停止。
 
 ### Phase 1D.1 最终收尾
 

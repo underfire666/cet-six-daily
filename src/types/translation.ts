@@ -15,6 +15,7 @@ export interface TranslationTask {
   keywords: string[];
   /** 参考译文（提交前不展示） */
   referenceTranslation: string;
+  referenceExplanation?: string;
   /** 评分要点（人读用） */
   scoringPoints: string[];
   /** 预置 Mock 反馈，未命中关键词时拼装 */
@@ -34,7 +35,7 @@ export interface TranslationTask {
     }[];
   };
   estimatedMinutes: number;
-  sourceType: "mock";
+  sourceType: "mock" | "past_exam";
 }
 
 export interface TranslationDailyProgress {

@@ -8,12 +8,18 @@ import { ListeningComplete } from "./ListeningComplete";
 
 export function ListeningHome() {
   const route = useLocalPracticeRoute("listening");
+  const { store } = useListening();
+  const goHome = () => {
+    const id = route.stage.id;
+    if (id && store.sessions[id]?.mode === "selected") route.goToExams();
+    else route.goHome();
+  };
   if (route.stage.kind === "session") {
     const id = route.stage.id;
-    return <ListeningSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+    return <ListeningSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={goHome} />;
   }
   if (route.stage.kind === "complete")
-    return <ListeningComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} />;
+    return <ListeningComplete id={route.stage.id} onSession={route.openSession} onHome={goHome} />;
   return <ListeningDashboard onSession={route.openSession} />;
 }
 

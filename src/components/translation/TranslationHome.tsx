@@ -8,12 +8,18 @@ import { TranslationComplete } from "./TranslationComplete";
 
 export function TranslationHome() {
   const route = useLocalPracticeRoute("translation");
+  const { store } = useTranslation();
+  const goHome = () => {
+    const id = route.stage.id;
+    if (id && store.sessions[id]?.mode === "selected") route.goToExams();
+    else route.goHome();
+  };
   if (route.stage.kind === "session") {
     const id = route.stage.id;
-    return <TranslationSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+    return <TranslationSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={goHome} />;
   }
   if (route.stage.kind === "complete")
-    return <TranslationComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} />;
+    return <TranslationComplete id={route.stage.id} onSession={route.openSession} onHome={goHome} />;
   return <TranslationDashboard onSession={route.openSession} />;
 }
 

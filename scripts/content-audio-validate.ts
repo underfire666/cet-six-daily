@@ -17,6 +17,8 @@ import { registerSyntheticPaperFixture } from "../src/content/fixture/cet6-2025-
 import {  } from "../src/content/papers/cet6-mock-paper-001";
 import { getPaperById } from "../src/content/registry";
 import { MOCK_PAPER_001_ID, registerMockPaper001 } from "../src/content/papers/cet6-mock-paper-001";
+import listeningManifest from "../src/content/imported/cet6-listening-manifest.json";
+import listeningPack from "../src/content/imported/cet6-2022-2026-listening.json";
 
 const PUBLIC_ROOT = path.resolve(__dirname, "../public");
 const MIN_DURATION_S = 30;
@@ -133,6 +135,30 @@ if (!paper001) {
   const audios = (paper001.assets ?? []).filter((a) => a.type === "audio");
   if (audios.length !== 7) errors.push(`mock paper 001 audio assets=${audios.length}（预期 7，官方 CET6 listening materials）`);
 }
+
+// Imported recordings use source metadata, rather than synthetic voice fields.
+for (const asset of listeningManifest.assets) {
+  audioCount++;
+  const item = listeningPack.items.find(item => item.id === asset.materialId);
+  const fp = resolvePublicPath(asset.src);
+  if (!fp || !fs.existsSync(fp)) {
+    errors.push(`${asset.materialId}: missing imported recording`);
+    continue;
+  }
+  if (seenAssetIds.has(asset.materialId)) errors.push(`duplicate imported audio: ${asset.materialId}`);
+  seenAssetIds.set(asset.materialId, "imported listening");
+  if (!item || item.audio.src !== asset.src || item.audio.duration !== asset.duration || asset.anchor !== `lt-${item.questions[0].examNumber}`)
+    errors.push(`${asset.materialId}: question/audio mapping mismatch`);
+  if (fs.statSync(fp).size !== asset.sizeBytes || sha256File(fp) !== asset.sha256)
+    errors.push(`${asset.materialId}: imported audio checksum/size mismatch`);
+  if (!(asset.duration > MIN_DURATION_S) || Math.abs(asset.end - asset.start - asset.duration) > 0.0011)
+    errors.push(`${asset.materialId}: invalid clip duration`);
+  if (!asset.sourcePageUrl.startsWith("https://") || !asset.playlistUrl.startsWith("https://") || !asset.recordingSha256 || !asset.retrievedAt)
+    errors.push(`${asset.materialId}: missing original recording provenance`);
+  if (asset.mimeType !== "audio/mpeg" || asset.rights.licenseStatus !== "unknown" || asset.rights.rightsStatus !== "unverified")
+    errors.push(`${asset.materialId}: unexpected format or rights claim`);
+}
+if (listeningManifest.assets.length !== listeningPack.items.length) errors.push("Imported listening audio count mismatch");
 
 console.log("=== Content Audio Validate ===");
 console.log(`Audio assets total: ${audioCount}`);

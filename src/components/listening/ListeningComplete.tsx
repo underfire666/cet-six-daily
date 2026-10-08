@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Check, Headphones, Repeat, Zap } from "lucide-react";
 
 import { listeningLesson } from "@/lib/listening/questions";
+import { todayInShanghai } from "@/lib/dates";
+import { examReturnHref } from "@/lib/exam-browse-route";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useListening } from "./ListeningProvider";
 
@@ -13,7 +15,15 @@ export function ListeningComplete({ id, onSession, onHome }: { id: string; onSes
   const { ready, store, dailyComplete, start } = useListening();
   const router = useRouter();
   const session = store.sessions[id];
+  const returnToCatalog = () => {
+    if (onHome) onHome();
+    else router.push(examReturnHref(window.location.search) ?? "/practice/exams");
+  };
   const nextGroup = () => {
+    if (session?.mode === "selected") {
+      returnToCatalog();
+      return;
+    }
     const mode =
       session?.mode === "extra" || dailyComplete ? "extra" : "daily";
     const nextId = start(mode);
@@ -43,6 +53,13 @@ export function ListeningComplete({ id, onSession, onHome }: { id: string; onSes
   }).length;
   const needImprove = unresolvedQuestions(session.lesson, definition).length;
   const collected = session.collectedWordIds.length;
+  const selected = session.mode === "selected";
+  const completedDate = session.completedAt ? todayInShanghai(new Date(session.completedAt)) : null;
+  const sameDayRepeat = Object.values(store.sessions).some((previous) =>
+    previous.id !== session.id && previous.applied && previous.materialId === session.materialId &&
+    previous.completedAt && session.completedAt && previous.completedAt <= session.completedAt &&
+    todayInShanghai(new Date(previous.completedAt)) === completedDate,
+  );
   return (
     <main className="listening-complete">
       <div className="listening-complete-badge">
@@ -84,15 +101,23 @@ export function ListeningComplete({ id, onSession, onHome }: { id: string; onSes
         </span>
         <strong>+{session.rewardXp ?? 0} XP</strong>
       </div>
+      {selected && (session.rewardXp ?? 0) === 0 && (
+        <p className="listening-complete-sub" role="status">
+          {sameDayRepeat
+            ? "这组题今天已计入 XP，重复练习不重复奖励。"
+            : "这组题已获得首次奖励，本次巩固未获得答题表现分。"}
+        </p>
+      )}
       <div className="listening-complete-actions">
         <button className="listening-button" onClick={nextGroup}>
           <Headphones size={18} />
-          {session.mode === "daily" && !dailyComplete
+          {selected ? "返回真题题库" : session.mode === "daily" && !dailyComplete
             ? "继续下一组"
             : "今天再听一组"}
         </button>
-        {onHome ? <button className="listening-text-button" onClick={onHome}>返回听力首页</button> :
-          <Link className="listening-text-button" href="/practice/listening">返回听力首页</Link>}
+        {selected ? <Link className="listening-text-button" href="/">返回学习首页</Link> :
+          onHome ? <button className="listening-text-button" onClick={onHome}>返回听力首页</button> :
+            <Link className="listening-text-button" href="/practice/listening">返回听力首页</Link>}
       </div>
     </main>
   );

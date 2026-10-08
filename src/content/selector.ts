@@ -63,3 +63,14 @@ export function selectContent<T>(opts: SelectOptions<T>): SelectResult<T> {
   }
   return { items: out, fallbackReason };
 }
+
+/** Shared practice prioritizes imported exam exercises; legacy plans still resolve. */
+export function selectPracticeContent<T extends { sourceType?: string }>(opts: SelectOptions<T>): SelectResult<T> {
+  const imported = opts.pool.filter(item => item.sourceType === "past_exam");
+  if (!imported.length) return selectContent(opts);
+  const first = selectContent({ ...opts, pool: imported });
+  if (first.items.length === opts.limit) return first;
+  const remainder = selectContent({ ...opts, pool: opts.pool.filter(item => item.sourceType !== "past_exam"), limit: opts.limit - first.items.length });
+  const items = [...first.items, ...remainder.items];
+  return { items, ...(items.length < opts.limit ? { fallbackReason: first.fallbackReason ?? remainder.fallbackReason } : {}) };
+}

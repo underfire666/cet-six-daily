@@ -9,6 +9,7 @@ import {
   FileText,
 } from "lucide-react";
 import { modules } from "@/data/mock";
+import styles from "./practice-entries.module.css";
 import { useReading } from "./reading/ReadingProvider";
 import { useListening } from "./listening/ListeningProvider";
 import { useTranslation } from "./translation/TranslationProvider";
@@ -88,37 +89,26 @@ export function PracticeModules() {
         })}
       </div>
 
-      {/* V13 Production: 模拟卷入口 */}
-      <div style={{ marginTop: 16 }}>
+      <div className={styles.entries}>
+        <Link href="/practice/exams" className={styles.entry}>
+          <span className={styles.icon}><BookOpen size={22} /></span>
+          <span className={styles.copy}><strong>真题题库</strong><small>按年份、考期、套卷选练 · 33 套试卷</small></span>
+          <span className={styles.arrow} aria-hidden="true">→</span>
+        </Link>
         <Link
           href="/practice/paper"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
-            border: "1px solid #a5d6a7",
-            borderRadius: 12,
-            padding: "14px 16px",
-            textDecoration: "none",
-            color: "inherit",
-          }}
+          className={styles.entry}
         >
-          <span style={{
-            width: 40, height: 40, borderRadius: 10,
-            background: "#fff", display: "flex",
-            alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <FileText size={22} color="#2e7d32" />
+          <span className={styles.icon}>
+            <FileText size={22} />
           </span>
-          <div style={{ flex: 1 }}>
-            <strong style={{ fontSize: 15, color: "#1b5e20" }}>模拟卷</strong>
-            <div style={{ fontSize: 12, color: "#558b2f", marginTop: 2 }}>
+          <div className={styles.copy}>
+            <strong>模拟卷</strong>
+            <small>
               完整 57 题原创高仿真 CET-6 模拟卷 · 含 AI 合成语音听力
-            </div>
+            </small>
           </div>
-          <span style={{ fontSize: 18, color: "#2e7d32" }}>→</span>
+          <span className={styles.arrow} aria-hidden="true">→</span>
         </Link>
       </div>
     </section>

@@ -21,6 +21,7 @@ export interface WritingTask {
   suggestedWords: string[];
   /** 参考范文（提交前不展示） */
   referenceEssay: string;
+  referenceExplanation?: string;
   outline: WritingOutlineBlock[];
   scoringPoints: string[];
   mockFeedback: {
@@ -40,7 +41,7 @@ export interface WritingTask {
   };
   /** 建议词数范围 */
   suggestedWordsRange: [number, number];
-  sourceType: "mock";
+  sourceType: "mock" | "past_exam";
 }
 
 export interface WritingDailyProgress {

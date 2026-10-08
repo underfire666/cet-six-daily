@@ -221,7 +221,7 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
               </p>
             )}
             <p className="pp-preview-note" style={{ fontSize: "12px", marginTop: "8px" }}>
-              复习结果已同步到云端，不修改错题次数、学习进度或 XP。
+              {review.syncStatus === "saved" ? "复习结果已同步到云端" : "复习结果仍保留在本地，尚未确认云端同步"}，不修改错题次数、学习进度或 XP。
             </p>
           </div>
 
@@ -294,12 +294,19 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
       {review.syncError && review.syncStatus !== "conflict" && (
         <p className="pp-error" role="alert" style={{ fontSize: "13px" }}>
           <CloudOff size={14} /> {review.syncError}
+          <button type="button" className="pp-cancel-btn" onClick={() => { void review.retrySync(); }}>重试同步</button>
         </p>
       )}
 
       {/* Conflict dialog */}
       {review.syncStatus === "conflict" && (
-        <dialog ref={conflictRef} className="pp-modal" aria-labelledby="conflict-title" onCancel={() => review.resolveConflict("cloud")} onKeyDown={event => {
+        <p className="pp-error" role="alert">
+          本地作答尚未同步。
+          <button type="button" className="pp-cancel-btn" onClick={() => conflictRef.current?.showModal()}>处理冲突</button>
+        </p>
+      )}
+      {review.syncStatus === "conflict" && (
+        <dialog ref={conflictRef} className="pp-modal" aria-labelledby="conflict-title" onCancel={event => { event.preventDefault(); conflictRef.current?.close(); }} onKeyDown={event => {
           if (event.key !== "Tab") return;
           const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
           const first = buttons[0], last = buttons.at(-1);
@@ -309,6 +316,7 @@ export default function ReviewClient({ paperId }: { paperId: string }) {
           <div>
             <h3 id="conflict-title">复习进度冲突</h3>
             <p>{review.syncError || "检测到其他设备有更新的复习进度。请选择如何处理："}</p>
+            <p>若云端已提交或更换批次，保留本地作答会另开一批复习，不改写已提交结果。</p>
             <div className="pp-modal-actions">
               <button type="button" onClick={() => review.resolveConflict("cloud")} className="pp-cancel-btn" autoFocus>
                 采用云端进度

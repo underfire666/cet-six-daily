@@ -1,0 +1,2976 @@
+{
+  "schemaVersion": 1,
+  "importedAt": "2026-10-06T00:00:00.000Z",
+  "years": [
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "listeningEnabled": true,
+  "papers": 19,
+  "materials": 133,
+  "questions": 475,
+  "documents": [
+    {
+      "document": "2022-12-1",
+      "listeningDocument": "2022-12-1",
+      "materialIds": [
+        "cet6:2022-12:set1:listening:g1",
+        "cet6:2022-12:set1:listening:g2",
+        "cet6:2022-12:set1:listening:g3",
+        "cet6:2022-12:set1:listening:g4",
+        "cet6:2022-12:set1:listening:g5",
+        "cet6:2022-12:set1:listening:g6",
+        "cet6:2022-12:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2022-12-2",
+      "listeningDocument": "2022-12-2",
+      "materialIds": [
+        "cet6:2022-12:set2:listening:g1",
+        "cet6:2022-12:set2:listening:g2",
+        "cet6:2022-12:set2:listening:g3",
+        "cet6:2022-12:set2:listening:g4",
+        "cet6:2022-12:set2:listening:g5",
+        "cet6:2022-12:set2:listening:g6",
+        "cet6:2022-12:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2022-12-3",
+      "listeningDocument": "2022-12-1",
+      "materialIds": [
+        "cet6:2022-12:set1:listening:g1",
+        "cet6:2022-12:set1:listening:g2",
+        "cet6:2022-12:set1:listening:g3",
+        "cet6:2022-12:set1:listening:g4",
+        "cet6:2022-12:set1:listening:g5",
+        "cet6:2022-12:set1:listening:g6",
+        "cet6:2022-12:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2022-06-1",
+      "listeningDocument": "2022-06-1",
+      "materialIds": [
+        "cet6:2022-06:set1:listening:g1",
+        "cet6:2022-06:set1:listening:g2",
+        "cet6:2022-06:set1:listening:g3",
+        "cet6:2022-06:set1:listening:g4",
+        "cet6:2022-06:set1:listening:g5",
+        "cet6:2022-06:set1:listening:g6",
+        "cet6:2022-06:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2022-06-2",
+      "listeningDocument": "2022-06-1",
+      "materialIds": [
+        "cet6:2022-06:set1:listening:g1",
+        "cet6:2022-06:set1:listening:g2",
+        "cet6:2022-06:set1:listening:g3",
+        "cet6:2022-06:set1:listening:g4",
+        "cet6:2022-06:set1:listening:g5",
+        "cet6:2022-06:set1:listening:g6",
+        "cet6:2022-06:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2022-06-3",
+      "listeningDocument": "2022-06-1",
+      "materialIds": [
+        "cet6:2022-06:set1:listening:g1",
+        "cet6:2022-06:set1:listening:g2",
+        "cet6:2022-06:set1:listening:g3",
+        "cet6:2022-06:set1:listening:g4",
+        "cet6:2022-06:set1:listening:g5",
+        "cet6:2022-06:set1:listening:g6",
+        "cet6:2022-06:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2022-09-1",
+      "listeningDocument": "2022-09-1",
+      "materialIds": [
+        "cet6:2022-09:set1:listening:g1",
+        "cet6:2022-09:set1:listening:g2",
+        "cet6:2022-09:set1:listening:g3",
+        "cet6:2022-09:set1:listening:g4",
+        "cet6:2022-09:set1:listening:g5",
+        "cet6:2022-09:set1:listening:g6",
+        "cet6:2022-09:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2022-09-2",
+      "listeningDocument": "2022-09-1",
+      "materialIds": [
+        "cet6:2022-09:set1:listening:g1",
+        "cet6:2022-09:set1:listening:g2",
+        "cet6:2022-09:set1:listening:g3",
+        "cet6:2022-09:set1:listening:g4",
+        "cet6:2022-09:set1:listening:g5",
+        "cet6:2022-09:set1:listening:g6",
+        "cet6:2022-09:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2022-09-3",
+      "listeningDocument": "2022-09-1",
+      "materialIds": [
+        "cet6:2022-09:set1:listening:g1",
+        "cet6:2022-09:set1:listening:g2",
+        "cet6:2022-09:set1:listening:g3",
+        "cet6:2022-09:set1:listening:g4",
+        "cet6:2022-09:set1:listening:g5",
+        "cet6:2022-09:set1:listening:g6",
+        "cet6:2022-09:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-12-1",
+      "listeningDocument": "2023-12-1",
+      "materialIds": [
+        "cet6:2023-12:set1:listening:g1",
+        "cet6:2023-12:set1:listening:g2",
+        "cet6:2023-12:set1:listening:g3",
+        "cet6:2023-12:set1:listening:g4",
+        "cet6:2023-12:set1:listening:g5",
+        "cet6:2023-12:set1:listening:g6",
+        "cet6:2023-12:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-12-2",
+      "listeningDocument": "2023-12-2",
+      "materialIds": [
+        "cet6:2023-12:set2:listening:g1",
+        "cet6:2023-12:set2:listening:g2",
+        "cet6:2023-12:set2:listening:g3",
+        "cet6:2023-12:set2:listening:g4",
+        "cet6:2023-12:set2:listening:g5",
+        "cet6:2023-12:set2:listening:g6",
+        "cet6:2023-12:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-12-3",
+      "listeningDocument": "2023-12-1",
+      "materialIds": [
+        "cet6:2023-12:set1:listening:g1",
+        "cet6:2023-12:set1:listening:g2",
+        "cet6:2023-12:set1:listening:g3",
+        "cet6:2023-12:set1:listening:g4",
+        "cet6:2023-12:set1:listening:g5",
+        "cet6:2023-12:set1:listening:g6",
+        "cet6:2023-12:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-03-1",
+      "listeningDocument": "2023-03-1",
+      "materialIds": [
+        "cet6:2023-03:set1:listening:g1",
+        "cet6:2023-03:set1:listening:g2",
+        "cet6:2023-03:set1:listening:g3",
+        "cet6:2023-03:set1:listening:g4",
+        "cet6:2023-03:set1:listening:g5",
+        "cet6:2023-03:set1:listening:g6",
+        "cet6:2023-03:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-03-2",
+      "listeningDocument": "2023-03-1",
+      "materialIds": [
+        "cet6:2023-03:set1:listening:g1",
+        "cet6:2023-03:set1:listening:g2",
+        "cet6:2023-03:set1:listening:g3",
+        "cet6:2023-03:set1:listening:g4",
+        "cet6:2023-03:set1:listening:g5",
+        "cet6:2023-03:set1:listening:g6",
+        "cet6:2023-03:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-03-3",
+      "listeningDocument": "2023-03-1",
+      "materialIds": [
+        "cet6:2023-03:set1:listening:g1",
+        "cet6:2023-03:set1:listening:g2",
+        "cet6:2023-03:set1:listening:g3",
+        "cet6:2023-03:set1:listening:g4",
+        "cet6:2023-03:set1:listening:g5",
+        "cet6:2023-03:set1:listening:g6",
+        "cet6:2023-03:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-06-1",
+      "listeningDocument": "2023-06-1",
+      "materialIds": [
+        "cet6:2023-06:set1:listening:g1",
+        "cet6:2023-06:set1:listening:g2",
+        "cet6:2023-06:set1:listening:g3",
+        "cet6:2023-06:set1:listening:g4",
+        "cet6:2023-06:set1:listening:g5",
+        "cet6:2023-06:set1:listening:g6",
+        "cet6:2023-06:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-06-2",
+      "listeningDocument": "2023-06-2",
+      "materialIds": [
+        "cet6:2023-06:set2:listening:g1",
+        "cet6:2023-06:set2:listening:g2",
+        "cet6:2023-06:set2:listening:g3",
+        "cet6:2023-06:set2:listening:g4",
+        "cet6:2023-06:set2:listening:g5",
+        "cet6:2023-06:set2:listening:g6",
+        "cet6:2023-06:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2023-06-3",
+      "listeningDocument": "2023-06-1",
+      "materialIds": [
+        "cet6:2023-06:set1:listening:g1",
+        "cet6:2023-06:set1:listening:g2",
+        "cet6:2023-06:set1:listening:g3",
+        "cet6:2023-06:set1:listening:g4",
+        "cet6:2023-06:set1:listening:g5",
+        "cet6:2023-06:set1:listening:g6",
+        "cet6:2023-06:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2024-12-1",
+      "listeningDocument": "2024-12-1",
+      "materialIds": [
+        "cet6:2024-12:set1:listening:g1",
+        "cet6:2024-12:set1:listening:g2",
+        "cet6:2024-12:set1:listening:g3",
+        "cet6:2024-12:set1:listening:g4",
+        "cet6:2024-12:set1:listening:g5",
+        "cet6:2024-12:set1:listening:g6",
+        "cet6:2024-12:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2024-12-2",
+      "listeningDocument": "2024-12-2",
+      "materialIds": [
+        "cet6:2024-12:set2:listening:g1",
+        "cet6:2024-12:set2:listening:g2",
+        "cet6:2024-12:set2:listening:g3",
+        "cet6:2024-12:set2:listening:g4",
+        "cet6:2024-12:set2:listening:g5",
+        "cet6:2024-12:set2:listening:g6",
+        "cet6:2024-12:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2024-12-3",
+      "listeningDocument": "2024-12-2",
+      "materialIds": [
+        "cet6:2024-12:set2:listening:g1",
+        "cet6:2024-12:set2:listening:g2",
+        "cet6:2024-12:set2:listening:g3",
+        "cet6:2024-12:set2:listening:g4",
+        "cet6:2024-12:set2:listening:g5",
+        "cet6:2024-12:set2:listening:g6",
+        "cet6:2024-12:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2024-06-1",
+      "listeningDocument": "2024-06-1",
+      "materialIds": [
+        "cet6:2024-06:set1:listening:g1",
+        "cet6:2024-06:set1:listening:g2",
+        "cet6:2024-06:set1:listening:g3",
+        "cet6:2024-06:set1:listening:g4",
+        "cet6:2024-06:set1:listening:g5",
+        "cet6:2024-06:set1:listening:g6",
+        "cet6:2024-06:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2024-06-2",
+      "listeningDocument": "2024-06-2",
+      "materialIds": [
+        "cet6:2024-06:set2:listening:g1",
+        "cet6:2024-06:set2:listening:g2",
+        "cet6:2024-06:set2:listening:g3",
+        "cet6:2024-06:set2:listening:g4",
+        "cet6:2024-06:set2:listening:g5",
+        "cet6:2024-06:set2:listening:g6",
+        "cet6:2024-06:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2024-06-3",
+      "listeningDocument": "2024-06-2",
+      "materialIds": [
+        "cet6:2024-06:set2:listening:g1",
+        "cet6:2024-06:set2:listening:g2",
+        "cet6:2024-06:set2:listening:g3",
+        "cet6:2024-06:set2:listening:g4",
+        "cet6:2024-06:set2:listening:g5",
+        "cet6:2024-06:set2:listening:g6",
+        "cet6:2024-06:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2025-12-1",
+      "listeningDocument": "2025-12-1",
+      "materialIds": [
+        "cet6:2025-12:set1:listening:g1",
+        "cet6:2025-12:set1:listening:g2",
+        "cet6:2025-12:set1:listening:g3",
+        "cet6:2025-12:set1:listening:g4",
+        "cet6:2025-12:set1:listening:g5",
+        "cet6:2025-12:set1:listening:g6",
+        "cet6:2025-12:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2025-12-2",
+      "listeningDocument": "2025-12-2",
+      "materialIds": [
+        "cet6:2025-12:set2:listening:g1",
+        "cet6:2025-12:set2:listening:g2",
+        "cet6:2025-12:set2:listening:g3",
+        "cet6:2025-12:set2:listening:g4",
+        "cet6:2025-12:set2:listening:g5",
+        "cet6:2025-12:set2:listening:g6",
+        "cet6:2025-12:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2025-12-3",
+      "listeningDocument": "2025-12-1",
+      "materialIds": [
+        "cet6:2025-12:set1:listening:g1",
+        "cet6:2025-12:set1:listening:g2",
+        "cet6:2025-12:set1:listening:g3",
+        "cet6:2025-12:set1:listening:g4",
+        "cet6:2025-12:set1:listening:g5",
+        "cet6:2025-12:set1:listening:g6",
+        "cet6:2025-12:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2025-06-1",
+      "listeningDocument": "2025-06-1",
+      "materialIds": [
+        "cet6:2025-06:set1:listening:g1",
+        "cet6:2025-06:set1:listening:g2",
+        "cet6:2025-06:set1:listening:g3",
+        "cet6:2025-06:set1:listening:g4",
+        "cet6:2025-06:set1:listening:g5",
+        "cet6:2025-06:set1:listening:g6",
+        "cet6:2025-06:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2025-06-2",
+      "listeningDocument": "2025-06-2",
+      "materialIds": [
+        "cet6:2025-06:set2:listening:g1",
+        "cet6:2025-06:set2:listening:g2",
+        "cet6:2025-06:set2:listening:g3",
+        "cet6:2025-06:set2:listening:g4",
+        "cet6:2025-06:set2:listening:g5",
+        "cet6:2025-06:set2:listening:g6",
+        "cet6:2025-06:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2025-06-3",
+      "listeningDocument": "2025-06-2",
+      "materialIds": [
+        "cet6:2025-06:set2:listening:g1",
+        "cet6:2025-06:set2:listening:g2",
+        "cet6:2025-06:set2:listening:g3",
+        "cet6:2025-06:set2:listening:g4",
+        "cet6:2025-06:set2:listening:g5",
+        "cet6:2025-06:set2:listening:g6",
+        "cet6:2025-06:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2026-06-1",
+      "listeningDocument": "2026-06-1",
+      "materialIds": [
+        "cet6:2026-06:set1:listening:g1",
+        "cet6:2026-06:set1:listening:g2",
+        "cet6:2026-06:set1:listening:g3",
+        "cet6:2026-06:set1:listening:g4",
+        "cet6:2026-06:set1:listening:g5",
+        "cet6:2026-06:set1:listening:g6",
+        "cet6:2026-06:set1:listening:g7"
+      ]
+    },
+    {
+      "document": "2026-06-2",
+      "listeningDocument": "2026-06-2",
+      "materialIds": [
+        "cet6:2026-06:set2:listening:g1",
+        "cet6:2026-06:set2:listening:g2",
+        "cet6:2026-06:set2:listening:g3",
+        "cet6:2026-06:set2:listening:g4",
+        "cet6:2026-06:set2:listening:g5",
+        "cet6:2026-06:set2:listening:g6",
+        "cet6:2026-06:set2:listening:g7"
+      ]
+    },
+    {
+      "document": "2026-06-3",
+      "listeningDocument": "2026-06-1",
+      "materialIds": [
+        "cet6:2026-06:set1:listening:g1",
+        "cet6:2026-06:set1:listening:g2",
+        "cet6:2026-06:set1:listening:g3",
+        "cet6:2026-06:set1:listening:g4",
+        "cet6:2026-06:set1:listening:g5",
+        "cet6:2026-06:set1:listening:g6",
+        "cet6:2026-06:set1:listening:g7"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "materialId": "cet6:2022-12:set1:listening:g1",
+      "src": "/audio/cet6/2022-12-1/g1.mp3",
+      "sizeBytes": 1436778,
+      "sha256": "2e2a66b8b19d20be296073032276fd2c4b46f958bc8663416ac539078dbc00d0",
+      "duration": 179.533,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/118/index.m3u8",
+      "recordingSha256": "3444d4d30a104fa5506e0f378791eb23c7be9a44669871806cc20b99efdb9ede",
+      "start": 36.2,
+      "end": 215.733,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set1:listening:g2",
+      "src": "/audio/cet6/2022-12-1/g2.mp3",
+      "sizeBytes": 1515773,
+      "sha256": "e02ff75bc56638efd42106c176df92e5633825c07b998a7759cba9606b222a17",
+      "duration": 189.4,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/118/index.m3u8",
+      "recordingSha256": "3444d4d30a104fa5506e0f378791eb23c7be9a44669871806cc20b99efdb9ede",
+      "start": 231.4,
+      "end": 420.8,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set1:listening:g3",
+      "src": "/audio/cet6/2022-12-1/g3.mp3",
+      "sizeBytes": 1368860,
+      "sha256": "d639642b296e83bd1417f99038f64bd1771a5eadc500a0e75281f07c6367250b",
+      "duration": 171.034,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/118/index.m3u8",
+      "recordingSha256": "3444d4d30a104fa5506e0f378791eb23c7be9a44669871806cc20b99efdb9ede",
+      "start": 463.966,
+      "end": 635,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set1:listening:g4",
+      "src": "/audio/cet6/2022-12-1/g4.mp3",
+      "sizeBytes": 1524759,
+      "sha256": "ba342e750ec848a4459f3d9df0252f13f1dce99674c0838d3a409e945864423f",
+      "duration": 190.534,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/118/index.m3u8",
+      "recordingSha256": "3444d4d30a104fa5506e0f378791eb23c7be9a44669871806cc20b99efdb9ede",
+      "start": 650.166,
+      "end": 840.7,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set1:listening:g5",
+      "src": "/audio/cet6/2022-12-1/g5.mp3",
+      "sizeBytes": 2005621,
+      "sha256": "82e62e7ab13efe498766ca2ae04bfe7e7f9cf60ba3e0c7be6c1ec8f1d67cfca3",
+      "duration": 250.633,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/118/index.m3u8",
+      "recordingSha256": "3444d4d30a104fa5506e0f378791eb23c7be9a44669871806cc20b99efdb9ede",
+      "start": 881.9,
+      "end": 1132.533,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set1:listening:g6",
+      "src": "/audio/cet6/2022-12-1/g6.mp3",
+      "sizeBytes": 1633428,
+      "sha256": "f844478c8721545f53ed04ad3dd4972b4532a1f86558ddac6affff40ed89b4c6",
+      "duration": 204.1,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/118/index.m3u8",
+      "recordingSha256": "3444d4d30a104fa5506e0f378791eb23c7be9a44669871806cc20b99efdb9ede",
+      "start": 1148,
+      "end": 1352.1,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set1:listening:g7",
+      "src": "/audio/cet6/2022-12-1/g7.mp3",
+      "sizeBytes": 2017324,
+      "sha256": "910d3befd09e8d29da17ec34b7adb52593ca77b015385815b5edcb7333ab5f48",
+      "duration": 252.1,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/118/index.m3u8",
+      "recordingSha256": "3444d4d30a104fa5506e0f378791eb23c7be9a44669871806cc20b99efdb9ede",
+      "start": 1367.3,
+      "end": 1619.4,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set2:listening:g1",
+      "src": "/audio/cet6/2022-12-2/g1.mp3",
+      "sizeBytes": 1540014,
+      "sha256": "ef729e94322c0df813657bffa1372452a548392875c22b1f7c104005fd02ff13",
+      "duration": 192.434,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/117/index.m3u8",
+      "recordingSha256": "da6bf2028ecae012854f17df3c8c9a6e639b9c31176e96327cfb30a1513a0632",
+      "start": 36.466,
+      "end": 228.9,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set2:listening:g2",
+      "src": "/audio/cet6/2022-12-2/g2.mp3",
+      "sizeBytes": 1405849,
+      "sha256": "888b90080378cd3b9a61f4fe253c5bee7cd4d7a6ff82cc3c9c2c7e810c5d85d4",
+      "duration": 175.666,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/117/index.m3u8",
+      "recordingSha256": "da6bf2028ecae012854f17df3c8c9a6e639b9c31176e96327cfb30a1513a0632",
+      "start": 244.5,
+      "end": 420.166,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set2:listening:g3",
+      "src": "/audio/cet6/2022-12-2/g3.mp3",
+      "sizeBytes": 1274192,
+      "sha256": "6058f4371478b89c3d2dd1368693352661e942edd57b90aa60197ba63240ad51",
+      "duration": 159.2,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/117/index.m3u8",
+      "recordingSha256": "da6bf2028ecae012854f17df3c8c9a6e639b9c31176e96327cfb30a1513a0632",
+      "start": 462.6,
+      "end": 621.8,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set2:listening:g4",
+      "src": "/audio/cet6/2022-12-2/g4.mp3",
+      "sizeBytes": 1528102,
+      "sha256": "d62e58c33ba6f50607e500f8c59976a71dc2bef04e3e67363b0c31e37e2a6d85",
+      "duration": 190.934,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/117/index.m3u8",
+      "recordingSha256": "da6bf2028ecae012854f17df3c8c9a6e639b9c31176e96327cfb30a1513a0632",
+      "start": 637.166,
+      "end": 828.1,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set2:listening:g5",
+      "src": "/audio/cet6/2022-12-2/g5.mp3",
+      "sizeBytes": 1747322,
+      "sha256": "cdce5593345c5382de7ba47bd892483628ba2363b011ca8b6cc58d355559f7dd",
+      "duration": 218.334,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/117/index.m3u8",
+      "recordingSha256": "da6bf2028ecae012854f17df3c8c9a6e639b9c31176e96327cfb30a1513a0632",
+      "start": 868.766,
+      "end": 1087.1,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set2:listening:g6",
+      "src": "/audio/cet6/2022-12-2/g6.mp3",
+      "sizeBytes": 1798522,
+      "sha256": "3013ba242a36980b91411e50268e3223743b8f1351d6a4e318d3778f90a912f0",
+      "duration": 224.733,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/117/index.m3u8",
+      "recordingSha256": "da6bf2028ecae012854f17df3c8c9a6e639b9c31176e96327cfb30a1513a0632",
+      "start": 1102.733,
+      "end": 1327.466,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-12:set2:listening:g7",
+      "src": "/audio/cet6/2022-12-2/g7.mp3",
+      "sizeBytes": 1815867,
+      "sha256": "8171443449affb257c92a636fa004d9533145f85eaed67af9f6aa047ef13331a",
+      "duration": 226.9,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/117/index.m3u8",
+      "recordingSha256": "da6bf2028ecae012854f17df3c8c9a6e639b9c31176e96327cfb30a1513a0632",
+      "start": 1342.866,
+      "end": 1569.766,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-06:set1:listening:g1",
+      "src": "/audio/cet6/2022-06-1/g1.mp3",
+      "sizeBytes": 1652863,
+      "sha256": "cbf1b7abce61cfd2bbd234d1311d726b4ecda98bfddc5d9993eab957daeaeaeb",
+      "duration": 206.534,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/112/index.m3u8",
+      "recordingSha256": "fe0e34fef87f6361e16431e6770d514e4122d1c1133f080458be0be52bd9afd3",
+      "start": 43.266,
+      "end": 249.8,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-06:set1:listening:g2",
+      "src": "/audio/cet6/2022-06-1/g2.mp3",
+      "sizeBytes": 1615665,
+      "sha256": "8225c69c4bc55dece19f3638fdcf8e0dd7b8deeabea529b44b5fd19fc21bcc1f",
+      "duration": 201.9,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/112/index.m3u8",
+      "recordingSha256": "fe0e34fef87f6361e16431e6770d514e4122d1c1133f080458be0be52bd9afd3",
+      "start": 266.2,
+      "end": 468.1,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-06:set1:listening:g3",
+      "src": "/audio/cet6/2022-06-1/g3.mp3",
+      "sizeBytes": 1461647,
+      "sha256": "d3722fe2d0cf345a71e56dbc4f3db771ccbca4e772260712e47779dac00b1a6e",
+      "duration": 182.633,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/112/index.m3u8",
+      "recordingSha256": "fe0e34fef87f6361e16431e6770d514e4122d1c1133f080458be0be52bd9afd3",
+      "start": 515.333,
+      "end": 697.966,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-06:set1:listening:g4",
+      "src": "/audio/cet6/2022-06-1/g4.mp3",
+      "sizeBytes": 1541895,
+      "sha256": "fd47073dd81ee0a743908333156285cb490b4198df7d8c8a4d8188fcd19470a5",
+      "duration": 192.667,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/112/index.m3u8",
+      "recordingSha256": "fe0e34fef87f6361e16431e6770d514e4122d1c1133f080458be0be52bd9afd3",
+      "start": 713.533,
+      "end": 906.2,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-06:set1:listening:g5",
+      "src": "/audio/cet6/2022-06-1/g5.mp3",
+      "sizeBytes": 1836347,
+      "sha256": "df23f1a9c699597439546383038fa453a4379b646f6f875657dbeb05675b5db0",
+      "duration": 229.467,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/112/index.m3u8",
+      "recordingSha256": "fe0e34fef87f6361e16431e6770d514e4122d1c1133f080458be0be52bd9afd3",
+      "start": 953.533,
+      "end": 1183,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-06:set1:listening:g6",
+      "src": "/audio/cet6/2022-06-1/g6.mp3",
+      "sizeBytes": 1890264,
+      "sha256": "14369f199037ebf86ec109c282f206d02e9528539addfb94c81194db572ba301",
+      "duration": 236.2,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/112/index.m3u8",
+      "recordingSha256": "fe0e34fef87f6361e16431e6770d514e4122d1c1133f080458be0be52bd9afd3",
+      "start": 1198.733,
+      "end": 1434.933,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-06:set1:listening:g7",
+      "src": "/audio/cet6/2022-06-1/g7.mp3",
+      "sizeBytes": 1922447,
+      "sha256": "b250d97f67a801819a65265d2b5c57254d2688549556d3ce2154451158fb9fbb",
+      "duration": 240.233,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/112/index.m3u8",
+      "recordingSha256": "fe0e34fef87f6361e16431e6770d514e4122d1c1133f080458be0be52bd9afd3",
+      "start": 1450.933,
+      "end": 1691.166,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-09:set1:listening:g1",
+      "src": "/audio/cet6/2022-09-1/g1.mp3",
+      "sizeBytes": 1478365,
+      "sha256": "f52aece54a5c17c4e1a98f55eaa71230b44c88a9a100ab32c0d1aaa327466368",
+      "duration": 184.734,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-09-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/115/index.m3u8",
+      "recordingSha256": "71cf79a3abc95af0047d167a2743f0140e76da0d9621b019c69ae48fb332ee4e",
+      "start": 42.066,
+      "end": 226.8,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-09:set1:listening:g2",
+      "src": "/audio/cet6/2022-09-1/g2.mp3",
+      "sizeBytes": 1499472,
+      "sha256": "89c2ff47435e4c40ca5202749148bcf28aea8069015027537c5f37be8200ff36",
+      "duration": 187.366,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-09-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/115/index.m3u8",
+      "recordingSha256": "71cf79a3abc95af0047d167a2743f0140e76da0d9621b019c69ae48fb332ee4e",
+      "start": 244.7,
+      "end": 432.066,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-09:set1:listening:g3",
+      "src": "/audio/cet6/2022-09-1/g3.mp3",
+      "sizeBytes": 1371159,
+      "sha256": "8b948f44afa1ce60e562c986dd3b677b8835c6681da6a6cfdffbccc9115a15b6",
+      "duration": 171.334,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-09-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/115/index.m3u8",
+      "recordingSha256": "71cf79a3abc95af0047d167a2743f0140e76da0d9621b019c69ae48fb332ee4e",
+      "start": 478.866,
+      "end": 650.2,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-09:set1:listening:g4",
+      "src": "/audio/cet6/2022-09-1/g4.mp3",
+      "sizeBytes": 1495293,
+      "sha256": "d25eff81b76c1195dabfdf5ae8729150e1c10dca432abf168ce2ef614ea2789a",
+      "duration": 186.833,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-09-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/115/index.m3u8",
+      "recordingSha256": "71cf79a3abc95af0047d167a2743f0140e76da0d9621b019c69ae48fb332ee4e",
+      "start": 667.533,
+      "end": 854.366,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-09:set1:listening:g5",
+      "src": "/audio/cet6/2022-09-1/g5.mp3",
+      "sizeBytes": 1819002,
+      "sha256": "19632643ebd46d6abd08a2d5e126b253b043d20e295b8a079132fa0ab5f14386",
+      "duration": 227.3,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-09-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/115/index.m3u8",
+      "recordingSha256": "71cf79a3abc95af0047d167a2743f0140e76da0d9621b019c69ae48fb332ee4e",
+      "start": 899.366,
+      "end": 1126.666,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-09:set1:listening:g6",
+      "src": "/audio/cet6/2022-09-1/g6.mp3",
+      "sizeBytes": 1726633,
+      "sha256": "bb62dd6a8e2137fb30d2e82e09df8eea6fdf171d68cc14a4910a48da350e9c09",
+      "duration": 215.767,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-09-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/115/index.m3u8",
+      "recordingSha256": "71cf79a3abc95af0047d167a2743f0140e76da0d9621b019c69ae48fb332ee4e",
+      "start": 1141.966,
+      "end": 1357.733,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2022-09:set1:listening:g7",
+      "src": "/audio/cet6/2022-09-1/g7.mp3",
+      "sizeBytes": 1928298,
+      "sha256": "300b7937298d9cb2508eb743af78176dc7e193172b200847c6678fa07e4a707a",
+      "duration": 240.966,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2022-09-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/115/index.m3u8",
+      "recordingSha256": "71cf79a3abc95af0047d167a2743f0140e76da0d9621b019c69ae48fb332ee4e",
+      "start": 1375.3,
+      "end": 1616.266,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set1:listening:g1",
+      "src": "/audio/cet6/2023-12-1/g1.mp3",
+      "sizeBytes": 1378264,
+      "sha256": "1d471af56e73e8a0c3eb21c75849c1d016d0715b325ebc5631545d95c96cfea4",
+      "duration": 172.2,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/127/index.m3u8",
+      "recordingSha256": "0b40815162554731d57b64d3b92388562e885df09635ec62bab5004806e64f2e",
+      "start": 40.766,
+      "end": 212.966,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set1:listening:g2",
+      "src": "/audio/cet6/2023-12-1/g2.mp3",
+      "sizeBytes": 1474186,
+      "sha256": "b472baf7bfec67695be1c50e90486e4b5a5c2867258b163e174d2dbe162f1540",
+      "duration": 184.2,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/127/index.m3u8",
+      "recordingSha256": "0b40815162554731d57b64d3b92388562e885df09635ec62bab5004806e64f2e",
+      "start": 229.333,
+      "end": 413.533,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set1:listening:g3",
+      "src": "/audio/cet6/2023-12-1/g3.mp3",
+      "sizeBytes": 1284850,
+      "sha256": "0ac066626b774ed9814ad0c2eeed2703755ab4e7169db408e85c0189ac5c43be",
+      "duration": 160.533,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/127/index.m3u8",
+      "recordingSha256": "0b40815162554731d57b64d3b92388562e885df09635ec62bab5004806e64f2e",
+      "start": 457.2,
+      "end": 617.733,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set1:listening:g4",
+      "src": "/audio/cet6/2023-12-1/g4.mp3",
+      "sizeBytes": 1449108,
+      "sha256": "0ab1aa868127b588a6131ff85f49696ab56ee37d1643c5ae365269bffb5365c9",
+      "duration": 181.067,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/127/index.m3u8",
+      "recordingSha256": "0b40815162554731d57b64d3b92388562e885df09635ec62bab5004806e64f2e",
+      "start": 632.466,
+      "end": 813.533,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set1:listening:g5",
+      "src": "/audio/cet6/2023-12-1/g5.mp3",
+      "sizeBytes": 1792044,
+      "sha256": "9c5d411f5a40781216599e3738fcd26d33c63cf70b70213e2437a818613f89a9",
+      "duration": 223.933,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/127/index.m3u8",
+      "recordingSha256": "0b40815162554731d57b64d3b92388562e885df09635ec62bab5004806e64f2e",
+      "start": 855.133,
+      "end": 1079.066,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set1:listening:g6",
+      "src": "/audio/cet6/2023-12-1/g6.mp3",
+      "sizeBytes": 1662267,
+      "sha256": "f7c87916b4c486bb72a176c0712a87e23de3cb3602a6684e4edb6836a0981470",
+      "duration": 207.7,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/127/index.m3u8",
+      "recordingSha256": "0b40815162554731d57b64d3b92388562e885df09635ec62bab5004806e64f2e",
+      "start": 1094.7,
+      "end": 1302.4,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set1:listening:g7",
+      "src": "/audio/cet6/2023-12-1/g7.mp3",
+      "sizeBytes": 1844497,
+      "sha256": "36406073b14ea4c92dc8a4ad58659d680d145285f3e685fa9118bc8fda5dca0f",
+      "duration": 230.5,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/127/index.m3u8",
+      "recordingSha256": "0b40815162554731d57b64d3b92388562e885df09635ec62bab5004806e64f2e",
+      "start": 1318.2,
+      "end": 1548.7,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set2:listening:g1",
+      "src": "/audio/cet6/2023-12-2/g1.mp3",
+      "sizeBytes": 1421105,
+      "sha256": "19cc91ec2a289b3b8efb263b8e8d0307dcfe181eaccfab8bc14591d5b3f5fb45",
+      "duration": 177.566,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/126/index.m3u8",
+      "recordingSha256": "22269c5b58780c80cba9b3aceedb5655a9d64ead4055968a4be61549a68fd04b",
+      "start": 39.7,
+      "end": 217.266,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set2:listening:g2",
+      "src": "/audio/cet6/2023-12-2/g2.mp3",
+      "sizeBytes": 1327064,
+      "sha256": "79166a5b794dc5c33a527cdc078919db5789a9e24281d57a724f184676ec239e",
+      "duration": 165.8,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/126/index.m3u8",
+      "recordingSha256": "22269c5b58780c80cba9b3aceedb5655a9d64ead4055968a4be61549a68fd04b",
+      "start": 232.533,
+      "end": 398.333,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set2:listening:g3",
+      "src": "/audio/cet6/2023-12-2/g3.mp3",
+      "sizeBytes": 1306793,
+      "sha256": "d4ce03ce01353543879427b210a4c8275c87eb3ece65dd9a1dca7a9e0f74f5cb",
+      "duration": 163.266,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/126/index.m3u8",
+      "recordingSha256": "22269c5b58780c80cba9b3aceedb5655a9d64ead4055968a4be61549a68fd04b",
+      "start": 442.5,
+      "end": 605.766,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set2:listening:g4",
+      "src": "/audio/cet6/2023-12-2/g4.mp3",
+      "sizeBytes": 1431972,
+      "sha256": "251190618dc50de07bb374d2aaf4921facb85379b26d96e8e5f74b5e8f739b96",
+      "duration": 178.934,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/126/index.m3u8",
+      "recordingSha256": "22269c5b58780c80cba9b3aceedb5655a9d64ead4055968a4be61549a68fd04b",
+      "start": 620.566,
+      "end": 799.5,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set2:listening:g5",
+      "src": "/audio/cet6/2023-12-2/g5.mp3",
+      "sizeBytes": 1701973,
+      "sha256": "33d2442ae7a05114ec10cd17e89a6c64c936e90fa395e507744d9186c93fdb2a",
+      "duration": 212.666,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/126/index.m3u8",
+      "recordingSha256": "22269c5b58780c80cba9b3aceedb5655a9d64ead4055968a4be61549a68fd04b",
+      "start": 841.2,
+      "end": 1053.866,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set2:listening:g6",
+      "src": "/audio/cet6/2023-12-2/g6.mp3",
+      "sizeBytes": 1732484,
+      "sha256": "67eea1aa48559b52b55780a585d14821193550839273d4bff13ebf5c21817433",
+      "duration": 216.499,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/126/index.m3u8",
+      "recordingSha256": "22269c5b58780c80cba9b3aceedb5655a9d64ead4055968a4be61549a68fd04b",
+      "start": 1068.467,
+      "end": 1284.966,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-12:set2:listening:g7",
+      "src": "/audio/cet6/2023-12-2/g7.mp3",
+      "sizeBytes": 1979289,
+      "sha256": "4a68f809289d49435ce82ac6da50a1c98cad05f002f5b7a2159556dea9dc7cb7",
+      "duration": 247.333,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/126/index.m3u8",
+      "recordingSha256": "22269c5b58780c80cba9b3aceedb5655a9d64ead4055968a4be61549a68fd04b",
+      "start": 1300.4,
+      "end": 1547.733,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-03:set1:listening:g1",
+      "src": "/audio/cet6/2023-03-1/g1.mp3",
+      "sizeBytes": 1382861,
+      "sha256": "fca8f97e91ed2b0458761bcde31be987a015e75e6202b874118380a820b182e0",
+      "duration": 172.8,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-03-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/121/index.m3u8",
+      "recordingSha256": "028a13242d9801c7ffa0b792bdce61203cb1294a48dc9d6d34c983e4b6143813",
+      "start": 36.366,
+      "end": 209.166,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-03:set1:listening:g2",
+      "src": "/audio/cet6/2023-03-1/g2.mp3",
+      "sizeBytes": 1545866,
+      "sha256": "004648f55e94853ea1a25bebc0668aaaf3928bb5cea2440ed2c5959f9535f7b0",
+      "duration": 193.165,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-03-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/121/index.m3u8",
+      "recordingSha256": "028a13242d9801c7ffa0b792bdce61203cb1294a48dc9d6d34c983e4b6143813",
+      "start": 223.801,
+      "end": 416.966,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-03:set1:listening:g3",
+      "src": "/audio/cet6/2023-03-1/g3.mp3",
+      "sizeBytes": 1274610,
+      "sha256": "432309876b9371ad20fa3a252270bd4e23a0f173d4566efb054d1fbc7f50105e",
+      "duration": 159.267,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-03-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/121/index.m3u8",
+      "recordingSha256": "028a13242d9801c7ffa0b792bdce61203cb1294a48dc9d6d34c983e4b6143813",
+      "start": 458.066,
+      "end": 617.333,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-03:set1:listening:g4",
+      "src": "/audio/cet6/2023-03-1/g4.mp3",
+      "sizeBytes": 1367397,
+      "sha256": "6396a9c02edaf38909cb70a25ee7f50ae85452f50acbd940710121ea3195e6bc",
+      "duration": 170.866,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-03-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/121/index.m3u8",
+      "recordingSha256": "028a13242d9801c7ffa0b792bdce61203cb1294a48dc9d6d34c983e4b6143813",
+      "start": 632.4,
+      "end": 803.266,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-03:set1:listening:g5",
+      "src": "/audio/cet6/2023-03-1/g5.mp3",
+      "sizeBytes": 1862679,
+      "sha256": "d477399fa9a5ed8d6116cc0e861b38accdb7f15d290cc1499aa14a74a080f44f",
+      "duration": 232.766,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-03-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/121/index.m3u8",
+      "recordingSha256": "028a13242d9801c7ffa0b792bdce61203cb1294a48dc9d6d34c983e4b6143813",
+      "start": 844.4,
+      "end": 1077.166,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-03:set1:listening:g6",
+      "src": "/audio/cet6/2023-03-1/g6.mp3",
+      "sizeBytes": 1873546,
+      "sha256": "367d1f91f21c093b720c8eda679ad28249b5ede9e400a97d487ba7b88ba534af",
+      "duration": 234.134,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-03-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/121/index.m3u8",
+      "recordingSha256": "028a13242d9801c7ffa0b792bdce61203cb1294a48dc9d6d34c983e4b6143813",
+      "start": 1092.566,
+      "end": 1326.7,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-03:set1:listening:g7",
+      "src": "/audio/cet6/2023-03-1/g7.mp3",
+      "sizeBytes": 1728514,
+      "sha256": "2aa957a16a290fbb73dc02443f9286b274828b8dc355cf548e7e6cd20185a256",
+      "duration": 215.999,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-03-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/121/index.m3u8",
+      "recordingSha256": "028a13242d9801c7ffa0b792bdce61203cb1294a48dc9d6d34c983e4b6143813",
+      "start": 1342.001,
+      "end": 1558,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set1:listening:g1",
+      "src": "/audio/cet6/2023-06-1/g1.mp3",
+      "sizeBytes": 1468752,
+      "sha256": "6e893de45b035295d6382f835eff7b6442e534e2bfb853f1867febbe6f105933",
+      "duration": 183.533,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/124/index.m3u8",
+      "recordingSha256": "8b7efaffba3afd14703cd23cacc45c4bfd35a7a54d03030ef4747a6e4909bec5",
+      "start": 37.133,
+      "end": 220.666,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set1:listening:g2",
+      "src": "/audio/cet6/2023-06-1/g2.mp3",
+      "sizeBytes": 1573660,
+      "sha256": "fcd2cd2d26623817516d10e39f07f3ca35dda141c56445a21f9ac98db24125d4",
+      "duration": 196.633,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/124/index.m3u8",
+      "recordingSha256": "8b7efaffba3afd14703cd23cacc45c4bfd35a7a54d03030ef4747a6e4909bec5",
+      "start": 236.1,
+      "end": 432.733,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set1:listening:g3",
+      "src": "/audio/cet6/2023-06-1/g3.mp3",
+      "sizeBytes": 1322257,
+      "sha256": "d02da1f1781169a80f2bb8fdea3e857d464dcfab3b2940b8c5bb8184f41b8cfa",
+      "duration": 165.2,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/124/index.m3u8",
+      "recordingSha256": "8b7efaffba3afd14703cd23cacc45c4bfd35a7a54d03030ef4747a6e4909bec5",
+      "start": 474.933,
+      "end": 640.133,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set1:listening:g4",
+      "src": "/audio/cet6/2023-06-1/g4.mp3",
+      "sizeBytes": 1732484,
+      "sha256": "0a2158fb302fde6374d4d3cc73736873dc1f53560172ef87ef92f589b7ec2f65",
+      "duration": 216.5,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/124/index.m3u8",
+      "recordingSha256": "8b7efaffba3afd14703cd23cacc45c4bfd35a7a54d03030ef4747a6e4909bec5",
+      "start": 655.466,
+      "end": 871.966,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set1:listening:g5",
+      "src": "/audio/cet6/2023-06-1/g5.mp3",
+      "sizeBytes": 1775952,
+      "sha256": "cc7667781fb56a4290c311b71821b37620ec4c5eb747241f034f997c757ed4e2",
+      "duration": 221.933,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/124/index.m3u8",
+      "recordingSha256": "8b7efaffba3afd14703cd23cacc45c4bfd35a7a54d03030ef4747a6e4909bec5",
+      "start": 913.933,
+      "end": 1135.866,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set1:listening:g6",
+      "src": "/audio/cet6/2023-06-1/g6.mp3",
+      "sizeBytes": 1828615,
+      "sha256": "3e202486dcd67c1031eec11264a17a47233824d66b3dc606b146a8fb5cd2f7b3",
+      "duration": 228.5,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/124/index.m3u8",
+      "recordingSha256": "8b7efaffba3afd14703cd23cacc45c4bfd35a7a54d03030ef4747a6e4909bec5",
+      "start": 1150.966,
+      "end": 1379.466,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set1:listening:g7",
+      "src": "/audio/cet6/2023-06-1/g7.mp3",
+      "sizeBytes": 1927462,
+      "sha256": "0b1b77a51541ae2cd9c75d684328d951097c3f9ea86c9abc842ad6fca601b09c",
+      "duration": 240.867,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/124/index.m3u8",
+      "recordingSha256": "8b7efaffba3afd14703cd23cacc45c4bfd35a7a54d03030ef4747a6e4909bec5",
+      "start": 1394.866,
+      "end": 1635.733,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set2:listening:g1",
+      "src": "/audio/cet6/2023-06-2/g1.mp3",
+      "sizeBytes": 1452661,
+      "sha256": "9f8a2a7e8fdd355091afad96308949251d0f4621eb295691e0e5296a4af23169",
+      "duration": 181.5,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/123/index.m3u8",
+      "recordingSha256": "3f1bfc2ac032225967bbb8f6a468aad7808a399637c793d44ab5d59429805a0b",
+      "start": 37.366,
+      "end": 218.866,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set2:listening:g2",
+      "src": "/audio/cet6/2023-06-2/g2.mp3",
+      "sizeBytes": 1446182,
+      "sha256": "b7e1cefb93dd94892cb94a492286cc727143333ec0d98b41642d8d3612f95d66",
+      "duration": 180.7,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/123/index.m3u8",
+      "recordingSha256": "3f1bfc2ac032225967bbb8f6a468aad7808a399637c793d44ab5d59429805a0b",
+      "start": 234.3,
+      "end": 415,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set2:listening:g3",
+      "src": "/audio/cet6/2023-06-2/g3.mp3",
+      "sizeBytes": 1299061,
+      "sha256": "5884b1c7c0f4cd0859db615b6b71c703bc7cb2c0d962d48369a1dd403091905f",
+      "duration": 162.3,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/123/index.m3u8",
+      "recordingSha256": "3f1bfc2ac032225967bbb8f6a468aad7808a399637c793d44ab5d59429805a0b",
+      "start": 457,
+      "end": 619.3,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set2:listening:g4",
+      "src": "/audio/cet6/2023-06-2/g4.mp3",
+      "sizeBytes": 1586617,
+      "sha256": "1a0ee6b3dca24f2535c0de36047d7aa80d5e14f9e54efbafec810faa93bc5133",
+      "duration": 198.267,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/123/index.m3u8",
+      "recordingSha256": "3f1bfc2ac032225967bbb8f6a468aad7808a399637c793d44ab5d59429805a0b",
+      "start": 634.466,
+      "end": 832.733,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set2:listening:g5",
+      "src": "/audio/cet6/2023-06-2/g5.mp3",
+      "sizeBytes": 2003322,
+      "sha256": "a33d608aadf899918b22df4ab70995585a3b1cf117a845899d8b33012014c7e3",
+      "duration": 250.333,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/123/index.m3u8",
+      "recordingSha256": "3f1bfc2ac032225967bbb8f6a468aad7808a399637c793d44ab5d59429805a0b",
+      "start": 874.2,
+      "end": 1124.533,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set2:listening:g6",
+      "src": "/audio/cet6/2023-06-2/g6.mp3",
+      "sizeBytes": 1849722,
+      "sha256": "ca62d77f8922d2d7e4879bb8f9af4aa7afdcf2b6d53f7ca746611eab29e1bf5c",
+      "duration": 231.133,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/123/index.m3u8",
+      "recordingSha256": "3f1bfc2ac032225967bbb8f6a468aad7808a399637c793d44ab5d59429805a0b",
+      "start": 1139.933,
+      "end": 1371.066,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2023-06:set2:listening:g7",
+      "src": "/audio/cet6/2023-06-2/g7.mp3",
+      "sizeBytes": 2002904,
+      "sha256": "57cf86c0ec4d2548ae65ee3eb83514d46af54dd00d03c1036b84da5acacda32a",
+      "duration": 250.3,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2023-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/123/index.m3u8",
+      "recordingSha256": "3f1bfc2ac032225967bbb8f6a468aad7808a399637c793d44ab5d59429805a0b",
+      "start": 1386.266,
+      "end": 1636.566,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set1:listening:g1",
+      "src": "/audio/cet6/2024-12-1/g1.mp3",
+      "sizeBytes": 1579720,
+      "sha256": "a86fb8f1601f87096eeeb8bed495b97a188dbea23e3f00a3be10eb6c0ff82df6",
+      "duration": 197.4,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/207/index.m3u8",
+      "recordingSha256": "301a67364eff2281065df6aa9c6c3c3317753b4031f77be649041393008ad5d2",
+      "start": 37.5,
+      "end": 234.9,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set1:listening:g2",
+      "src": "/audio/cet6/2024-12-1/g2.mp3",
+      "sizeBytes": 1477111,
+      "sha256": "83e8cb49573c3b9b1c125ca4480d57718a11e2a9eb88f0f604f95d14f467be4e",
+      "duration": 184.567,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/207/index.m3u8",
+      "recordingSha256": "301a67364eff2281065df6aa9c6c3c3317753b4031f77be649041393008ad5d2",
+      "start": 250.566,
+      "end": 435.133,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set1:listening:g3",
+      "src": "/audio/cet6/2024-12-1/g3.mp3",
+      "sizeBytes": 1209408,
+      "sha256": "71be6818d8e11cd3359221670d5148c2cf319a4957b04a7f78e49e7fa6502936",
+      "duration": 151.1,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/207/index.m3u8",
+      "recordingSha256": "301a67364eff2281065df6aa9c6c3c3317753b4031f77be649041393008ad5d2",
+      "start": 476.866,
+      "end": 627.966,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set1:listening:g4",
+      "src": "/audio/cet6/2024-12-1/g4.mp3",
+      "sizeBytes": 1587035,
+      "sha256": "d509f07347f644919ffc9d97f6e6f7278595b189e809a2b144000f0896c45a6d",
+      "duration": 198.3,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/207/index.m3u8",
+      "recordingSha256": "301a67364eff2281065df6aa9c6c3c3317753b4031f77be649041393008ad5d2",
+      "start": 642.966,
+      "end": 841.266,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set1:listening:g5",
+      "src": "/audio/cet6/2024-12-1/g5.mp3",
+      "sizeBytes": 1964243,
+      "sha256": "d39e69b4fdcff045dbe3fa8425d80bfb0396e051d75785da76a44dcd406992fb",
+      "duration": 245.466,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/207/index.m3u8",
+      "recordingSha256": "301a67364eff2281065df6aa9c6c3c3317753b4031f77be649041393008ad5d2",
+      "start": 883.3,
+      "end": 1128.766,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set1:listening:g6",
+      "src": "/audio/cet6/2024-12-1/g6.mp3",
+      "sizeBytes": 1659550,
+      "sha256": "bd788080944d437630b9f034fbe0dc7adb4f2330bda0267f8011788fcc4bd1e3",
+      "duration": 207.367,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/207/index.m3u8",
+      "recordingSha256": "301a67364eff2281065df6aa9c6c3c3317753b4031f77be649041393008ad5d2",
+      "start": 1144.766,
+      "end": 1352.133,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set1:listening:g7",
+      "src": "/audio/cet6/2024-12-1/g7.mp3",
+      "sizeBytes": 2246365,
+      "sha256": "d6a064bab35b59e2f27acfe28b13e841f827db040d842a66416d0ae151a41086",
+      "duration": 280.733,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/207/index.m3u8",
+      "recordingSha256": "301a67364eff2281065df6aa9c6c3c3317753b4031f77be649041393008ad5d2",
+      "start": 1367.8,
+      "end": 1648.533,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set2:listening:g1",
+      "src": "/audio/cet6/2024-12-2/g1.mp3",
+      "sizeBytes": 1436569,
+      "sha256": "d863e2396414c7a0bd8f491acf09d9a6e232079b15ab3067130639b7f57b8689",
+      "duration": 179.5,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/208/index.m3u8",
+      "recordingSha256": "322759ed8b7d1caa4d1cfe1bab6fc5d78de3919811da668ff71613cd609a8560",
+      "start": 37.3,
+      "end": 216.8,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set2:listening:g2",
+      "src": "/audio/cet6/2024-12-2/g2.mp3",
+      "sizeBytes": 1479201,
+      "sha256": "5746dad8b5703694b99cfcb06b205a1bdfeca530c2f39b79371eb1e66a7f26eb",
+      "duration": 184.833,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/208/index.m3u8",
+      "recordingSha256": "322759ed8b7d1caa4d1cfe1bab6fc5d78de3919811da668ff71613cd609a8560",
+      "start": 232.5,
+      "end": 417.333,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set2:listening:g3",
+      "src": "/audio/cet6/2024-12-2/g3.mp3",
+      "sizeBytes": 1462692,
+      "sha256": "605e2b769b8799bb89da86d5278035030e38705a07db14415cccdac0a2ab69de",
+      "duration": 182.767,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/208/index.m3u8",
+      "recordingSha256": "322759ed8b7d1caa4d1cfe1bab6fc5d78de3919811da668ff71613cd609a8560",
+      "start": 459.566,
+      "end": 642.333,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set2:listening:g4",
+      "src": "/audio/cet6/2024-12-2/g4.mp3",
+      "sizeBytes": 1583064,
+      "sha256": "2746dd0970953f72f6fabd34adf785b3e9c25ef60254d19fa9e19a953267ad08",
+      "duration": 197.8,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/208/index.m3u8",
+      "recordingSha256": "322759ed8b7d1caa4d1cfe1bab6fc5d78de3919811da668ff71613cd609a8560",
+      "start": 658.166,
+      "end": 855.966,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set2:listening:g5",
+      "src": "/audio/cet6/2024-12-2/g5.mp3",
+      "sizeBytes": 1771564,
+      "sha256": "dda265384985eada032e863fd92fca8582cf066414e382e6e1ecba1c93e99f10",
+      "duration": 221.367,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/208/index.m3u8",
+      "recordingSha256": "322759ed8b7d1caa4d1cfe1bab6fc5d78de3919811da668ff71613cd609a8560",
+      "start": 898.133,
+      "end": 1119.5,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set2:listening:g6",
+      "src": "/audio/cet6/2024-12-2/g6.mp3",
+      "sizeBytes": 1847423,
+      "sha256": "57b16b66570de317a6e79df523e081aadaf2d8d69699b374c35588e61b59c288",
+      "duration": 230.866,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/208/index.m3u8",
+      "recordingSha256": "322759ed8b7d1caa4d1cfe1bab6fc5d78de3919811da668ff71613cd609a8560",
+      "start": 1134.7,
+      "end": 1365.566,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-12:set2:listening:g7",
+      "src": "/audio/cet6/2024-12-2/g7.mp3",
+      "sizeBytes": 1932896,
+      "sha256": "5e11d02320d974b9e45cb429705fd9f256f120f8cb91584dfb5575397f56e388",
+      "duration": 241.533,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/208/index.m3u8",
+      "recordingSha256": "322759ed8b7d1caa4d1cfe1bab6fc5d78de3919811da668ff71613cd609a8560",
+      "start": 1381.533,
+      "end": 1623.066,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set1:listening:g1",
+      "src": "/audio/cet6/2024-06-1/g1.mp3",
+      "sizeBytes": 1382235,
+      "sha256": "e56080bef6e731c47766d9dca98b8cc72e7c4f0dfe9fad2f518f258428b0b2c9",
+      "duration": 172.7,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/204/index.m3u8",
+      "recordingSha256": "7c1bdbd1a624a70cefa011fcf1f13916c0e55c4fabfe6f631259b7f2e233e3f4",
+      "start": 35.9,
+      "end": 208.6,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set1:listening:g2",
+      "src": "/audio/cet6/2024-06-1/g2.mp3",
+      "sizeBytes": 1503861,
+      "sha256": "f0d27794429f125f506de029fdaafcc3d3d6bbbb0366d97542e60840cdde27a1",
+      "duration": 187.9,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/204/index.m3u8",
+      "recordingSha256": "7c1bdbd1a624a70cefa011fcf1f13916c0e55c4fabfe6f631259b7f2e233e3f4",
+      "start": 224.266,
+      "end": 412.166,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set1:listening:g3",
+      "src": "/audio/cet6/2024-06-1/g3.mp3",
+      "sizeBytes": 1444928,
+      "sha256": "93d87ffd0ab16f1816ac986cac44aed2c2bf02d367a72069baee9c0f42696323",
+      "duration": 180.534,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/204/index.m3u8",
+      "recordingSha256": "7c1bdbd1a624a70cefa011fcf1f13916c0e55c4fabfe6f631259b7f2e233e3f4",
+      "start": 458.866,
+      "end": 639.4,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set1:listening:g4",
+      "src": "/audio/cet6/2024-06-1/g4.mp3",
+      "sizeBytes": 1498427,
+      "sha256": "3ac704610f2d1d24556a1e19b8478dd90f8f30161384aee8935a7b99280a4a05",
+      "duration": 187.233,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/204/index.m3u8",
+      "recordingSha256": "7c1bdbd1a624a70cefa011fcf1f13916c0e55c4fabfe6f631259b7f2e233e3f4",
+      "start": 654.933,
+      "end": 842.166,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set1:listening:g5",
+      "src": "/audio/cet6/2024-06-1/g5.mp3",
+      "sizeBytes": 1767175,
+      "sha256": "5cd1222fccefcb4b81164900248fbec3da9b5fce27ee862132cd8ee2678f22ad",
+      "duration": 220.833,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/204/index.m3u8",
+      "recordingSha256": "7c1bdbd1a624a70cefa011fcf1f13916c0e55c4fabfe6f631259b7f2e233e3f4",
+      "start": 882.333,
+      "end": 1103.166,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set1:listening:g6",
+      "src": "/audio/cet6/2024-06-1/g6.mp3",
+      "sizeBytes": 1805836,
+      "sha256": "966bcf2a99cac9245cef779405ad6454bc9447408684077e8bbe616d9b16bf15",
+      "duration": 225.666,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/204/index.m3u8",
+      "recordingSha256": "7c1bdbd1a624a70cefa011fcf1f13916c0e55c4fabfe6f631259b7f2e233e3f4",
+      "start": 1118.2,
+      "end": 1343.866,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set1:listening:g7",
+      "src": "/audio/cet6/2024-06-1/g7.mp3",
+      "sizeBytes": 1944599,
+      "sha256": "c481246165b26437d73dd85f943cd0af846e574a82c53ee6b547c2ba18482463",
+      "duration": 243.0,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/204/index.m3u8",
+      "recordingSha256": "7c1bdbd1a624a70cefa011fcf1f13916c0e55c4fabfe6f631259b7f2e233e3f4",
+      "start": 1359.6,
+      "end": 1602.6,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set2:listening:g1",
+      "src": "/audio/cet6/2024-06-2/g1.mp3",
+      "sizeBytes": 1402088,
+      "sha256": "8d643328776f17415f728cc36c68b7ecef4d809149bbe46d5f22132c59407281",
+      "duration": 175.2,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/205/index.m3u8",
+      "recordingSha256": "60f7316bcc1f0b9e65f0df8f6dab8c846e4fa7cab2d6adeff712fa0b09d54d50",
+      "start": 36.4,
+      "end": 211.6,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set2:listening:g2",
+      "src": "/audio/cet6/2024-06-2/g2.mp3",
+      "sizeBytes": 1486724,
+      "sha256": "4ef3ebab9b372eec2abadd6461f12e7f52c06c1edec19835fa3eddae3521b90a",
+      "duration": 185.767,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/205/index.m3u8",
+      "recordingSha256": "60f7316bcc1f0b9e65f0df8f6dab8c846e4fa7cab2d6adeff712fa0b09d54d50",
+      "start": 227.133,
+      "end": 412.9,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set2:listening:g3",
+      "src": "/audio/cet6/2024-06-2/g3.mp3",
+      "sizeBytes": 1245980,
+      "sha256": "a1bb91f28b4ca1341f89ffb74f1a440bba17e28a1c8297998d7fb37294eddce8",
+      "duration": 155.666,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/205/index.m3u8",
+      "recordingSha256": "60f7316bcc1f0b9e65f0df8f6dab8c846e4fa7cab2d6adeff712fa0b09d54d50",
+      "start": 459.5,
+      "end": 615.166,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set2:listening:g4",
+      "src": "/audio/cet6/2024-06-2/g4.mp3",
+      "sizeBytes": 1353813,
+      "sha256": "6831848321439ac194da1b259fafb5d9c6dd1d685ee04ebf2c89dbc2f59b877f",
+      "duration": 169.167,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/205/index.m3u8",
+      "recordingSha256": "60f7316bcc1f0b9e65f0df8f6dab8c846e4fa7cab2d6adeff712fa0b09d54d50",
+      "start": 630.533,
+      "end": 799.7,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set2:listening:g5",
+      "src": "/audio/cet6/2024-06-2/g5.mp3",
+      "sizeBytes": 1693405,
+      "sha256": "6ed2463a1d61dfb2ddc8f0eebbfc195a91376c3516fee98199265b032bef9eed",
+      "duration": 211.6,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/205/index.m3u8",
+      "recordingSha256": "60f7316bcc1f0b9e65f0df8f6dab8c846e4fa7cab2d6adeff712fa0b09d54d50",
+      "start": 839.3,
+      "end": 1050.9,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set2:listening:g6",
+      "src": "/audio/cet6/2024-06-2/g6.mp3",
+      "sizeBytes": 1699257,
+      "sha256": "a1ea73ac13eccf3f664c38a7127eae2039a96c9ca08e1864716d30bf4b6d2e92",
+      "duration": 212.333,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/205/index.m3u8",
+      "recordingSha256": "60f7316bcc1f0b9e65f0df8f6dab8c846e4fa7cab2d6adeff712fa0b09d54d50",
+      "start": 1066.6,
+      "end": 1278.933,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2024-06:set2:listening:g7",
+      "src": "/audio/cet6/2024-06-2/g7.mp3",
+      "sizeBytes": 1904893,
+      "sha256": "e16eb57cc1df9d03a808b54c1b618d5b3a34c6351046189a600ba4f0ea2e56a9",
+      "duration": 238.033,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2024-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/205/index.m3u8",
+      "recordingSha256": "60f7316bcc1f0b9e65f0df8f6dab8c846e4fa7cab2d6adeff712fa0b09d54d50",
+      "start": 1294.133,
+      "end": 1532.166,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set1:listening:g1",
+      "src": "/audio/cet6/2025-12-1/g1.mp3",
+      "sizeBytes": 1471260,
+      "sha256": "a4d07bb932361e4829b4e0ad2ae232bf4cc22c75296ac47656d30a0399805775",
+      "duration": 183.824,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/225/index.m3u8",
+      "recordingSha256": "30cc05104cccc16818f46350d08c5bade4f87642810a8eb510ecab394eab5982",
+      "start": 37.9,
+      "end": 221.724,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set1:listening:g2",
+      "src": "/audio/cet6/2025-12-1/g2.mp3",
+      "sizeBytes": 1361337,
+      "sha256": "a43f3de33314eb5050237a59da127e876bae2fa7e8bb63afd8fd0f653e73fd9c",
+      "duration": 170.096,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/225/index.m3u8",
+      "recordingSha256": "30cc05104cccc16818f46350d08c5bade4f87642810a8eb510ecab394eab5982",
+      "start": 237.468,
+      "end": 407.564,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set1:listening:g3",
+      "src": "/audio/cet6/2025-12-1/g3.mp3",
+      "sizeBytes": 1170747,
+      "sha256": "df2250527d72e0f21f6ec2f4c443e153ad0e044b2a04923a4d0b9330bb285ab2",
+      "duration": 146.272,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/225/index.m3u8",
+      "recordingSha256": "30cc05104cccc16818f46350d08c5bade4f87642810a8eb510ecab394eab5982",
+      "start": 452.156,
+      "end": 598.428,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set1:listening:g4",
+      "src": "/audio/cet6/2025-12-1/g4.mp3",
+      "sizeBytes": 1459139,
+      "sha256": "be358176476eb8969136d29e6114df065e325364982bc112fb87e7cbb815071a",
+      "duration": 182.32,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/225/index.m3u8",
+      "recordingSha256": "30cc05104cccc16818f46350d08c5bade4f87642810a8eb510ecab394eab5982",
+      "start": 614.044,
+      "end": 796.364,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set1:listening:g5",
+      "src": "/audio/cet6/2025-12-1/g5.mp3",
+      "sizeBytes": 1630084,
+      "sha256": "803d7b3208139210ef7d1ce41f4285fac87cecce60826d4ec8fa70bcb6cf0b51",
+      "duration": 203.68,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/225/index.m3u8",
+      "recordingSha256": "30cc05104cccc16818f46350d08c5bade4f87642810a8eb510ecab394eab5982",
+      "start": 836.62,
+      "end": 1040.3,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set1:listening:g6",
+      "src": "/audio/cet6/2025-12-1/g6.mp3",
+      "sizeBytes": 1814404,
+      "sha256": "401aaa1a3bc2a1fdc5535e5548d792247e2ebf26cb58ef683803775563b0ce67",
+      "duration": 226.72,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/225/index.m3u8",
+      "recordingSha256": "30cc05104cccc16818f46350d08c5bade4f87642810a8eb510ecab394eab5982",
+      "start": 1056.204,
+      "end": 1282.924,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set1:listening:g7",
+      "src": "/audio/cet6/2025-12-1/g7.mp3",
+      "sizeBytes": 1824644,
+      "sha256": "004d700e71748f475a9696ce46a0b3c4a644b60ecdc268d0e47b75b1f7dc99ff",
+      "duration": 228.016,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/225/index.m3u8",
+      "recordingSha256": "30cc05104cccc16818f46350d08c5bade4f87642810a8eb510ecab394eab5982",
+      "start": 1298.396,
+      "end": 1526.412,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set2:listening:g1",
+      "src": "/audio/cet6/2025-12-2/g1.mp3",
+      "sizeBytes": 1435524,
+      "sha256": "1bcd0b62920037a50186207b9bcdd74ed35fdca78ba3fdec3999e492dae76e62",
+      "duration": 179.36,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/226/index.m3u8",
+      "recordingSha256": "53343c43954189c757a6bc7de21f338dba9b999c6d06668f574b0396ccc7472b",
+      "start": 38.476,
+      "end": 217.836,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set2:listening:g2",
+      "src": "/audio/cet6/2025-12-2/g2.mp3",
+      "sizeBytes": 1466035,
+      "sha256": "5192798afc0dba27dc86bc37fb8d3332ba1d9f65ac326bbc8bae6956057ff5a3",
+      "duration": 183.184,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/226/index.m3u8",
+      "recordingSha256": "53343c43954189c757a6bc7de21f338dba9b999c6d06668f574b0396ccc7472b",
+      "start": 233.388,
+      "end": 416.572,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set2:listening:g3",
+      "src": "/audio/cet6/2025-12-2/g3.mp3",
+      "sizeBytes": 1334169,
+      "sha256": "f20172b64e3890683a5400ee5fe9eb15d8c31b84af7279db88734a1010732243",
+      "duration": 166.704,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/226/index.m3u8",
+      "recordingSha256": "53343c43954189c757a6bc7de21f338dba9b999c6d06668f574b0396ccc7472b",
+      "start": 460.924,
+      "end": 627.628,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set2:listening:g4",
+      "src": "/audio/cet6/2025-12-2/g4.mp3",
+      "sizeBytes": 1427165,
+      "sha256": "26e202404fe6ccfa0af92fea7546b93987ee28232427033d122a76c8a12511db",
+      "duration": 178.32,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/226/index.m3u8",
+      "recordingSha256": "53343c43954189c757a6bc7de21f338dba9b999c6d06668f574b0396ccc7472b",
+      "start": 642.94,
+      "end": 821.26,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set2:listening:g5",
+      "src": "/audio/cet6/2025-12-2/g5.mp3",
+      "sizeBytes": 1710333,
+      "sha256": "76c05b2262944e4b642111f40655de9a6d344f895250a30ad0394656b9f0c223",
+      "duration": 213.712,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/226/index.m3u8",
+      "recordingSha256": "53343c43954189c757a6bc7de21f338dba9b999c6d06668f574b0396ccc7472b",
+      "start": 861.372,
+      "end": 1075.084,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set2:listening:g6",
+      "src": "/audio/cet6/2025-12-2/g6.mp3",
+      "sizeBytes": 1763204,
+      "sha256": "19393abb0dd8a6ec43c1eecc5055fbc4f9ae89324e63c9cf894190e91bbe1096",
+      "duration": 220.32,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/226/index.m3u8",
+      "recordingSha256": "53343c43954189c757a6bc7de21f338dba9b999c6d06668f574b0396ccc7472b",
+      "start": 1090.572,
+      "end": 1310.892,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-12:set2:listening:g7",
+      "src": "/audio/cet6/2025-12-2/g7.mp3",
+      "sizeBytes": 1689435,
+      "sha256": "85640218c045131b27815c07b42f2c77f927606ebcfce64ba9f30a674e8d0219",
+      "duration": 211.12,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-12-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/226/index.m3u8",
+      "recordingSha256": "53343c43954189c757a6bc7de21f338dba9b999c6d06668f574b0396ccc7472b",
+      "start": 1326.94,
+      "end": 1538.06,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set1:listening:g1",
+      "src": "/audio/cet6/2025-06-1/g1.mp3",
+      "sizeBytes": 1354231,
+      "sha256": "c7a118c685a22198f73db7d2317d48412dfec2ead843881ee7ee94aee87db59e",
+      "duration": 169.2,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/219/index.m3u8",
+      "recordingSha256": "09ff12523accfbd555ecc6ca781a3adb558ef4884e69fe9f2fad15d9f330e2e3",
+      "start": 41.5,
+      "end": 210.7,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set1:listening:g2",
+      "src": "/audio/cet6/2025-06-1/g2.mp3",
+      "sizeBytes": 1455795,
+      "sha256": "56ed3288d4a79b2cecd419822a6d35ad29bac066a54f563b0a8de72c51658d6a",
+      "duration": 181.9,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/219/index.m3u8",
+      "recordingSha256": "09ff12523accfbd555ecc6ca781a3adb558ef4884e69fe9f2fad15d9f330e2e3",
+      "start": 226.133,
+      "end": 408.033,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set1:listening:g3",
+      "src": "/audio/cet6/2025-06-1/g3.mp3",
+      "sizeBytes": 1309301,
+      "sha256": "8458add0c71cc32bcdf01a47e24023a0197817b685bd8fd6f284a23f7f6803b8",
+      "duration": 163.6,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/219/index.m3u8",
+      "recordingSha256": "09ff12523accfbd555ecc6ca781a3adb558ef4884e69fe9f2fad15d9f330e2e3",
+      "start": 452.433,
+      "end": 616.033,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set1:listening:g4",
+      "src": "/audio/cet6/2025-06-1/g4.mp3",
+      "sizeBytes": 1410656,
+      "sha256": "749c07f21b3dda0ec3cb196419cf283e6cb3440608d179067d916acb9da71197",
+      "duration": 176.267,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/219/index.m3u8",
+      "recordingSha256": "09ff12523accfbd555ecc6ca781a3adb558ef4884e69fe9f2fad15d9f330e2e3",
+      "start": 631.033,
+      "end": 807.3,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set1:listening:g5",
+      "src": "/audio/cet6/2025-06-1/g5.mp3",
+      "sizeBytes": 1828824,
+      "sha256": "b58b2faeb01b9bc479f05c37671836088f55374c3ec0e7533aa72938bd759700",
+      "duration": 228.533,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/219/index.m3u8",
+      "recordingSha256": "09ff12523accfbd555ecc6ca781a3adb558ef4884e69fe9f2fad15d9f330e2e3",
+      "start": 848.7,
+      "end": 1077.233,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set1:listening:g6",
+      "src": "/audio/cet6/2025-06-1/g6.mp3",
+      "sizeBytes": 1626741,
+      "sha256": "d00ec318a140800de7d45d0f27404c8d93c7d38b4fe0978a2e0a04f040cf3a55",
+      "duration": 203.266,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/219/index.m3u8",
+      "recordingSha256": "09ff12523accfbd555ecc6ca781a3adb558ef4884e69fe9f2fad15d9f330e2e3",
+      "start": 1093,
+      "end": 1296.266,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set1:listening:g7",
+      "src": "/audio/cet6/2025-06-1/g7.mp3",
+      "sizeBytes": 1844079,
+      "sha256": "0b7a10eb08a6e9953fd0c1d29f99ce036f5a37d10d2106ea9a4aa648a5b97741",
+      "duration": 230.434,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/219/index.m3u8",
+      "recordingSha256": "09ff12523accfbd555ecc6ca781a3adb558ef4884e69fe9f2fad15d9f330e2e3",
+      "start": 1311.466,
+      "end": 1541.9,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set2:listening:g1",
+      "src": "/audio/cet6/2025-06-2/g1.mp3",
+      "sizeBytes": 1463737,
+      "sha256": "07d78586b2ddd493eb95461f747f4ef117b4232187aa974fa00482777a218898",
+      "duration": 182.9,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/220/index.m3u8",
+      "recordingSha256": "12b9d1aafd50daf0d89dd1a0d8cf07db6229b8efaf8f99ff6c5c9eec89fb861c",
+      "start": 41,
+      "end": 223.9,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set2:listening:g2",
+      "src": "/audio/cet6/2025-06-2/g2.mp3",
+      "sizeBytes": 1462065,
+      "sha256": "2d3036c5753d2e7c94ad2e17b47393ed40e94d814d5286255b075424b5031c97",
+      "duration": 182.7,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/220/index.m3u8",
+      "recordingSha256": "12b9d1aafd50daf0d89dd1a0d8cf07db6229b8efaf8f99ff6c5c9eec89fb861c",
+      "start": 238.733,
+      "end": 421.433,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set2:listening:g3",
+      "src": "/audio/cet6/2025-06-2/g3.mp3",
+      "sizeBytes": 1394146,
+      "sha256": "ddc2410a28bfc494c35c049cb40fbd5552b22c53fb5e791c6236f59b72641760",
+      "duration": 174.2,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/220/index.m3u8",
+      "recordingSha256": "12b9d1aafd50daf0d89dd1a0d8cf07db6229b8efaf8f99ff6c5c9eec89fb861c",
+      "start": 465.333,
+      "end": 639.533,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set2:listening:g4",
+      "src": "/audio/cet6/2025-06-2/g4.mp3",
+      "sizeBytes": 1432808,
+      "sha256": "6a232dd6b3cdec9012396fa33e228ea389d250fa99f8b790451c2189f53dd9ed",
+      "duration": 179.033,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/220/index.m3u8",
+      "recordingSha256": "12b9d1aafd50daf0d89dd1a0d8cf07db6229b8efaf8f99ff6c5c9eec89fb861c",
+      "start": 654.4,
+      "end": 833.433,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set2:listening:g5",
+      "src": "/audio/cet6/2025-06-2/g5.mp3",
+      "sizeBytes": 1579302,
+      "sha256": "fb31f94153c2c7477641e06b58bf16ef3813452b2106b0b7b41098c9d450f30e",
+      "duration": 197.333,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/220/index.m3u8",
+      "recordingSha256": "12b9d1aafd50daf0d89dd1a0d8cf07db6229b8efaf8f99ff6c5c9eec89fb861c",
+      "start": 874.8,
+      "end": 1072.133,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set2:listening:g6",
+      "src": "/audio/cet6/2025-06-2/g6.mp3",
+      "sizeBytes": 1740217,
+      "sha256": "71fb95094cd4e52951ff3242e9ea36c6938fa41867768f8914cd2e7802c1be20",
+      "duration": 217.467,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/220/index.m3u8",
+      "recordingSha256": "12b9d1aafd50daf0d89dd1a0d8cf07db6229b8efaf8f99ff6c5c9eec89fb861c",
+      "start": 1087.066,
+      "end": 1304.533,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2025-06:set2:listening:g7",
+      "src": "/audio/cet6/2025-06-2/g7.mp3",
+      "sizeBytes": 1845542,
+      "sha256": "0db7e8dcfd589b22ef8d8d458d60a5e7deb999c1add7e2e0d11c8f937ede854e",
+      "duration": 230.633,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2025-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/220/index.m3u8",
+      "recordingSha256": "12b9d1aafd50daf0d89dd1a0d8cf07db6229b8efaf8f99ff6c5c9eec89fb861c",
+      "start": 1320,
+      "end": 1550.633,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set1:listening:g1",
+      "src": "/audio/cet6/2026-06-1/g1.mp3",
+      "sizeBytes": 1321839,
+      "sha256": "2c7b4a1bc4bc12c25807d9c1d984e14473e96394bdf10a36410466e60eaca5a3",
+      "duration": 165.167,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/234/index.m3u8",
+      "recordingSha256": "b973518ff7be877331f87d32061073e722001e40b456f8edb48dffc469496054",
+      "start": 38.066,
+      "end": 203.233,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set1:listening:g2",
+      "src": "/audio/cet6/2026-06-1/g2.mp3",
+      "sizeBytes": 1404804,
+      "sha256": "dcd15f4e53876738993d618f630c001bbe50543aa227a60d89bc03fd1656e378",
+      "duration": 175.533,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/234/index.m3u8",
+      "recordingSha256": "b973518ff7be877331f87d32061073e722001e40b456f8edb48dffc469496054",
+      "start": 218.933,
+      "end": 394.466,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set1:listening:g3",
+      "src": "/audio/cet6/2026-06-1/g3.mp3",
+      "sizeBytes": 1282760,
+      "sha256": "394c68204abec06676b93b61b6fecd6cd88fbd11c10066eec6990746c781af5d",
+      "duration": 160.267,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/234/index.m3u8",
+      "recordingSha256": "b973518ff7be877331f87d32061073e722001e40b456f8edb48dffc469496054",
+      "start": 437.266,
+      "end": 597.533,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set1:listening:g4",
+      "src": "/audio/cet6/2026-06-1/g4.mp3",
+      "sizeBytes": 1359665,
+      "sha256": "2dd2ffaed7d1c48d0cb610a4ae08847e58f223f772d6df81206b4b0dbf5da657",
+      "duration": 169.9,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/234/index.m3u8",
+      "recordingSha256": "b973518ff7be877331f87d32061073e722001e40b456f8edb48dffc469496054",
+      "start": 612.333,
+      "end": 782.233,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set1:listening:g5",
+      "src": "/audio/cet6/2026-06-1/g5.mp3",
+      "sizeBytes": 1817957,
+      "sha256": "047320e00ebdedcee14cfb36b34178d137bdd605785f4a5c3596ccc7bd10e610",
+      "duration": 227.167,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/234/index.m3u8",
+      "recordingSha256": "b973518ff7be877331f87d32061073e722001e40b456f8edb48dffc469496054",
+      "start": 825.133,
+      "end": 1052.3,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set1:listening:g6",
+      "src": "/audio/cet6/2026-06-1/g6.mp3",
+      "sizeBytes": 1598946,
+      "sha256": "eaf9e25f06f0044b2af708d2035b9aa896c5055ea096d93671d83cb9d174c977",
+      "duration": 199.8,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/234/index.m3u8",
+      "recordingSha256": "b973518ff7be877331f87d32061073e722001e40b456f8edb48dffc469496054",
+      "start": 1067.466,
+      "end": 1267.266,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set1:listening:g7",
+      "src": "/audio/cet6/2026-06-1/g7.mp3",
+      "sizeBytes": 1658924,
+      "sha256": "c32486ca9303bcd4eec0bbb7ac6365135b56c34d4c84c5c9d4dbc6017e6bc945",
+      "duration": 207.3,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-1/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/234/index.m3u8",
+      "recordingSha256": "b973518ff7be877331f87d32061073e722001e40b456f8edb48dffc469496054",
+      "start": 1283.1,
+      "end": 1490.4,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set2:listening:g1",
+      "src": "/audio/cet6/2026-06-2/g1.mp3",
+      "sizeBytes": 1357784,
+      "sha256": "bd3e148a77cea5656ba4072f4e603e5892f02edd8869497ada4903b1c191a0b0",
+      "duration": 169.66,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/235/index.m3u8",
+      "recordingSha256": "5299e69578916381c94752aaa61b6faa4f3fbc5aff2c151c76e8b7fa4d3f1854",
+      "start": 39.44,
+      "end": 209.1,
+      "anchor": "lt-1",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set2:listening:g2",
+      "src": "/audio/cet6/2026-06-2/g2.mp3",
+      "sizeBytes": 1469379,
+      "sha256": "c5240bcd2d37ebdf131616f9312c522e0ed38d293f3d8882ab6594646fd8a0a0",
+      "duration": 183.6,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/235/index.m3u8",
+      "recordingSha256": "5299e69578916381c94752aaa61b6faa4f3fbc5aff2c151c76e8b7fa4d3f1854",
+      "start": 224.64,
+      "end": 408.24,
+      "anchor": "lt-5",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set2:listening:g3",
+      "src": "/audio/cet6/2026-06-2/g3.mp3",
+      "sizeBytes": 1393101,
+      "sha256": "2c7b9d983f83cd6e2364f8238ce8f2e9af51276558faa3604a6b5f54aad6c27c",
+      "duration": 174.06,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/235/index.m3u8",
+      "recordingSha256": "5299e69578916381c94752aaa61b6faa4f3fbc5aff2c151c76e8b7fa4d3f1854",
+      "start": 452.12,
+      "end": 626.18,
+      "anchor": "lt-9",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set2:listening:g4",
+      "src": "/audio/cet6/2026-06-2/g4.mp3",
+      "sizeBytes": 1435942,
+      "sha256": "456c526de353818007def2c8e514d28e331f33c8f08211506b536250973463bc",
+      "duration": 179.42,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/235/index.m3u8",
+      "recordingSha256": "5299e69578916381c94752aaa61b6faa4f3fbc5aff2c151c76e8b7fa4d3f1854",
+      "start": 642.04,
+      "end": 821.46,
+      "anchor": "lt-12",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set2:listening:g5",
+      "src": "/audio/cet6/2026-06-2/g5.mp3",
+      "sizeBytes": 1685882,
+      "sha256": "99b7283dbad01f26dffec78b8fcf3cc3eb414ebeaa23f11671d5e93687a4ea9f",
+      "duration": 210.66,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/235/index.m3u8",
+      "recordingSha256": "5299e69578916381c94752aaa61b6faa4f3fbc5aff2c151c76e8b7fa4d3f1854",
+      "start": 865.1,
+      "end": 1075.76,
+      "anchor": "lt-16",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set2:listening:g6",
+      "src": "/audio/cet6/2026-06-2/g6.mp3",
+      "sizeBytes": 1862888,
+      "sha256": "6588d16390a4cca5447b398ffcf853455eb303ab602f196cec0d716fc642d662",
+      "duration": 232.78,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/235/index.m3u8",
+      "recordingSha256": "5299e69578916381c94752aaa61b6faa4f3fbc5aff2c151c76e8b7fa4d3f1854",
+      "start": 1091.3,
+      "end": 1324.08,
+      "anchor": "lt-19",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    },
+    {
+      "materialId": "cet6:2026-06:set2:listening:g7",
+      "src": "/audio/cet6/2026-06-2/g7.mp3",
+      "sizeBytes": 1841781,
+      "sha256": "99cfb5c9205fc5df541d34985d3ec6365873ce96d62b55f392aa0bc0fad49e68",
+      "duration": 230.16,
+      "mimeType": "audio/mpeg",
+      "sourcePageUrl": "https://english-exam.lazynote.cn/cet6/paper/2026-06-2/",
+      "playlistUrl": "https://listening.lazynote.cn/cet6/235/index.m3u8",
+      "recordingSha256": "5299e69578916381c94752aaa61b6faa4f3fbc5aff2c151c76e8b7fa4d3f1854",
+      "start": 1339.7,
+      "end": 1569.86,
+      "anchor": "lt-22",
+      "retrievedAt": "2026-10-06T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      }
+    }
+  ],
+  "notes": "Active listening import manifest. The reading-import manifests record the earlier no-audio snapshot."
+}

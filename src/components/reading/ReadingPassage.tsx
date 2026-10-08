@@ -32,9 +32,9 @@ export function ReadingPassage({
   return (
     <article className="reading-passage">
       <div className="reading-meta">
-        <span>mock 文章</span>·<span>{difficultyLabel[article.difficulty]}</span>·
+        <span>{article.sourceType === "past_exam" ? ({ cloze: "选词填空", matching: "信息匹配", careful: "仔细阅读" }[article.exerciseType ?? "careful"]) : "mock 文章"}</span>·<span>{difficultyLabel[article.difficulty]}</span>·
         <span>约 {article.estimatedMinutes} 分钟</span>·
-        <span>点击单词可查释义</span>
+        {Object.keys(article.vocabulary).length > 0 && <span>点击单词可查释义</span>}
       </div>
       <h2>{article.title}</h2>
       {paragraphs.map((paragraph, index) => (

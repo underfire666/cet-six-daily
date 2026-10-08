@@ -12,6 +12,7 @@ import {
   planFor,
   translationDayStats,
   startTranslation,
+  startSelectedTranslation,
   updateTranslation,
   translationResumeSessions,
   deleteTranslationHistory,
@@ -95,12 +96,29 @@ function useTranslationState() {
   }, [store.sessions, ready, learning.ready, award]);
 
   const start = useCallback(
-    (mode: SubjectiveSessionMode) => {
+    (mode: Exclude<SubjectiveSessionMode, "selected">) => {
       if (!storage.current && !ready) return;
       const now = new Date().toISOString();
       const result = startTranslation(
         latest.current,
         mode,
+        todayInShanghai(new Date(now)),
+        now,
+        crypto.randomUUID(),
+      );
+      if (result.store !== latest.current) commit(result.store);
+      return result.id;
+    },
+    [commit, ready],
+  );
+
+  const startSelected = useCallback(
+    (contentId: string) => {
+      if (!ready) return;
+      const now = new Date().toISOString();
+      const result = startSelectedTranslation(
+        latest.current,
+        contentId,
         todayInShanghai(new Date(now)),
         now,
         crypto.randomUUID(),
@@ -164,6 +182,7 @@ function useTranslationState() {
     ...translationResumeSessions(store, today),
     dayStats: translationDayStats(store, today),
     start,
+    startSelected,
     dispatch,
     removeHistory,
   };

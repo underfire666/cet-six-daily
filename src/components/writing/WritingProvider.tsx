@@ -12,6 +12,7 @@ import {
   planWritingFor,
   writingDayStats,
   startWriting,
+  startSelectedWriting,
   updateWriting,
   writingResumeSessions,
   deleteWritingHistory,
@@ -93,12 +94,29 @@ function useWritingState() {
   }, [store.sessions, ready, learning.ready, award]);
 
   const start = useCallback(
-    (mode: SubjectiveSessionMode) => {
+    (mode: Exclude<SubjectiveSessionMode, "selected">) => {
       if (!storage.current && !ready) return;
       const now = new Date().toISOString();
       const result = startWriting(
         latest.current,
         mode,
+        todayInShanghai(new Date(now)),
+        now,
+        crypto.randomUUID(),
+      );
+      if (result.store !== latest.current) commit(result.store);
+      return result.id;
+    },
+    [commit, ready],
+  );
+
+  const startSelected = useCallback(
+    (contentId: string) => {
+      if (!ready) return;
+      const now = new Date().toISOString();
+      const result = startSelectedWriting(
+        latest.current,
+        contentId,
         todayInShanghai(new Date(now)),
         now,
         crypto.randomUUID(),
@@ -162,6 +180,7 @@ function useWritingState() {
     ...writingResumeSessions(store, today),
     dayStats: writingDayStats(store, today),
     start,
+    startSelected,
     dispatch,
     removeHistory,
   };

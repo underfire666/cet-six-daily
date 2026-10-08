@@ -64,7 +64,7 @@ export function validTranslationSession(v: unknown): v is TranslationSession {
     !obj(v) ||
     v.schemaVersion !== 1 ||
     typeof v.id !== "string" ||
-    !["daily", "extra"].includes(String(v.mode)) ||
+    !["daily", "extra", "selected"].includes(String(v.mode)) ||
     typeof v.planDate !== "string" ||
     !validDate(v.planDate) ||
     typeof v.taskId !== "string" ||

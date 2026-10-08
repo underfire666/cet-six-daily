@@ -50,6 +50,7 @@ export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; o
   if (session.phase === "complete")
     return <div className="exercise-loading">正在整理阅读成果…</div>;
   const article = readingArticleById(session.articleId)!;
+  const exerciseLabel = article.exerciseType === "cloze" ? "选词填空" : article.exerciseType === "matching" ? "信息匹配" : "阅读理解";
   const definition = readingLesson(article);
   const question = currentQuestion(session.lesson, definition)!;
   const intro = session.lesson.phase === "review_intro";
@@ -84,14 +85,14 @@ export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; o
       <LessonProgress
         progress={progress}
         onExit={() => setDialog("exit")}
-        label={session.phase === "reading" ? "阅读" : "阅读理解"}
+        label={session.phase === "reading" ? "阅读" : exerciseLabel}
       />
       <main className="exercise-body">
         {notice && <p className="exercise-notice">{notice}</p>}
         {session.phase === "reading" ? (
           <>
             <p className="reading-phase-hint">
-              通读全文，遇到生词可以点一下查释义。读完点下方按钮开始答题。
+              {article.exerciseType === "cloze" ? "阅读带空格的短文，从词库中选择合适的词；每个词最多使用一次。" : article.exerciseType === "matching" ? "阅读带字母标记的各段，判断每条陈述对应的段落；同一段可以多次选择。" : "通读全文，读完点下方按钮开始答题。"}
             </p>
             <ReadingPassage
               article={article}
@@ -114,9 +115,10 @@ export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; o
         ) : (
           <>
             <span className="exercise-retest-label">
-              {session.lesson.round === "retest" ? "巩固复测" : "阅读理解"}
+              {session.lesson.round === "retest" ? "巩固复测" : exerciseLabel}
             </span>
             <QuestionRenderer
+              label={exerciseLabel}
               question={question}
               selected={session.lesson.selected}
               disabled={session.lesson.phase === "feedback"}
@@ -191,7 +193,7 @@ export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; o
           onExit={() => {
             setDialog(null);
             if (onExit) onExit();
-            else router.push("/practice/reading");
+            else router.push(session.mode === "selected" ? "/practice/exams" : "/practice/reading");
           }}
         />
       )}

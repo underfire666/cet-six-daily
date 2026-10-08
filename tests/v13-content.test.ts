@@ -853,10 +853,10 @@ test("production pool: fail-closed matrix", () => {
 test("regression: 59 mock items intact and registry clean", () => {
   setup();
   assert.equal(getItems("vocabulary").length, 30);
-  assert.equal(getItems("reading").length, 6);
-  assert.equal(getItems("listening").length, 7);
-  assert.equal(getItems("translation").length, 8);
-  assert.equal(getItems("writing").length, 8);
+  assert.equal(getItems<{ sourceType: string }>("reading").filter(item => item.sourceType === "mock").length, 6);
+  assert.equal(getItems<{ sourceType: string }>("listening").filter(item => item.sourceType === "mock").length, 7);
+  assert.equal(getItems<{ sourceType: string }>("translation").filter(item => item.sourceType === "mock").length, 8);
+  assert.equal(getItems<{ sourceType: string }>("writing").filter(item => item.sourceType === "mock").length, 8);
   const rep = validateAll(registeredPacks() as never);
   assert.equal(rep.errors.length, 0, `mock+papers must validate: ${rep.errors.map((e) => e.message).join("; ")}`);
 });

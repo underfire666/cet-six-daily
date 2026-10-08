@@ -12,6 +12,7 @@ import {
   planFor,
   listeningDayStats,
   startListening,
+  startSelectedListening,
   updateListening,
   listeningResumeSessions,
 } from "@/lib/listening/store";
@@ -83,7 +84,7 @@ function useListeningState() {
           award(`listening:${session.id}`, session.rewardXp);
   }, [store.sessions, ready, learning.ready, award]);
   const start = useCallback(
-    (mode: ListeningSessionMode) => {
+    (mode: Exclude<ListeningSessionMode, "selected">) => {
       if (!storage.current && !ready) return;
       const now = new Date().toISOString();
       const result = startListening(
@@ -98,6 +99,23 @@ function useListeningState() {
     },
     [commit, ready],
   );
+  const startSelected = useCallback(
+    (contentId: string) => {
+      if (!ready) return;
+      const now = new Date().toISOString();
+      const result = startSelectedListening(
+        latest.current,
+        contentId,
+        todayInShanghai(new Date(now)),
+        now,
+        crypto.randomUUID(),
+      );
+      if (result.store !== latest.current) commit(result.store);
+      return result.id;
+    },
+    [commit, ready],
+  );
+
   const dispatch = useCallback(
     (id: string, action: ListeningAction) => {
       const previous = latest.current.sessions[id];
@@ -130,6 +148,7 @@ function useListeningState() {
     ...listeningResumeSessions(store, today),
     dayStats: listeningDayStats(store, today),
     start,
+    startSelected,
     dispatch,
   };
 }

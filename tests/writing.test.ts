@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   mockWritingTasks,
-  writingTaskById,
 } from "../src/data/mockWriting";
+import { writingTaskById } from "../src/content/learning";
 import {
   emptyWritingStore,
   loadWritingStore,

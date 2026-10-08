@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { examReturnHref } from "@/lib/exam-browse-route";
 import {
   practiceStageHref,
   readPracticeStage,
@@ -12,6 +14,7 @@ export function useLocalPracticeRoute(
   module: "vocabulary" | "reading" | "listening" | "translation" | "writing",
   pathname = `/practice/${module}`,
 ) {
+  const router = useRouter();
   const [stage, setStage] = useState<PracticeStage>({ kind: "home", id: null });
 
   useEffect(() => {
@@ -35,6 +38,11 @@ export function useLocalPracticeRoute(
     openSession: (id: string) => navigate({ kind: "session", id }),
     openComplete: (id: string) => navigate({ kind: "complete", id }, true),
     openWordbook: () => navigate({ kind: "wordbook", id: null }),
-    goHome: () => navigate({ kind: "home", id: null }),
+    goToExams: () => router.push(examReturnHref(window.location.search) ?? "/practice/exams"),
+    goHome: () => {
+      const returnHref = examReturnHref(window.location.search);
+      if (returnHref) router.push(returnHref);
+      else navigate({ kind: "home", id: null });
+    },
   };
 }

@@ -1,0 +1,219 @@
+{
+  "id": "pack-cet6-2026-06-writing",
+  "name": "2026年6月六级 · writing",
+  "version": "1.0.0",
+  "contentType": "writing",
+  "sourceId": "src-cet6-2026-06-user-provided",
+  "createdAt": "2026-10-05T00:00:00.000Z",
+  "updatedAt": "2026-10-05T00:00:00.000Z",
+  "rights": {
+    "licenseStatus": "unknown",
+    "rightsStatus": "unverified"
+  },
+  "items": [
+    {
+      "id": "cet6:2026-06:set1:writing",
+      "type": "writing",
+      "title": "2026年6月六级第1套 · 写作",
+      "sourceId": "src-cet6-2026-06-user-provided",
+      "sourceType": "past_exam",
+      "authenticity": "past_exam",
+      "status": "active",
+      "version": "1.0.0",
+      "difficulty": "normal",
+      "tags": [
+        "CET-6",
+        "2026-06",
+        "set1"
+      ],
+      "createdAt": "2026-10-05T00:00:00.000Z",
+      "updatedAt": "2026-10-05T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      },
+      "level": "essay",
+      "prompt": "Directions: For this part, you are allowed 30 minutes to write an essay that begins with the sentence \"With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature.\" You can make comments, cite examples or use your personal experiences to develop your essay. You should write at least 150 words but no more than 200 words. You should copy the sentence given in quotes at the beginning of your essay.",
+      "requirements": [
+        "150–200 词",
+        "将题目给定句子原样放在文章开头",
+        "围绕主题评论、举例或结合个人经历展开"
+      ],
+      "suggestedWords": [
+        "urbanization",
+        "nature",
+        "city",
+        "residents",
+        "green",
+        "environment"
+      ],
+      "referenceEssay": "With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature. As concrete forests expand, many urban dwellers rarely feel the breeze, hear birds, or touch soil. A stronger bond with nature is not a luxury; it is essential for mental and physical well-being in an increasingly artificial environment.\n\nOne practical way to cultivate this love is to make nature part of daily routines. For example, residents can walk in nearby parks, grow plants on balconies, or join community gardening projects. These activities reconnect people with the living world. Last year, I started visiting a small riverbank park every weekend. Watching seasons change there reduced my stress and made me more aware of environmental protection.\n\nTherefore, city governments and individuals should work together to create more green spaces and spend time in them. Only by integrating nature into urban life can residents truly develop a stronger love for it and build healthier cities for future generations.",
+      "outline": [
+        {
+          "type": "introduction",
+          "content": "With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature. As concrete forests expand, many urban dwellers rarely feel the breeze, hear birds, or touch soil. A stronger bond with nature is not a luxury; it is essential for mental and physical well-being in an increasingly artificial environment."
+        },
+        {
+          "type": "body",
+          "content": "One practical way to cultivate this love is to make nature part of daily routines. For example, residents can walk in nearby parks, grow plants on balconies, or join community gardening projects. These activities reconnect people with the living world. Last year, I started visiting a small riverbank park every weekend. Watching seasons change there reduced my stress and made me more aware of environmental protection."
+        },
+        {
+          "type": "conclusion",
+          "content": "Therefore, city governments and individuals should work together to create more green spaces and spend time in them. Only by integrating nature into urban life can residents truly develop a stronger love for it and build healthier cities for future generations."
+        }
+      ],
+      "scoringPoints": [
+        "紧扣题目给定主题",
+        "论点清晰，举例具体",
+        "段落连贯，语言准确",
+        "满足首句和字数要求"
+      ],
+      "mockFeedback": {
+        "summary": "请对照参考范文检查主题、首句要求、段落衔接与表达；当前为规则估分。",
+        "issues": [],
+        "details": []
+      },
+      "suggestedWordsRange": [
+        150,
+        200
+      ],
+      "referenceExplanation": "随着城市化的趋势，城市居民培养对自然更深厚的热爱至关重要。随着混凝土森林的扩张，许多城市居民很少感受到微风、听到鸟鸣或触摸土壤。在日益人造化的环境中，对自然的更紧密联系不是奢侈品，而是身心健康的必需品。\n\n培养这种热爱的一个实用方法是让自然成为日常生活的一部分。例如，居民可以在附近公园散步、在阳台种植植物或参加社区园艺项目。这些活动使人们重新与有生命的世界连接。去年，我开始每个周末去一个\n\n小河岸公园。在那里观察季节变化减轻了我的压力，也使我更关注环境保护。\n\n因此，城市政府和个人应共同努力创造更多绿色空间，并花时间置身其中。只有将自然融入城市生活，居民才能真正培养更深厚的热爱，并为后代建设更健康的城市。\n\n【第 1 段】首段落实首句照抄与论点回应。范文首句完全复制 With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature.，随后用 'concrete forests expand' 描述城市化现象，并以 'not a luxury; it is essential' 亮明观点。\n\n【第 2 段】中段用做法+例子+个人经历展开。主题句 'One practical way to cultivate this love...' 对应 paragraphGuide 的方法；'For example...' 列举具体做法；'Last year, I started visiting...' 加入个人经历，使论证更可信。\n\n【第 3 段】末段总结并发出行动呼吁。'Therefore, city governments and individuals...' 总结对策，'Only by integrating nature into urban life...' 用倒装句升华，回扣首段论点。\n\nA N A L Y S I S · 审题与立意这道题到底要写什么 、 立意是什么\n\n动笔前先钉死本题的核心写作任务与读者语域 ，再定中心立意与要展开的要点 —— 这些是本题特有的内容判断，不是通用套路。\n\n核心任务\n\n城市化背景下城市居民如何增强对自然的热爱\n\n根据 write an essay that begins with the sentence 与 With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature. 可知，本文须围绕城市化趋势，讨论城市居民应如何培养对自然的热爱，并结合 You can make comments, cite examples or use your personal experiences to develop your essay. 展开。\n\n读者 · 语域\n\n面向阅卷人的正式书面语\n\n题目未设定具体读者与身份，写作对象为六级阅卷人，语气应为正式议论文，不使用口语缩写或书信称呼。\n\n中心立意\n\n城市居民应把亲近自然变成日常，以缓解城市化带来的疏离\n\n以 With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature. 为出发点，中心论点是：面对城市化，居民需要通过日常行动主动重建与自然的联系。\n\n要展开的要点\n\n1. 城市化让居民与自然渐行渐远描述城市扩张带来的'水泥森林'现象，说明为什么增强爱自然之心变得迫切。\n\n2. 日常亲近自然是培养热爱的有效途径\n\n用具体例子或个人经历说明散步、养花、社区园艺等活动如何让居民重新感受自然。\n\n3. 政府与个人应共建绿色空间从社会层面提出对策：增加绿地并鼓励居民使用，把热爱自然落实到城市生活中。\n\nS T R U C T U R E · 谋篇与逐段怎么分段 、 每段写什么 、 能套哪些句架\n\n按写作家族给出现成的段落框架（每段承担什么功能），并为每段配可直接套用的功能句架（留出填本题内容的空位）。段序与上方参考范文一一对应。\n\n第 1 段开篇点题\n\n照抄题干给定首句，简要描述城市化现象并亮明中心论点。\n\n第 2 段举例论证\n\n提出培养热爱自然的具体做法，用例子和个人经历支撑论点。\n\n第 3 段总结呼吁\n\n回扣主题，呼吁政府与个人共同努力，把自然融入城市生活。\n\n第 1 段用'水泥森林'承接首句，提出'亲近自然是必需品而非奢侈品'\n\n以 With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature. 为起点，指出城市扩张使居民远离自然，进而提出中心论点。\n\n照抄给定首句 · 将题⼲中的开头句原封不动置于⾸段第⼀句。\n\n现象导入句 · As concrete forests expand, many urban dwellers rarely feel ..., hear ..., or touch ....\n\n论点句 · A stronger love for nature is not a luxury; it is essential for mental and physical well-being.\n\n第 2 段日常接触自然的方法与个人体验\n\n围绕 You can make comments, cite examples or use your personal experiences to develop your essay. 的要求，写出散步、阳台种植、社区园艺等做法，并加入一次周末去河岸公园的经历。\n\n主题句 · One practical way to cultivate this love is to make ... part of daily routines.\n\n举例扩展 · For example, residents can ..., ..., or ....\n\n个人经历 · Last year, I started visiting ... every weekend. Watching ... reduced my stress and made me more aware of ....\n\n第 3 段呼吁共建绿色城市，回扣'增强热爱自然'主题\n\n回应全文中心，强调城市化不应以牺牲自然为代价，呼吁政策支持与个人行动相结合。\n\n总结呼吁句 · Therefore, ... and ... should work together to create more green spaces and spend time in them.\n\n倒装升华句 · Only by integrating ... into ... can ... truly develop a stronger love for ... and build healthier ....\n\nR E V I E W · 自检避坑本题在四个评分维度怎样算达标 、 容易在哪丢分\n\n按阅卷四维（内容切题 / 结构连贯 / 语言准确 / 字数格式）给出本题达标要点，并把最容易踩的低分写法摆出来 + 给改法 —— 这是写作版的「狠拆诱人错项」。\n\n内容切题必须原样照抄首句并紧扣城市化\n\n要落实 You should copy the sentence given in quotes at the beginning of your essay. 与 With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature.，避免写成泛泛的环保文章。\n\n结构连贯三段分工明确，衔接自然\n\n首段点题、中段举例论证、末段呼吁，每段开头用主题句或连接词提示功能，全文形成 '问题—办法—呼吁' 的清晰链条。\n\n语言准确注意正式书面语与常见搭配\n\n全文使用一般现在时描述普遍现象，用 a stronger love for、develop a love for 等固定搭配，不使用口语缩写。\n\n字数格式词数必须落在给定区间内开头句计入总词数，范文通过充实例子和个人经历把词数控制在区间内。\n\n典型低分写法 · 反面示例与改法\n\n漏写或改写开头句\n\n反面示例：With the development of urbanization, city people should love nature more. 问题：改写了原句。修正：With the trend of Urbanization, it is vitally important for city residents to develop a stronger love for Nature.\n\n脱离城市化泛泛谈环保\n\n反面示例：We should protect forests and save wild animals. 问题：没有城市背景，不符合题意。 修正：Urban residents can start by visiting city parks and growing plants on balconies.\n\n只评论不举例\n\n反面示例：Nature is very important. We must love it. 问题：无具体例证，缺乏说服力。修正：For example, walking in a nearby park every weekend helps me feel relaxed and closer to nature.\n\n字数不足或超标\n\n反面示例：全文仅120词。问题：未达 You should write at least 150 words but no more than 200 words. 的硬要求。修正：增加个人经历与具体做法，使内容充实到150词以上。\n\n堆砌万能模板\n\n反面示例：With the development of society, nature is becoming more and more important. 问题：套话空洞，未回应城市化背景。修正：As concrete forests expand, city residents need to rebuild their connection with nature."
+    },
+    {
+      "id": "cet6:2026-06:set2:writing",
+      "type": "writing",
+      "title": "2026年6月六级第2套 · 写作",
+      "sourceId": "src-cet6-2026-06-user-provided",
+      "sourceType": "past_exam",
+      "authenticity": "past_exam",
+      "status": "active",
+      "version": "1.0.0",
+      "difficulty": "normal",
+      "tags": [
+        "CET-6",
+        "2026-06",
+        "set2"
+      ],
+      "createdAt": "2026-10-05T00:00:00.000Z",
+      "updatedAt": "2026-10-05T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      },
+      "level": "essay",
+      "prompt": "Directions: For this part, you are allowed 30 minutes to write an essay that begins with the sentence \"In an era of rapid social development, it is vitally important to enhance young people's sense of responsibility.\" You can make comments, cite examples or use your personal experiences to develop your essay. You should write at least 150 words but no more than 200 words. You should copy the sentence given in quotes at the beginning of your essay.",
+      "requirements": [
+        "150–200 词",
+        "将题目给定句子原样放在文章开头",
+        "围绕主题评论、举例或结合个人经历展开"
+      ],
+      "suggestedWords": [
+        "social",
+        "responsibility",
+        "young",
+        "people",
+        "society",
+        "development"
+      ],
+      "referenceEssay": "In an era of rapid social development, it is vitally important to enhance young people's sense of responsibility. As society changes at an unprecedented pace, young people often face distractions and pressures that weaken their commitment to family, community, and the future. Without a strong sense of responsibility, they may become self-centered and short-sighted.\n\nThe decline of responsibility among youth is partly caused by the instant gratification culture brought by technology and social media. Many young people are used to receiving immediate rewards and may avoid duties that require long-term effort. To address this problem, schools and families should work together to cultivate accountability through real tasks and role models. For example, involving students in community service can help them understand the value of contributing to society.\n\nIn conclusion, enhancing young people's sense of responsibility is not only a personal virtue but also a social necessity. Only when the younger generation takes responsibility seriously can society achieve sustainable development and harmony.",
+      "outline": [
+        {
+          "type": "introduction",
+          "content": "In an era of rapid social development, it is vitally important to enhance young people's sense of responsibility. As society changes at an unprecedented pace, young people often face distractions and pressures that weaken their commitment to family, community, and the future. Without a strong sense of responsibility, they may become self-centered and short-sighted."
+        },
+        {
+          "type": "body",
+          "content": "The decline of responsibility among youth is partly caused by the instant gratification culture brought by technology and social media. Many young people are used to receiving immediate rewards and may avoid duties that require long-term effort. To address this problem, schools and families should work together to cultivate accountability through real tasks and role models. For example, involving students in community service can help them understand the value of contributing to society."
+        },
+        {
+          "type": "conclusion",
+          "content": "In conclusion, enhancing young people's sense of responsibility is not only a personal virtue but also a social necessity. Only when the younger generation takes responsibility seriously can society achieve sustainable development and harmony."
+        }
+      ],
+      "scoringPoints": [
+        "紧扣题目给定主题",
+        "论点清晰，举例具体",
+        "段落连贯，语言准确",
+        "满足首句和字数要求"
+      ],
+      "mockFeedback": {
+        "summary": "请对照参考范文检查主题、首句要求、段落衔接与表达；当前为规则估分。",
+        "issues": [],
+        "details": []
+      },
+      "suggestedWordsRange": [
+        150,
+        200
+      ],
+      "referenceExplanation": "在社会快速发展的时代，提升年轻人的责任感至关重要。随着社会以前所未有的速度变化，年轻人常常面临分散注意力和压力，这些因素削弱了他们对家庭、社区和未来的承诺。如果没有强烈的责任感，他们可能会变得以自我为中心、目光短浅。\n\n年轻人责任感的下降，部分是由科技和社交媒体带来的即时满足文化造成的。许多年轻人习惯于获得即时回报，可能会回避需要长期付出的职责。为解决这一问题，学校和家庭应共同努力，通过真实任务和榜样示范来培养责任意识。例如，让学生参与社区服务，可以帮助他们理解为社会做贡献的价值。\n\n总之，提升年轻人的责任感不仅是个人美德，也是社会必需。只有当年轻一代认真对待责任时，社会才能实现可持续发展与和谐。\n\n【第 1 段】照抄首句后自然释义并立论。首句使用题目给定的“In an era of rapid social development, it is vitally important to enhance young people's sense of responsibility.”，随后用“As society changes...”解释社会发展与责任感之间的关系，再以“Without a strong sense of responsibility...”点出缺失责任感的后果，顺势引出后文论证。\n\n【第 2 段】因果分析+对策+例子完整论证。本段先用“The decline of responsibility among youth is partly caused by...”分析问题原因，再用“To address this problem...”提出家校协同的对策，最后用“For example, involving students in community service...”给出具体例子，并回扣到为社会做贡献的价值， 避免空泛。\n\n【第 3 段】总结升华并用强调句收尾。结论段用“In conclusion”收束全文，将责任感从个人层面提升到社会层面，再用“Only when... can society achieve...”的倒装强调句增强说服力，呼应首段提出的时代背景。\n\nA N A L Y S I S · 审题与立意这道题到底要写什么 、 立意是什么\n\n动笔前先钉死本题的核心写作任务与读者语域 ，再定中心立意与要展开的要点 —— 这些是本题特有的内容判断，不是通用套路。\n\n核心任务\n\n围绕“提升年轻人责任感”写议论文\n\n本题的写作任务是：以In an era of rapid social development, it is vitally important to enhance young people's sense of responsibility.为文章开头，写一篇议论性短文，通过评论、举例或个人经历来论证为何以及如何提升年轻人的责任感。\n\n读者 · 语域\n\n面向阅卷人的正式书面语\n\n这是一道六级议论文写作，没有具体交际对象，写作身份是考生本人，读者是阅卷教师。因此语言应正式、客观，避免口语化缩写、过度情绪化和网络用语，用完整的复合句和恰当的衔接词展示论证能力。\n\n中心立意\n\n责任感是青年成长与社会稳定的共同需要\n\n中心论点：在社会快速发展的时代，提升年轻人的责任感不仅关系到他们自身的人格成熟，也关系到社会的可持续和谐，因此家庭、学校和社会都应共同发力。\n\n要展开的要点\n\n1. 问题：科技发展削弱责任感\n\n现代社会节奏快、诱惑多，年轻人容易沉迷即时满足，忽视对家庭、集体和未来的责任，这是需要被正视的现实问题。\n\n2. 对策：家校社协同培养担当通过家庭教育、学校实践和社会服务，让年轻人在真实任务中体验责任、建立习惯，把抽象的责任感变成具体行动。\n\n3. 意义：责任感成就个人与社会\n\n当年轻人具备责任感，他们更能抵御短期诱惑、做出长远选择，社会也因此获得稳定发展的中坚力量。\n\nS T R U C T U R E · 谋篇与逐段怎么分段 、 每段写什么 、 能套哪些句架\n\n按写作家族给出现成的段落框架（每段承担什么功能），并为每段配可直接套用的功能句架（留出填本题内容的空位）。段序与上方参考范文一一对应。\n\n第 1 段引入段：照抄首句+提出观点\n\n本段先逐字照抄题目给定的首句，然后简要解释其含义，顺势提出中心论点：提升年轻人责任感是时代所需。\n\n第 2 段论证段：问题分析+对策举例\n\n本段先指出责任感被削弱的现实原因，再给出具体可行的培养路径，并用例子支撑，使论证有深度。\n\n第 3 段结论段：总结升华+行动呼吁\n\n本段回扣首句和中心论点，把责任感从个人品质提升到社会 necessity 的高度，发出简短有力的呼吁。\n\n第 1 段从社会发展谈到责任感的重要性\n\n本段先呈现In an era of rapid social development, it is vitally important to enhance young people's sense of responsibility.这一命题，再解释社会发展带来的快节奏和多元选择为何更需要年轻人守住责任意识，最后提出中心论点。\n\n解释首句 · As society changes at an unprecedented pace, young people face ... that may weaken their sense of responsibility.\n\n亮明观点 · Therefore, it is imperative for families, schools, and society to work together to cultivate this quality.\n\n第 2 段责任感缺失的原因与提升路径\n\n本段先分析即时满足文化对责任感的冲击，再提出家校协同、社会实践等具体培养方式，并用社区服务等例子说明这些方法如何让年轻人理解责任的意义。\n\n给出原因 · The decline of responsibility among youth is partly caused by ...\n\n提出对策 · To address this problem, ... should work together to cultivate accountability through ...\n\n举例过渡 · For example, involving students in ... can help them understand the value of ...\n\n第 3 段责任感是个人美德也是社会必需\n\n本段总结全文，强调提升年轻人责任感不只是道德口号，而是社会持续健康发展的基础，呼吁各方共同行动。\n\n总结升华 · In conclusion, enhancing young people's sense of responsibility is not only a personal virtue but also a social necessity.\n\n强调呼吁 · Only when the younger generation takes responsibility seriously can society achieve sustainable development and harmony.\n\nR E V I E W · 自检避坑本题在四个评分维度怎样算达标 、 容易在哪丢分\n\n按阅卷四维（内容切题 / 结构连贯 / 语言准确 / 字数格式）给出本题达标要点，并把最容易踩的低分写法摆出来 + 给改法 —— 这是写作版的「狠拆诱人错项」。\n\n内容切题紧扣“责任感”而非泛谈责任\n\n本题的核心是sense of responsibility，自查时要确认全文不仅在说“年轻人要承担责任”，更在谈“内在责任意识的培养与重要性”，避免把话题滑向社会责任或社会发展本身。\n\n结构连贯三段各司其职\n\n本文结构为引入-论证-结论：第一段提出观点，第二段分析问题并给对策，第三段总结升华。写完后检查三段之间是否有清晰的逻辑推进，没有重复或跳跃。\n\n语言准确注意抽象名词与正式搭配\n\n本文使用了sense of responsibility、instant gratification、accountability、 sustainable development等议论文常用抽象表达，自查时确认这些词在语境中搭配正确，避免把responsibility和duty混用。\n\n字数格式首句必须逐字照抄\n\n本题要求开头原样照抄给定句子，自查时把范文首句与Directions中的句子逐词比对，任何一个词的增减或顺序变化都属于硬约束失误。\n\n典型低分写法 · 反面示例与改法\n\n把责任感泛化成责任行为\n\n反面示例：Young people should be responsible for their work, family and society. This is very important. 问题：只罗列了要承担的责任，没有谈“责任感”本身。修正：Cultivating a strong sense of responsibility helps young people voluntarily fulfill their duties to work, family and society.\n\n建议空洞无具体路径\n\n反面示例：We should work hard to enhance young people's sense of responsibility. 问题：没有说明怎么努力、谁来努力。修正：Schools can design volunteer programs that require students to complete real community tasks, so they experience the consequences of their actions firsthand.\n\n照抄首句后另起炉灶\n\n反面示例：In an era of rapid social development, it is vitally important to enhance young people's sense of responsibility. Nowadays young people face many problems. They should study hard. 问题：首句与后文断裂。修正：In an era of rapid social development, it is vitally important to enhance young people's sense of responsibility, because a society cannot function well without responsible young citizens.\n\n全文多为简单句并列\n\n反面示例：Social development is fast. Young people are busy. They forget responsibility. We must help them. 问题：四句都是简单句，缺乏论证深度。修正：Because social development is so fast, young people are often too busy to reflect on their responsibilities, which is why we must help them regain this awareness."
+    },
+    {
+      "id": "cet6:2026-06:set3:writing",
+      "type": "writing",
+      "title": "2026年6月六级第3套 · 写作",
+      "sourceId": "src-cet6-2026-06-user-provided",
+      "sourceType": "past_exam",
+      "authenticity": "past_exam",
+      "status": "active",
+      "version": "1.0.0",
+      "difficulty": "normal",
+      "tags": [
+        "CET-6",
+        "2026-06",
+        "set3"
+      ],
+      "createdAt": "2026-10-05T00:00:00.000Z",
+      "updatedAt": "2026-10-05T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      },
+      "level": "essay",
+      "prompt": "Directions: For this part, you are allowed 30 minutes to write an essay that begins with the sentence \"Faced with growing globalization,students realize that a deep understanding of traditional Chinese culture helps cultivate cultural confidence.\" You can make comments, cite examples or use your personal experiences to develop your essay. You should write at least 150 words but no more than 200 words. You should copy the sentence given in quotes at the beginning of your essay.",
+      "requirements": [
+        "150–200 词",
+        "将题目给定句子原样放在文章开头",
+        "围绕主题评论、举例或结合个人经历展开"
+      ],
+      "suggestedWords": [
+        "globalization",
+        "traditional",
+        "Chinese",
+        "culture",
+        "cultural",
+        "confidence"
+      ],
+      "referenceEssay": "Faced with growing globalization,students realize that a deep understanding of traditional Chinese culture helps cultivate cultural confidence. In an age when Western brands, movies and festivals flood daily life, many young people begin to look back at their own roots. They find that cultural confidence cannot be borrowed from outside; it must grow from real knowledge of what their ancestors created.\n\nThe reason is not hard to understand. Globalization exposes us to different values, yet it also makes us question who we are. Only by learning the ideas behind Confucianism, the beauty of calligraphy, or the spirit of traditional festivals can we answer that question with pride. Take the Spring Festival as an example: those who understand its meaning of reunion and renewal celebrate it not out of habit, but out of identity.\n\nTherefore, college students should actively read classics, visit museums and practice folk arts. The deeper we understand traditional Chinese culture, the more confident we become in facing the world.",
+      "outline": [
+        {
+          "type": "introduction",
+          "content": "Faced with growing globalization,students realize that a deep understanding of traditional Chinese culture helps cultivate cultural confidence. In an age when Western brands, movies and festivals flood daily life, many young people begin to look back at their own roots. They find that cultural confidence cannot be borrowed from outside; it must grow from real knowledge of what their ancestors created."
+        },
+        {
+          "type": "body",
+          "content": "The reason is not hard to understand. Globalization exposes us to different values, yet it also makes us question who we are. Only by learning the ideas behind Confucianism, the beauty of calligraphy, or the spirit of traditional festivals can we answer that question with pride. Take the Spring Festival as an example: those who understand its meaning of reunion and renewal celebrate it not out of habit, but out of identity."
+        },
+        {
+          "type": "conclusion",
+          "content": "Therefore, college students should actively read classics, visit museums and practice folk arts. The deeper we understand traditional Chinese culture, the more confident we become in facing the world."
+        }
+      ],
+      "scoringPoints": [
+        "紧扣题目给定主题",
+        "论点清晰，举例具体",
+        "段落连贯，语言准确",
+        "满足首句和字数要求"
+      ],
+      "mockFeedback": {
+        "summary": "请对照参考范文检查主题、首句要求、段落衔接与表达；当前为规则估分。",
+        "issues": [],
+        "details": []
+      },
+      "suggestedWordsRange": [
+        150,
+        200
+      ],
+      "referenceExplanation": "面对日益增长的全球化，学生们意识到深入理解中国传统文化有助于培养文化自信。在这个西方品牌、电影和节日充斥着日常生活的时代，许多年轻人开始回望自己的文化根脉。他们发现文化自信无法从外界借来，而必须建立在对先辈所创造文化的真正了解之上。\n\n其原因不难理解。全球化让我们接触到不同的价值观，但也让我们反思自己是谁。只有了解儒家思想背后的理念、书法之美或传统节日的精神，我们才能自豪地回答这个问题。以春节为例：真正理解其团圆与更\n\n新内涵的人，庆祝春节不是出于习惯，而是出于身份认同。\n\n因此，大学生应积极阅读经典、参观博物馆并参与民俗艺术实践。我们对中国传统文化理解得越深入，在面对世界时就越自信。\n\n【第 1 段】照抄首句并解释现象。本段首句逐字照抄题目要求，随后用 In an age when ... flood daily life 把全球化背景具体化，再用同义解释点明文化自信源于对传统文化的真实了解，完成了现象引入的功能。\n\n【第 2 段】因果链+春节例证。本段使用“先论点—原因—例子—回扣”四步展开：先用 The reason is not hard to understand 承上启下，再用 Only by ... can we ... 强调传统文化理解的必要性，最后用春节的例子把抽象道理落到具体可感的习俗上。\n\n【第 3 段】行动呼吁+升华。本段用 Therefore 引出大学生的具体行动，再用 The deeper ... the more confident ... 句架把主题从个人行为升华到面对世界的文化自信，呼应首句并收束全文。\n\nA N A L Y S I S · 审题与立意这道题到底要写什么 、 立意是什么\n\n动笔前先钉死本题的核心写作任务与读者语域 ，再定中心立意与要展开的要点 —— 这些是本题特有的内容判断，不是通用套路。\n\n核心任务\n\n续写首句，论证传统文化理解与文化自信的关系\n\n本题要求以 Faced with growing globalization,students realize that a deep understanding of traditional Chinese culture helps cultivate cultural confidence. 为开头，围绕全球化、传统文化理解、文化自信三者之间的因果链写一篇议论文。\n\n读者 · 语域\n\n面向阅卷教师的正式书面语\n\n六级写作没有特定交际对象，默认读者为阅卷教师；语言需正式、准确、有逻辑，避免口语缩写、网络用语和情绪化口号。\n\n中心立意\n\n传统文化理解是全球化时代文化自信之源\n\n全文中心论点：在全球化浪潮中，只有真正理解传统文化，青年才能建立起不依赖于外界评价的文化自信。\n\n要展开的要点\n\n1. 全球化带来文化冲击，让人更需要文化根脉\n\n从现象入手：西方品牌、影视、节日大量涌入，使年轻人开始反思自身文化身份，因此需要回头理解传统文化。\n\n2. 深入理解传统文化才能建立真正的文化自信展开因果：文化自信不是空喊口号，而是建立在对儒家思想、书法、传统节日等具体内容理解之上的认同感。\n\n3. 青年应从具体文化实践入手增强自信\n\n给出行动：读经典、参观博物馆、参与民俗活动，把理解转化为日常实践，从而在全球化中保持文化定力。\n\nS T R U C T U R E · 谋篇与逐段怎么分段 、 每段写什么 、 能套哪些句架\n\n按写作家族给出现成的段落框架（每段承担什么功能），并为每段配可直接套用的功能句架（留出填本题内容的空位）。段序与上方参考范文一一对应。\n\n第 1 段现象引入段\n\n逐字照抄给定首句，并用一到两句解释其时代背景，点明全球化与传统文化之间的张力。\n\n第 2 段分析论证段\n\n提出分论点，说明为何传统文化理解能带来文化自信，并用一个具体例子支撑论证。\n\n第 3 段结论升华段\n\n重申中心论点，呼吁大学生主动学习传统文化，并升华到面对世界的文化自信。\n\n第 1 段解释首句中的三角关系\n\n用 Faced with growing globalization,students realize that a deep understanding of traditional Chinese culture helps cultivate cultural confidence. 引出话题后，解释全球化如何让年轻人重新发现传统文化的价值。\n\n照抄首句 · Faced with growing globalization, students realize that a deep understanding of traditional Chinese culture helps cultivate cultural confidence.\n\n同义破题 · In other words, ...\n\n点明时代背景 · In an age when ... flood daily life, ...\n\n第 2 段用春节例证传统文化理解如何生成文化自信\n\n结合 cite examples 的要求，选择一个学生熟悉、阅卷人也认可的文化载体，如春节、书法或京剧，说明理解其内涵后，庆祝行为会从习惯变成身份认同。\n\n亮明论点 · The reason lies in the fact that ...\n\n举例过渡 · Take ... as an example.\n\n因果强调 · Only by doing ... can we ...\n\n回扣主题 · ... not out of habit, but out of identity.\n\n第 3 段呼吁大学生主动学习传统文化\n\n把论证落到行动上：读经典、进博物馆、参与民俗实践，让文化自信从理解变成生活方式。\n\n总结句 · In conclusion, ...\n\n行动呼吁 · College students should actively ...\n\n升华句 · The deeper we understand ..., the more confident we become in ...\n\nR E V I E W · 自检避坑本题在四个评分维度怎样算达标 、 容易在哪丢分\n\n按阅卷四维（内容切题 / 结构连贯 / 语言准确 / 字数格式）给出本题达标要点，并把最容易踩的低分写法摆出来 + 给改法 —— 这是写作版的「狠拆诱人错项」。\n\n内容切题紧扣首句三角关系\n\n本题最容易跑题：必须回应 Faced with growing globalization,students realize that a deep understanding of traditional Chinese culture helps cultivate cultural confidence. 中的 globalization、traditional Chinese culture、cultural confidence 三个关键词，不能只写“我爱中国文化”。\n\n结构连贯三段逻辑闭环\n\n范文三段分别承担“现象引入—原因+例证—行动+升华”，段间用 The reason、 Therefore 等逻辑词衔接，避免写成三段互不相关的观点罗列。\n\n语言准确避免中式直译与词义混淆\n\n注意 cultural confidence 不等于 nationalism，表达“文化自信”时不要写成盲目排外； 写传统节日、书法等专有名词时注意大小写和拼写。\n\n字数格式满足字数与格式硬约束\n\n本题要求 You should write at least 150 words but no more than 200 words.，且 You should copy the sentence given in quotes at the beginning of your essay.；写完后务必自查，避免字数不足或首句改写。\n\n典型低分写法 · 反面示例与改法\n\n脱离首句另起炉灶\n\n反面示例：As we all know, Chinese culture is very important and I love it very much. 问题：完全没有出现 globalization，也没照抄给定首句，等于另起话题。修正：Faced with growing globalization, students realize that a deep understanding of traditional Chinese culture helps cultivate cultural confidence. In an age when foreign cultures flood in, young people begin to rediscover their own roots.\n\n只喊口号不举例子\n\n反面示例：We should learn traditional culture because it is very good and important. 问题：没有具体例子，论证无力。修正：Take the Spring Festival as an example: those who understand its meaning of reunion celebrate it not out of habit, but out of identity.\n\n把文化自信写成狭隘民族主义\n\n反面示例：We must fight against Western culture to protect our own culture. 问题：把文化自信曲解为排外对立。修正：Cultural confidence means understanding our own heritage while staying open to the world.\n\n字数注水或不足\n\n反面示例：Traditional Chinese culture is very important. It is very important for us. We must learn it because it is important. 问题：重复 important，无实质内容。修正：Only by learning the ideas behind Confucianism and the beauty of calligraphy can we build real cultural confidence.\n\n三段内容写成一段\n\n反面示例：把首句、原因、例子、呼吁全部挤在一个自然段里。问题：结构混乱，阅卷人找不到层次。修正：按“现象引入—分析论证—结论升华”分成三个段落，每段只讲一层意思。"
+    }
+  ]
+}

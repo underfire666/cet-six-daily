@@ -8,12 +8,18 @@ import { ReadingComplete } from "./ReadingComplete";
 
 export function ReadingHome() {
   const route = useLocalPracticeRoute("reading");
+  const { store } = useReading();
+  const goHome = () => {
+    const id = route.stage.id;
+    if (id && store.sessions[id]?.mode === "selected") route.goToExams();
+    else route.goHome();
+  };
   if (route.stage.kind === "session") {
     const id = route.stage.id;
-    return <ReadingSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+    return <ReadingSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={goHome} />;
   }
   if (route.stage.kind === "complete")
-    return <ReadingComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} />;
+    return <ReadingComplete id={route.stage.id} onSession={route.openSession} onHome={goHome} />;
   return <ReadingDashboard onSession={route.openSession} />;
 }
 
@@ -60,7 +66,7 @@ function ReadingDashboard({ onSession }: { onSession: (id: string) => void }) {
         <p className="reading-sub">
           {completed
             ? "今日任务完成，再读一篇也不多。"
-            : total === 0 ? "暂无可用阅读内容，请稍后再试。" : total < 3 ? `当前可用 ${total} 篇，先完成这些内容。` : "读完 3 篇短文，顺便收获生词。"}
+            : total === 0 ? "暂无可用阅读内容，请稍后再试。" : total < 3 ? `当前可用 ${total} 组，先完成这些内容。` : "完成 3 组阅读，练习选词、匹配与理解。"}
         </p>
         <div className="reading-bar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
           <span style={{ width: `${total ? (done / total) * 100 : 0}%` }} />

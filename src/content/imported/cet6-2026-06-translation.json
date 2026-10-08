@@ -1,0 +1,153 @@
+{
+  "id": "pack-cet6-2026-06-translation",
+  "name": "2026年6月六级 · translation",
+  "version": "1.0.0",
+  "contentType": "translation",
+  "sourceId": "src-cet6-2026-06-user-provided",
+  "createdAt": "2026-10-05T00:00:00.000Z",
+  "updatedAt": "2026-10-05T00:00:00.000Z",
+  "rights": {
+    "licenseStatus": "unknown",
+    "rightsStatus": "unverified"
+  },
+  "items": [
+    {
+      "id": "cet6:2026-06:set1:translation",
+      "type": "translation",
+      "title": "2026年6月六级第1套 · 段落翻译",
+      "sourceId": "src-cet6-2026-06-user-provided",
+      "sourceType": "past_exam",
+      "authenticity": "past_exam",
+      "status": "active",
+      "version": "1.0.0",
+      "difficulty": "normal",
+      "tags": [
+        "CET-6",
+        "2026-06",
+        "set1"
+      ],
+      "createdAt": "2026-10-05T00:00:00.000Z",
+      "updatedAt": "2026-10-05T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      },
+      "level": "paragraph",
+      "promptChinese": "科技进步使中国的医疗事业得到快速发展。近年来，远程医疗使优质医疗资源惠及更多患者。医学专家可以通过视频为偏远地区患者提供咨询，指导当地医生制定并实施治疗方案。人工智能辅助诊断系统帮助医生识别患者的早期症状，提高诊断准确率。电子健康档案的普及让医生能够快速了解患者病史，避免重复检查。线上医疗咨询平台极大地方便了患者就诊。科技与医疗的深度融合更好地满足了人民的健康需求。",
+      "keywords": [
+        "science and technology",
+        "telemedicine",
+        "medical resources",
+        "remote areas",
+        "diagnosis",
+        "health records"
+      ],
+      "referenceTranslation": "Advances in science and technology have brought about the rapid development of China's medical services. In recent years, telemedicine has made high-quality medical resources accessible to more patients. Through video links, medical experts can provide consultations for patients in remote areas, guiding local doctors in developing and implementing treatment plans. AI-assisted diagnosis systems help doctors identify patients' early symptoms, thereby improving the accuracy of diagnosis. The widespread adoption of electronic health records enables doctors to quickly review patients' medical histories, thus avoiding repeated examinations. Online medical consultation platforms have also greatly facilitated patients' access to medical care. Overall, the deep integration of technology and healthcare has better met people's health needs.",
+      "scoringPoints": [
+        "完整传达原文信息",
+        "时态和主谓一致准确",
+        "术语和固定搭配恰当",
+        "句间衔接自然"
+      ],
+      "mockFeedback": {
+        "summary": "对照参考译文检查信息是否完整、术语是否准确；当前为规则估分。",
+        "issues": [],
+        "details": []
+      },
+      "estimatedMinutes": 15,
+      "referenceExplanation": "【衔接】 第1、2句间用时间状语承接\n\n近年来自带时间推进，译 In recent years 置于第2句句首，自然把远程医疗这个实例挂到首句得到快速发展的总起之后，无需另加关联词。\n\n四个并列实例句群，只在末例补 also 第3至6句是四个并列的应用实例（远程咨询、AI诊断、电子档案、线上平台），若每句都加 moreover／in addition 会关联词堆砌、反而生硬；只在最后一例句首补一个 also（Online medical consultation platforms have also...），标示「再举一例、举例将尽」，轻重得当。\n\n总结句前补 Overall 末句科技与医疗的深度融合更好地满足了人民的健康需求是对前文的收束，中文靠语序暗示、英文需显性标记，句首补 Overall（Overall, the deep integration of technology and healthcare has better met...），把「举例→总结」的信息流显化给阅卷人。\n\n逐句解析一整段连排中文、无段落标记无题号——把它切成一句句翻译单元本身就是解题动作，句前 N. 为逐句解析自切的句序号（非考卷题号），与卷面中文逐字对应。\n\n【主旨】 科技赋能中国医疗的正式客观介绍 P1是典型的六级式社会科技介绍段：首句科技进步使中国的医疗事业得到快速发展总起，中间逐一举远程医疗、人工智能诊断、电子健康档案、线上平台四个应用实例，末句科技与医疗的深度融合更好地满足了人民的健康需求收束升华。语体正式客观，英文用词应偏书面（consultation、 facilitate 优于口语说法），句式以主谓主干句为主。\n\n【时态】 一般现在时\n\n通篇客观介绍科技给中国医疗带来的现状与功能，陈述的是当下的一般事实与能力，如可以通过视频为偏远地区患者提供咨询、帮助医生识别患者的早期症状，故全篇以一般现在时为基调；凡带 「了」「近年来」、表示已成结果的句子（如得到快速发展、极大地方便了患者就诊）合理偏离为现在完成时，表示动作已发生且结果延续至今。\n\n【译法】 科技进步\n\n统一译作 advances in science and technology（约定俗成的固定搭配，advances 用复数表「多方面的进步」），锚回科技进步，全篇不再换用 technology development 等自造说法。\n\n医疗事业统一译作 medical services（也可作 healthcare，但全篇只取 medical services 一种），锚回医疗事业；「事业」在此语境下不译 cause/undertaking。\n\n远程医疗\n\n统一译作 telemedicine，这是国际通用的约定俗成译名，锚回远程医疗；不要自造 long-distance medical care 这类中式表达。\n\n优质医疗资源统一译作 high-quality medical resources（resources 用复数），锚回优质医疗资源。\n\n偏远地区统一译作 remote areas，作后置定语时为 in remote areas，锚回偏远地区患者。\n\n人工智能辅助诊断系统统一译作 AI-assisted diagnosis systems（AI-assisted 为连字符复合形容词，systems 复数表一类事物），锚回人工智能辅助诊断系统；AI 为公认缩写，正式译文中可直接使用。\n\n电子健康档案统一译作 electronic health records（records 用复数），锚回电子健康档案，即国际通用的 EHR，全篇不混用 electronic medical files。\n\n线上医疗咨询平台统一译作 online medical consultation platforms（platforms 复数），锚回线上医疗咨询平台； 「咨询」取书面词 consultation，不用 asking doctors 这类口语。\n\n治疗方案\n\n统一译作 treatment plans（plans 复数），锚回治疗方案。\n\n1. 科技进步使中国的医疗事业得到快速发展 。\n\n【主干】 科技进步作主语，带来作谓语 （主语策略：原句主语） 科技进步使中国的医疗事业得到快速发展的核心动作是「使……得到快速发展」，提主干为 Advances in science and technology（主语）+ have brought about（谓语）+ the rapid development of China's medical services（宾语）；「中国的医疗事业」整体降为宾语内部的修饰成分。\n\n【降级】 「使……得到发展」并入一个及物动词 「使中国的医疗事业得到快速发展」不宜逐字译成 make China's medical services get developed（典型中式英语），把「快速发展」做成名词短语 the rapid development of China's medical services 作宾语，用一个及物动词 brought about（带来）即可完整承载「使……得到」 的因果语义。\n\n【语法】 时态\n\n得到快速发展表示已发生且延续至今的结果，此处偏离全篇一般现在时的基调，改用现在完成时 have brought about；若用一般现在时 brings about，会丢掉「已然实现」的意味。\n\n主谓一致主语中心词 advances 是复数，助动词用 have，不要误写为 has。\n\n冠词与单复数 development 被 of China's medical services 限定为特指，前面加 the；medical services 用复数表医疗服务的统称。\n\n【译文】 Advances in science and technology have brought about the rapid development of China's medical services.\n\n2. 近年来 ， 远程医疗使优质医疗资源惠及更多患者 。\n\n【主干】 远程医疗作主语，使资源可及作谓语 （主语策略：原句主语） 远程医疗使优质医疗资源惠及更多患者的主语「远程医疗」照搬为 telemedicine；「使优质医疗资源惠及更多患者」用英文惯用复合宾语结构 has made high-quality medical resources accessible to more patients——「惠及」没有一个逐字对应的英文动词，make sth accessible to sb 是地道对译。\n\n【降级】 「近年来」降为时间状语前置本句主干之外只有近年来一个成分，译为时间状语 In recent years 置于句首，既符合英文把时间状语放句首标示话题的习惯，又天然起到承接上句的作用；句内其余部分无需再降级。\n\n【语法】 时态 「近年来」标示从过去持续到现在，是现在完成时的典型信号，用 has made；这是基调时态的合理偏离。\n\n主谓一致主语 telemedicine 是不可数单数，助动词用 has，不要受中文无单复数标记影响写成 have。\n\n单复数\n\n「优质医疗资源」「更多患者」均为复数概念：high-quality medical resources、more patients，patients 不要漏掉 s。\n\n【译文】 In recent years, telemedicine has made high-quality medical resources accessible to more patients.\n\n3. 医学专家可以通过视频为偏远地区患者提供咨询 ， 指导当地医生制定并实施治疗方案 。\n\n【主干】 医学专家作主语，提供咨询作谓语 （主语策略：原句主语）\n\n医学专家可以通过视频为偏远地区患者提供咨询给出明确主语「医学专家」→medical experts， 谓语取「提供咨询」→can provide consultations；后半句指导当地医生制定并实施治疗方案不另立谓语，留给降级处理。\n\n【降级】 方式状语前置，伴随动作分词化\n\n「通过视频」→介词短语 Through video links 作方式状语置句首；「为偏远地区患者」→for patients in remote areas，其中「偏远地区」用介词短语 in remote areas 作 patients 的后置定语，不堆在名词前；「指导当地医生制定并实施治疗方案」→现在分词短语 guiding local doctors in developing and implementing treatment plans 作伴随状语，「制定并实施」在 guide sb in doing sth 框架内用 and 连接两个动名词。\n\n【语法】 时态与情态回指全篇基调用一般现在时，can 后接动词原形 provide；本句陈述的是当下的能力，不用完成时。\n\n介词搭配 provide sth for sb（为某人提供某物）与 guide sb in doing sth（指导某人做某事）是固定搭配，介词 for／in 不可换、不可省。\n\n单复数 consultations、treatment plans 均用复数表泛指的一类；experts、doctors 复数与中文「专家们／医生们」的群体义一致。\n\n【译文】 Through video links, medical experts can provide consultations for patients in remote areas, guiding local doctors in developing and implementing treatment plans.\n\n4. 人工智能辅助诊断系统帮助医生识别患者的早期症状 ， 提高诊断准确率 。\n\n【主干】 诊断系统作主语，帮助识别作谓语 （主语策略：原句主语） 人工智能辅助诊断系统帮助医生识别患者的早期症状主语照搬为 AI-assisted diagnosis systems （systems 复数表一类事物），谓语用 help sb do 结构：help doctors identify patients' early symptoms；「识别」紧跟 help 用原形。\n\n【降级】 「提高准确率」降为结果状语\n\n提高诊断准确率是「帮助识别早期症状」带来的结果，译为 thereby improving the accuracy of diagnosis 作结果状语挂句尾；「诊断准确率」不直译为 diagnosis correct rate（中式），用 the accuracy of diagnosis 这个名词化表达。\n\n【语法】 时态陈述系统的一般功能，回指全篇基调用一般现在时 help。\n\n动词用法 help 后接不带 to 的不定式：help doctors identify（to identify 也算对，但 identify 更简洁）； 不要误写 help doctors identifying。\n\n单复数\n\nsystems、doctors、symptoms 均用复数；symptoms 最易漏 s，注意「患者的早期症状」是多个症状。\n\n【译文】 AI-assisted diagnosis systems help doctors identify patients' early symptoms, thereby improving the accuracy of diagnosis.\n\n5. 电子健康档案的普及让医生能够快速了解患者病史 ， 避免重复检查 。\n\n【主干】 普及作主语，使医⽣能够作谓语 （主语策略：原句主语） 电子健康档案的普及是「动词＋的＋名词」结构，译成名词化短语 The widespread adoption of electronic health records 作整句主语；「让医生能够」用 enable sb to do：enables doctors to quickly review patients' medical histories。\n\n【降级】 「避免重复检查」降为结果状语\n\n避免重复检查是「快速了解病史」的直接结果，用 thus avoiding repeated examinations 作结果状语挂句尾；「让」译作 enable sb to do 已含「能够」义，「能够」不再另译 can，避免 enable...to be able to 的冗余。\n\n【语法】 主谓一致主语中心词是 adoption（单数），不是 records，谓语用 enables——长主语里隔着 of 短语时， 最容易被末尾的复数名词带偏。\n\n时态陈述现实功能，回指基调用一般现在时。\n\n单复数\n\nrecords、histories 用复数；「病史」也可作 a patient's medical history，两种译法取一即可， 全篇保持可数名词标记完整。\n\n【译文】 The widespread adoption of electronic health records enables doctors to quickly review patients' medical histories, thus avoiding repeated examinations.\n\n6. 线上医疗咨询平台极大地方便了患者就诊 。\n\n【主干】 平台作主语，⽅便就诊作谓语 （主语策略：原句主语）\n\n线上医疗咨询平台极大地方便了患者就诊主语照搬为 Online medical consultation platforms； 「方便了患者就诊」不逐字译 convenient for patients to see doctors（中式且破碎），用 facilitate ＋名词化宾语：have greatly facilitated patients' access to medical care。\n\n【降级】 「极大地」作副词修饰谓语本句结构简单，无需降级：「极大地」→副词 greatly 直接修饰谓语动词；「患者就诊」名词化为 patients' access to medical care 作宾语，access to 是固定搭配。\n\n【语法】 时态 「方便了」表已成事实且影响延续，偏离基调用现在完成时 have facilitated。\n\n主谓一致与单复数主语 platforms 复数，助动词用 have；platforms 的 s 不可漏。\n\n介词搭配 access to 中的 to 是介词固定搭配，不可换成 for 或 of。\n\n【译文】 Online medical consultation platforms have greatly facilitated patients' access to medical care.\n\n7. 科技与医疗的深度融合更好地满足了人民的健康需求 。\n\n【主干】 深度融合作主语，满⾜需求作谓语 （主语策略：原句主语） 科技与医疗的深度融合译成名词化主语 The deep integration of technology and healthcare （integration 为中心词）；谓语「满足了」→has met；宾语人民的健康需求→people's health needs，needs 用复数。\n\n【降级】 「更好地」作副词嵌入谓语\n\n本句为简单句，无成分需降级：「更好地」→better 置于助动词与过去分词之间（has better met），修饰「满足」的程度。\n\n【语法】 主谓一致主语中心词 integration 是单数，助动词用 has；不要被 of 后面的 technology and healthcare 两个名词带成 have。\n\n时态 「更好地满足了」呼应全篇「已经实现的成果」，用现在完成时 has met，与首句 have brought about 首尾呼应。\n\n单复数\n\n「健康需求」是多种需求，needs 用复数；meet one's needs 为固定搭配。\n\n【译文】 The deep integration of technology and healthcare has better met people's health needs."
+    },
+    {
+      "id": "cet6:2026-06:set2:translation",
+      "type": "translation",
+      "title": "2026年6月六级第2套 · 段落翻译",
+      "sourceId": "src-cet6-2026-06-user-provided",
+      "sourceType": "past_exam",
+      "authenticity": "past_exam",
+      "status": "active",
+      "version": "1.0.0",
+      "difficulty": "normal",
+      "tags": [
+        "CET-6",
+        "2026-06",
+        "set2"
+      ],
+      "createdAt": "2026-10-05T00:00:00.000Z",
+      "updatedAt": "2026-10-05T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      },
+      "level": "paragraph",
+      "promptChinese": "电子商务的蓬勃发展正在深刻改变中国农村的面貌。随着互联网和物流网络快速向农村延伸， 越来越多的农村居民通过电子商务平台将农产品直接销售给城市消费者。近年来，直播带货 ( live-streaming commerce) 使城市消费者能够与卖家实时互动，已成为促进农村发展的一种新方式。电子商务打破了城乡之间的信息壁垒，拓宽了农产品销售渠道，帮助农村居民增收致富。数字经济与乡村振兴的深度融合，正在为中国农村发展注入前所未有的活力。",
+      "keywords": [
+        "e-commerce",
+        "rural",
+        "logistics",
+        "agricultural products",
+        "live-streaming",
+        "revitalization"
+      ],
+      "referenceTranslation": "The booming development of e-commerce is profoundly changing the face of rural China. As the Internet and logistics networks rapidly extend into rural areas, more and more rural residents are selling their agricultural products directly to urban consumers through e-commerce platforms. In recent years, live-streaming commerce, which enables urban consumers to interact with sellers in real time, has become a new way to promote rural development. E-commerce has broken down the information barriers between urban and rural areas and expanded sales channels for agricultural products, helping rural residents increase their incomes and achieve prosperity. The deep integration of the digital economy with rural revitalization is injecting unprecedented vitality into China's rural development.",
+      "scoringPoints": [
+        "完整传达原文信息",
+        "时态和主谓一致准确",
+        "术语和固定搭配恰当",
+        "句间衔接自然"
+      ],
+      "mockFeedback": {
+        "summary": "对照参考译文检查信息是否完整、术语是否准确；当前为规则估分。",
+        "issues": [],
+        "details": []
+      },
+      "estimatedMinutes": 15,
+      "referenceExplanation": "【衔接】 句2→句3：用时间线自然衔接\n\n句2讲「随着……延伸」的背景趋势，句3以近年来推进到最新现象，英文保留 In recent years 置于句首，两句之间形成「背景→新进展」的时间递进，无需额外关联词，靠时间状语即完成衔接。\n\n句4主语重复「电子商务」的处理电子商务在句1、句4两次作主语，因中间隔了两句、指代链已断，句4不宜用代词 it（会让读者回头找错对象），直接重复 E-commerce 反而清楚；句4内部用 helping 分词承接结果，避免 and 三连。\n\n句5收束：与句1进行时首尾呼应句1「正在深刻改变」与句5「正在为中国农村发展注入前所未有的活力」都用现在进行时（is changing / is injecting），一开头一收尾形成闭环，末句无需加 In short 之类总结词，时态一致本身就是连贯信号。\n\n逐句解析一整段连排中文、无段落标记无题号——把它切成一句句翻译单元本身就是解题动作，句前 N. 为逐句解析自切的句序号（非考卷题号），与卷面中文逐字对应。\n\n【主旨】 中国农村电商发展现状介绍整段围绕电子商务的蓬勃发展正在深刻改变中国农村的面貌展开，逐句铺陈电商进农村、直播带货、城乡信息壁垒被打破、数字经济与乡村振兴融合等事实。这是典型的六级汉译英语体：对中国社会经济发展成就的客观介绍，属说明性语体，用词应正式、平实，不抒情、不口语。\n\n【时态】 一般现在时全段是在陈述当下正在发生的客观趋势：正在深刻改变、正在为中国农村发展注入前所未有的活力用的是进行体，打破了城乡之间的信息壁垒、已成为促进农村发展的一种新方式是已完成的结果。 以一般现在时为默认骨架，凡带「正在」的句子用现在进行时、带「了/已成为/近年来」的句子用现在完成时，这三者同属「现在」时间域，基调统一、不算飘忽。\n\n【译法】 电子商务统一译作 e-commerce（全篇词根一致，动词义用 e-commerce platforms 表「电子商务平台」）。电子商务在句1与句4两次出现，必须前后同一译法，切忌一处 e-commerce、一处 electronic commerce 混用。\n\n直播带货原文已随文给出注释，直接采用 live-streaming commerce（直播带货），不要再自造 live selling 等说法；给定注释就用给定译名是六级汉译英的送分纪律。\n\n农产品统一译作 agricultural products。农产品在句2、句4出现两次，全篇只用这一个译法，不与 farm produce 混用。\n\n乡村振兴译作 rural revitalization（约定俗成的官方译名，乡村振兴），与「中国农村」的 rural China、 「农村发展」的 rural development 保持 rural 一词贯通。\n\n数字经济译作 the digital economy（数字经济），economy 此处作特指概念用定冠词 the。\n\n1. 电子商务的蓬勃发展正在深刻改变中国农村的面貌 。\n\n【主干】 发展正在改变⾯貌 （主语策略：原句主语） 中文核心动词是改变，做这动作的是电子商务的蓬勃发展，承受对象是「中国农村的面貌」。英文主干立为 The development is changing the face：主语 The booming development of e-commerce，谓语 is changing（进行时呼应「正在」），宾语 the face of rural China。\n\n【降级】 两个「的」字修饰后置\n\n主干之外的修饰全是「的」字结构：电子商务的作「发展」的定语→后置介词短语 of e-commerce；「中国农村的」作「面貌」的定语→后置 of rural China；「蓬勃」「深刻」分别译作形容词 booming 与副词 profoundly，直接贴在被修饰词旁。全句无需从句，把定语从名词前搬到名词后即可。\n\n【语法】 时态 「正在改变」用现在进行时 is changing——它属于全篇「现在」时间域，与基调一致，是基允许内的偏离，不要写成一般现在时 changes（丢了「正在」的进行义）。\n\n单复数与冠词 development 表抽象「发展」不可数，用单数不加复数；face 此处特指中国农村的面貌，用 the face。rural China 是固定表达，China 前不加 the。\n\n主谓一致主语中心词是 development（单数），谓语用 is changing，不要被紧随其后的 of e-commerce 带偏。\n\n【译文】 The booming development of e-commerce is profoundly changing the face of rural China.\n\n2. 随着互联网和物流网络快速向农村延伸 ， 越来越多的农村居民通过电子商务平台将农产品直接销售给城市消费者 。\n\n【主干】 居⺠销售农产品 （主语策略：原句主语） 逗号后的主句才是全句重心：越来越多的农村居民通过电子商务平台将农产品直接销售给城市消费者。核心动词「销售」→sell；主语「农村居民」→rural residents；宾语「农产品」 →agricultural products；「城市消费者」是间接对象→to urban consumers。主干：rural residents sell agricultural products to urban consumers。\n\n【降级】 「随着」降为背景状语从句随着互联网和物流网络快速向农村延伸是全句背景→降级为 As 引导的时间/背景状语从句 As the Internet and logistics networks rapidly extend into rural areas；通过电子商务平台表方式→介词短语 through e-commerce platforms 作状语；「直接」→副词 directly 修饰 sell。主干之外三块各有归处，不用 and 平铺。\n\n【语法】 单复数\n\n「居民」「消费者」都是泛指的一类人，用复数 rural residents、urban consumers；logistics networks 与 e-commerce platforms 同为泛指复数；Internet 表「互联网」惯用 the Internet。\n\n时态主句可理解为主正在发生的趋势，用现在进行时 are selling 呼应全篇「现在」域；As 从句表伴随背景，用一般现在时 extend 即可。\n\n搭配\n\n「把某物卖给某人」用 sell sth. to sb.，to 不可省；「延伸到农村」用 extend into rural areas， into 表进入方向。\n\n【译文】 As the Internet and logistics networks rapidly extend into rural areas, more and more rural residents are selling their agricultural products directly to urban consumers through e-commerce platforms.\n\n3. 近年来 ， 直播带货 ( live-streaming commerce) 使城市消费者能够与卖家实时互动 ， 已成为促进农村发展的一种新方式 。\n\n【主干】 直播带货已成为新⽅式 （主语策略：原句主语）\n\n本句一个主语带两个动作：使城市消费者能够与卖家实时互动与已成为促进农村发展的一种新方式。判断语义重心在后者（下结论），故主干取 live-streaming commerce has become a new way：主语沿用原文给定译名 live-streaming commerce，谓语 has become，表语 a new way。\n\n【降级】 「使……」降级为定语从句使城市消费者能够与卖家实时互动降级为 which 引导的非限定定语从句 which enables urban consumers to interact with sellers in real time，插回主语之后；「促进农村发展的」修饰 way→后置不定式 to promote rural development；近年来→句首时间状语 In recent years。\n\n【语法】 时态\n\n近年来＋「已成为」是现在完成时的双重标志，谓语用 has become；这是对基调的合理偏离，不能用一般现在时 becomes（丢了「至今已成」的完成义）。\n\n主谓一致主语 live-streaming commerce 是单数概念，谓语用 has become；定语从句内 which 指代它， 从句谓语用 enables。\n\n搭配 「与某人实时互动」interact with sb. in real time，in real time 是固定搭配无冠词；「一种新方式」a new way to do sth.，way 后接不定式。\n\n【译文】 In recent years, live-streaming commerce, which enables urban consumers to interact with sellers in real time, has become a new way to promote rural development.\n\n4. 电子商务打破了城乡之间的信息壁垒 ， 拓宽了农产品销售渠道 ， 帮助农村居民增收致富 。\n\n【主干】 电商打破壁垒、拓宽渠道 （主语策略：原句主语） 主语电子商务带三个动作：打破、拓宽、帮助。前两个「打破了城乡之间的信息壁垒」「拓宽了农产品销售渠道」是并列的核心成果，可作共用同一主语的并列谓语 has broken down ... and expanded ...；「帮助……」是这两个成果带来的结果，留给下一步降级。\n\n【降级】 结果动作降为分词\n\n帮助农村居民增收致富是前两动作带来的结果→现在分词短语 helping rural residents increase their incomes and achieve prosperity 作结果状语；「城乡之间的」修饰壁垒→between urban and rural areas 后置；「农产品销售渠道」→sales channels for agricultural products， 渠道用 for 短语后置修饰。四字格「增收致富」拆开意译为 increase their incomes and achieve prosperity。\n\n【语法】 时态两个「了」均表已完成且影响延续至今，用现在完成时 has broken down ... and expanded ...， 共用一个 has；分词 helping 无时态问题。\n\n单复数 barriers 与 channels 均为泛指复数；incomes 指众居民各自的收入，用复数。\n\n搭配 「打破壁垒」break down the barriers 为惯用搭配；「城乡之间」between urban and rural areas；「增收」increase one's incomes，one's 与 rural residents 对应为 their。\n\n【译文】 E-commerce has broken down the information barriers between urban and rural areas and expanded sales channels for agricultural products, helping rural residents increase their incomes and achieve prosperity.\n\n5. 数字经济与乡村振兴的深度融合 ， 正在为中国农村发展注入前所未有的活力 。\n\n【主干】 融合正在注⼊活⼒ （主语策略：原句主语）\n\n核心动词注入→is injecting；发出动作的主语是「数字经济与乡村振兴的深度融合」这个整体名词短语→The deep integration of the digital economy with rural revitalization；宾语「活力」 →vitality；「为中国农村发展」表受益方向→into China's rural development。主干：The deep integration is injecting vitality into China's rural development。\n\n【降级】 本就是单主干句，修饰后置即可本句中文本身只有一个谓语「注入」，无需降级从句：「数字经济与乡村振兴的」→后置 of the digital economy with rural revitalization；「深度」→形容词 deep 前置修饰 integration； 「前所未有的」→unprecedented 前置修饰 vitality；「为中国农村发展」→介词短语 into China's rural development 表注入方向。\n\n【语法】 时态\n\n「正在注入」用现在进行时 is injecting，与句1「正在改变」首尾呼应，同属全篇「现在」域。\n\n单复数 integration、vitality 均为抽象不可数名词，用单数、不加复数；主语中心词 integration 是单数，谓语用 is。\n\n搭配 「为……注入活力」inject vitality into ... 为固定搭配，into 不可换成 to；「A与B的融合」the integration of A with B。\n\n【译文】 The deep integration of the digital economy with rural revitalization is injecting unprecedented vitality into China's rural development."
+    },
+    {
+      "id": "cet6:2026-06:set3:translation",
+      "type": "translation",
+      "title": "2026年6月六级第3套 · 段落翻译",
+      "sourceId": "src-cet6-2026-06-user-provided",
+      "sourceType": "past_exam",
+      "authenticity": "past_exam",
+      "status": "active",
+      "version": "1.0.0",
+      "difficulty": "normal",
+      "tags": [
+        "CET-6",
+        "2026-06",
+        "set3"
+      ],
+      "createdAt": "2026-10-05T00:00:00.000Z",
+      "updatedAt": "2026-10-05T00:00:00.000Z",
+      "rights": {
+        "licenseStatus": "unknown",
+        "rightsStatus": "unverified"
+      },
+      "level": "paragraph",
+      "promptChinese": "近年来，中国无人机(drone) 产业蓬勃发展，出口量跃升为全球第一。中国的无人机以出色的稳定性、高清 (high-definition)拍摄能力和便捷的操作，受到全球消费者的喜爱，在民用领域得到广泛应用。无人机已被国家纳入战略性新兴产业，逐步成为能满足多种场景需求的智能助手。在农村，无人机可精准识别农作物病虫害，高效喷洒农药。在城市，无人机可快速运送生鲜食品。在不久的将来， 无人机能够在更多领域实现其独特价值，为经济社会发展注入新动能。",
+      "keywords": [
+        "drone",
+        "export",
+        "high-definition",
+        "rural",
+        "pesticides",
+        "deliver"
+      ],
+      "referenceTranslation": "In recent years, China's drone industry has been booming, with its export volume ranking first in the world. Chinese drones are popular with consumers around the world for their excellent stability, high-definition shooting capability and convenient operation, and have been widely used in civilian fields. Drones have been included by the state in strategic emerging industries, and are gradually becoming intelligent assistants that can meet the needs of various scenarios. In rural areas, drones can accurately identify crop diseases and pests, and efficiently spray pesticides. In cities, drones can quickly deliver fresh food. In the near future, drones will be able to realize their unique value in more fields, injecting new momentum into economic and social development.",
+      "scoringPoints": [
+        "完整传达原文信息",
+        "时态和主谓一致准确",
+        "术语和固定搭配恰当",
+        "句间衔接自然"
+      ],
+      "mockFeedback": {
+        "summary": "对照参考译文检查信息是否完整、术语是否准确；当前为规则估分。",
+        "issues": [],
+        "details": []
+      },
+      "estimatedMinutes": 15,
+      "referenceExplanation": "【衔接】 第4、5句之间：复刻对仗句式\n\n在农村，无人机可精准识别农作物病虫害，高效喷洒农药。在城市，无人机可快速运送生鲜食品。 两句是原文设计的平行结构，英文用 In rural areas, drones can... / In cities, drones can... 同槽位对齐，中间不需任何关联词，对仗本身就是衔接。\n\n第5、6句之间：时间词自然推进从当下应用讲到在不久的将来的前景，句首 In the near future 自带时间推进信号，承接上文无需再加 however / moreover；主语沿用 drones，与全篇保持一致，读者视线不断。\n\n第2、3句之间：主语由 Chinese drones 收敛为 drones 第2句主语已用 Chinese drones 完整出现，第3句起无人机直接承续译 drones 即可，不必每句都重复 Chinese——专名在首句锁定、后文用简式，是避免整篇累赘的基本手法。\n\n逐句解析一整段连排中文、无段落标记无题号——把它切成一句句翻译单元本身就是解题动作，句前 N. 为逐句解析自切的句序号（非考卷题号），与卷面中文逐字对应。\n\n【主旨】 中国无人机产业现状与前景的客观介绍\n\n全段围绕中国无人机(drone) 产业蓬勃发展展开，依次讲出口地位、产品优点、政策定位、农村与城市应用、未来价值，是典型的六级汉译英高频语体——社会发展类客观介绍，用词宜正式、平实、信息密集，不带个人情感。\n\n【时态】 一般现在时全篇主体是在陈述当前事实与普遍能力，如受到全球消费者的喜爱，在民用领域得到广泛应用和无人机可精准识别农作物病虫害，属客观介绍，故默认用一般现在时；仅在三处有据偏离：近年来引出的已发生动作用现在完成时，已被国家纳入的\"已\"字用现在完成时被动，在不久的将来用一般将来时。\n\n【译法】 中国无人机产业中国无人机(drone) 产业统一译作 China's drone industry。drone 一词原文已给出，直接沿用；\"产业\"译 industry，全篇不再换成 business / sector，避免一词两译。\n\n战略性新兴产业战略性新兴产业是政策固定表述，约定俗成译法为 strategic emerging industries；industries 用复数，因为它指一类产业的集合，不要自造 new strategic industries 之类的译名。\n\n民用领域\n\n民用领域统一译 civilian fields（或 the civilian sector），与 military 相对用 civilian；不要在同篇一会儿 civil 一会儿 civilian。\n\n农作物病虫害农作物病虫害是\"病害+虫害\"的合称，意译为 crop diseases and pests，两个名词都用复数表泛指；不要硬译成 disease insects。\n\n新动能注入新动能的\"新动能\"译 new momentum（不可数）或 new driving force，全篇取 new momentum 一种即可；\"注入\"搭配 inject...into...，比 give 更正式贴合语体。\n\n1. 近年来 ， 中国无人机(drone) 产业蓬勃发展 ， 出口量跃升为全球第一 。\n\n【主干】 产业蓬勃发展⽴为主谓，出⼝量降级 （主语策略：原句主语） 取中国无人机(drone) 产业蓬勃发展为主干：主语 China's drone industry，谓语 has developed rapidly / has been booming。出口量跃升为全球第一是伴随的另一层信息，不抢谓语位置。\n\n【降级】 出口量分句降级为 with 结构出口量跃升为全球第一与主句主语不同（换成了\"出口量\"），最省力的地道处理是降级为 with 独立结构：with its export volume ranking first in the world，用 its 回指产业，避免再造一个并列整句。近年来放句首作时间状语 In recent years。\n\n【语法】 时态近年来是\"从过去持续到现在\"的标记，本句偏离全篇一般现在时基调，用现在完成时 has developed / has been booming；这正是通读时圈出的偏离点之一。\n\n单复数 export volume（出口量）作不可数概念用单数；ranking 的逻辑主语是 volume，用单数名词即可。\n\n专名统一\n\n主语按 glossary 定稿写 China's drone industry，全篇首现即锁定，后文不再另译。\n\n【译文】 In recent years, China's drone industry has been booming, with its export volume ranking first in the world.\n\n2. 中国的无人机以出色的稳定性 、 高清 (high-definition)拍摄能力和便捷的操作 ， 受到全球消费者的喜爱 ， 在民用领域得到广泛应用 。\n\n【主干】 ⽆⼈机受到喜爱⽴为被动主谓 （主语策略：转被动）\n\n中文受到全球消费者的喜爱里\"无人机\"是动作的承受者，英文主语用 Chinese drones，谓语用被动色彩的 are popular with / are favored by，承受者提作主语；在民用领域得到广泛应用同样是\"得到……应用\"，被动共享同一主语，接成 and have been widely used。\n\n【降级】 \"以……\"三个名词短语降级为 for 原因状语以出色的稳定性、高清 (high-definition)拍摄能力和便捷的操作是受喜爱的原因，降级为 for + 三个并列名词短语：for their excellent stability, high-definition shooting capability and convenient operation；三个短语保持名词性词性一致，别一个写成从句一个写成短语。在民用领域得到广泛应用降级为并列谓语 and have been widely used in civilian fields。\n\n【语法】 语态\n\n\"受到喜爱\"\"得到应用\"两处都须落实被动：are popular with / have been widely used；主体考生最易把\"得到广泛应用\"漏译成主动 use widely，主客颠倒。\n\n单复数无人机此处泛指一类产品，drones 用复数；对应物主代词用 their，三处名词短语 stability（不可数）、capability（单数）、operation（单数）各按其可数性处理。\n\n并列一致\n\nfor 后三个名词短语词性对齐：stability / shooting capability / operation 都是名词性，不要混进形容词或从句。\n\n时态陈述普遍事实，回全篇基调用一般现在时 are popular；后半\"得到应用\"表截至目前的状态，用现在完成时被动 have been widely used，属有据偏离。\n\n【译文】 Chinese drones are popular with consumers around the world for their excellent stability, high-definition shooting capability and convenient operation, and have been widely used in civilian fields.\n\n3. 无人机已被国家纳入战略性新兴产业 ， 逐步成为能满足多种场景需求的智能助手 。\n\n【主干】 ⽆⼈机被纳⼊⽴为被动主⼲ （主语策略：转被动）\n\n已被国家纳入战略性新兴产业的施事是\"国家\"、承受者是\"无人机\"，英文把承受者提作主语： Drones have been included by the state in strategic emerging industries；后半逐步成为能满足多种场景需求的智能助手主语仍是无人机，接并列谓语 and are gradually becoming intelligent assistants。\n\n【降级】 长定语\"能满足……的\"降级为定语从句能满足多种场景需求的是长定语，中文搁在\"智能助手\"前，英文形合不允许长定语前置，降级为后置定语从句 that can meet the needs of various scenarios 挂在 assistants 后；逐步译副词 gradually 嵌进第二个谓语。\n\n【语法】 时态\n\n\"已\"字是完成时标记，have been included 用现在完成时被动，呼应通读时圈出的偏离点；后半\"逐步成为\"是进行中的趋势，用现在进行时 are becoming。\n\n语态 \"被纳入\"必须落实为 be included in；注意英文被动使用率远高于中文\"被\"字句，这里照译被动正好地道。\n\n介词搭配 \"纳入……（行列）\"搭配 be included in / be incorporated into；strategic emerging industries 按 glossary 定稿，industries 用复数。\n\n【译文】 Drones have been included by the state in strategic emerging industries, and are gradually becoming intelligent assistants that can meet the needs of various scenarios.\n\n4. 在农村 ， 无人机可精准识别农作物病虫害 ， 高效喷洒农药 。\n\n【主干】 ⽆⼈机带两个并列谓语 （主语策略：原句主语） 主语明确：drones；精准识别农作物病虫害与高效喷洒农药是同一主语的两个能力，留作 and 连接的并列谓语 can accurately identify ... and efficiently spray ...，不必再降级。\n\n【降级】 地点状语前置，简单句无需多拆在农村译 In rural areas 置句首作地点状语；两个动词宾语结构工整，本就是并列谓语的天然材料，保持 and 连接即可，属\"该平铺时才平铺\"的情形。\n\n【语法】 单复数农作物病虫害按 glossary 译 crop diseases and pests，diseases、pests 均复数表泛指；\"农药\"pesticides 此处泛指各类农药用复数（或不可数 pesticide），二者取一、全句统一。\n\n词性 \"精准\"\"高效\"修饰动词，用副词 accurately / efficiently，别用形容词 accurate / efficient 直接贴动词。\n\n时态表能力，回基调用一般现在时 + 情态动词 can，can 后两动词都用原形 identify / spray。\n\n【译文】 In rural areas, drones can accurately identify crop diseases and pests, and efficiently spray pesticides.\n\n5. 在城市 ， 无人机可快速运送生鲜食品 。\n\n【主干】 ⽆⼈机运送⻝品，主谓宾⻬全 （主语策略：原句主语）\n\n主语 drones，谓语 can deliver，宾语 fresh food；在城市与快速分别为地点、方式状语，句子本身就是标准主谓宾，无需补主语或转被动。\n\n【降级】 简单句直译，与上句保持对仗本句成分单一无需降级；唯一要做的是与上一句在农村对仗：上句用 In rural areas 开头，本句用 In cities 开头，保留中文的平行结构，这是白送的连贯分。\n\n【语法】 词义选词 \"运送（食品）\"用 deliver（配送上门）而非 transport（大宗运输），贴合生活场景；生鲜食品译 fresh food 即可，不必硬造 fresh-keeping food。\n\n单复数\n\nfood 此处作不可数集合概念用单数；drones 复数与全篇一致。\n\n【译文】 In cities, drones can quickly deliver fresh food.\n\n6. 在不久的将来 ， 无人机能够在更多领域实现其独特价值 ， 为经济社会发展注入新动能 。\n\n【主干】 ⽆⼈机实现价值⽴为主谓宾 （主语策略：原句主语）\n\n主语 drones，谓语 will be able to realize，宾语 their unique value（实现其独特价值），状语 in more fields（在更多领域）；在不久的将来是将来时信号，谓语先按 will 写。\n\n【降级】 \"为……注入动能\"降级为 doing 结果状语\n\n为经济社会发展注入新动能是实现价值带来的结果，主语仍是无人机，降级为现在分词短语 injecting new momentum into economic and social development 挂主句后，用逗号隔开；不要再起 and 并列句，分词结构才显出\"实现价值→带动发展\"的因果层次。\n\n【语法】 时态在不久的将来明确指向未来，本句偏离基调用一般将来时 will be able to；doing 短语 injecting 不涉及时态变化，随主句即可。\n\n代词\n\n\"其独特价值\"的\"其\"回指 drones，用 their unique value，代词单复数与先行词一致。\n\n介词搭配\n\n注入新动能按 glossary 用 inject new momentum into...；\"经济社会发展\"合译 economic and social development，development 不可数。\n\n【译文】 In the near future, drones will be able to realize their unique value in more fields, injecting new momentum into economic and social development."
+    }
+  ]
+}

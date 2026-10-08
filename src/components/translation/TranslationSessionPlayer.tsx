@@ -74,9 +74,9 @@ export function TranslationSessionPlayer({ id, onComplete, onExit }: { id: strin
     <main className="subjective-session">
       <header className="subjective-session-bar">
         {onExit ? <button className="exercise-icon-button" onClick={onExit} aria-label="关闭"><ArrowLeft size={19} /></button> :
-          <Link href="/practice/translation" aria-label="关闭"><ArrowLeft size={19} /></Link>}
+          <Link href={session.mode === "selected" ? "/practice/exams" : "/practice/translation"} aria-label="关闭"><ArrowLeft size={19} /></Link>}
         <span>翻译 · {task.title}</span>
-        <small>{session.mode === "daily" ? "每日任务" : "额外练习"}</small>
+        <small>{session.mode === "daily" ? "每日任务" : session.mode === "selected" ? "真题选练" : "额外练习"}</small>
       </header>
 
       {session.phase === "drafting" && (
@@ -189,6 +189,7 @@ export function TranslationSessionPlayer({ id, onComplete, onExit }: { id: strin
             </button>
             {showDetail && (
               <div className="subjective-details">
+                {task.referenceExplanation && <div className="subjective-detail"><p style={{ whiteSpace: "pre-wrap" }}>{task.referenceExplanation}</p></div>}
                 {session.feedback.details.map((d, i) => (
                   <div key={i} className="subjective-detail">
                     {d.excerpt && (
@@ -224,7 +225,7 @@ export function TranslationSessionPlayer({ id, onComplete, onExit }: { id: strin
             {session.phase === "complete" && (onExit ? (
               <button className="subjective-button" onClick={onExit}><ArrowLeft size={18} />返回翻译</button>
             ) : (
-              <Link className="subjective-button" href="/practice/translation"><ArrowLeft size={18} />返回翻译</Link>
+              <Link className="subjective-button" href={session.mode === "selected" ? "/practice/exams" : "/practice/translation"}><ArrowLeft size={18} />{session.mode === "selected" ? "返回真题题库" : "返回翻译"}</Link>
             ))}
           </section>
         )}

@@ -12,6 +12,7 @@ import {
   planFor,
   readingDayStats,
   startReading,
+  startSelectedReading,
   updateReading,
 } from "@/lib/reading/store";
 import {
@@ -80,7 +81,7 @@ function useReadingState() {
           award(`reading:${session.id}`, session.rewardXp);
   }, [store.sessions, ready, learning.ready, award]);
   const start = useCallback(
-    (mode: ReadingSessionMode) => {
+    (mode: Exclude<ReadingSessionMode, "selected">) => {
       if (!storage.current && !ready) return;
       const now = new Date().toISOString();
       const result = startReading(
@@ -95,6 +96,23 @@ function useReadingState() {
     },
     [commit, ready],
   );
+  const startSelected = useCallback(
+    (contentId: string) => {
+      if (!ready) return;
+      const now = new Date().toISOString();
+      const result = startSelectedReading(
+        latest.current,
+        contentId,
+        todayInShanghai(new Date(now)),
+        now,
+        crypto.randomUUID(),
+      );
+      if (result.store !== latest.current) commit(result.store);
+      return result.id;
+    },
+    [commit, ready],
+  );
+
   const dispatch = useCallback(
     (id: string, action: ReadingAction) => {
       const previous = latest.current.sessions[id];
@@ -118,7 +136,7 @@ function useReadingState() {
   );
   const plan = planFor(store, today);
   const inProgress = Object.values(store.sessions).filter(
-    (s) => s.phase !== "complete",
+    (s) => s.phase !== "complete" && s.mode !== "selected",
   );
   const active =
     inProgress.find((s) => s.mode === "daily" && s.planDate === today) ??
@@ -137,6 +155,7 @@ function useReadingState() {
     ),
     dayStats: readingDayStats(store, today),
     start,
+    startSelected,
     dispatch,
   };
 }

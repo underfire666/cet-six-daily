@@ -1,0 +1,783 @@
+{
+  "schemaVersion": 1,
+  "importedAt": "2026-10-06T00:00:00.000Z",
+  "years": [
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "documents": [
+    {
+      "id": "2022-12-1",
+      "documentSha256": "3c90b810dc8f30f61c388b1e61a09966c88758a41792c048ffe06a4738ccd634",
+      "pages": 160,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 80,
+        "matching": 93,
+        "careful1": 117,
+        "careful2": 134,
+        "translation": 154
+      },
+      "readingIds": [
+        "cet6:2022-12:set1:cloze",
+        "cet6:2022-12:set1:matching",
+        "cet6:2022-12:set1:careful1",
+        "cet6:2022-12:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2022-12:set1:writing",
+      "translationId": "cet6:2022-12:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2022-12-2",
+      "documentSha256": "4db1ffb7b0abeab78d927d43740fdae856c58dd5ba4ecdf94b35dac806764731",
+      "pages": 159,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 79,
+        "matching": 93,
+        "careful1": 121,
+        "careful2": 138,
+        "translation": 153
+      },
+      "readingIds": [
+        "cet6:2022-12:set2:cloze",
+        "cet6:2022-12:set2:matching",
+        "cet6:2022-12:set2:careful1",
+        "cet6:2022-12:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2022-12:set2:writing",
+      "translationId": "cet6:2022-12:set2:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2022-12-3",
+      "documentSha256": "59d348910c7f5429bf05bb56b70d78873e7c8f4d399baf743587c5027c8bc790",
+      "pages": 91,
+      "chapters": {
+        "writing": 9,
+        "cloze": 16,
+        "matching": 29,
+        "careful1": 53,
+        "careful2": 68,
+        "translation": 85
+      },
+      "readingIds": [
+        "cet6:2022-12:set3:cloze",
+        "cet6:2022-12:set3:matching",
+        "cet6:2022-12:set3:careful1",
+        "cet6:2022-12:set3:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2022-12:set3:writing",
+      "translationId": "cet6:2022-12:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2022-06-1",
+      "documentSha256": "fb7043274bb05d88d8456788c1482478f1236d07db3db9df10e1743e35392699",
+      "pages": 157,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 82,
+        "matching": 94,
+        "careful1": 117,
+        "careful2": 135,
+        "translation": 151
+      },
+      "readingIds": [
+        "cet6:2022-06:set1:cloze",
+        "cet6:2022-06:set1:matching",
+        "cet6:2022-06:set1:careful1",
+        "cet6:2022-06:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2022-06:set1:writing",
+      "translationId": "cet6:2022-06:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2022-06-2",
+      "documentSha256": "d887b1682883c368f38cd6e2ea005f214a3ad153c00fe5b8c4b34e69cf42407e",
+      "pages": 96,
+      "chapters": {
+        "writing": 9,
+        "cloze": 16,
+        "matching": 31,
+        "careful1": 59,
+        "careful2": 74,
+        "translation": 90
+      },
+      "readingIds": [
+        "cet6:2022-06:set2:cloze",
+        "cet6:2022-06:set2:matching",
+        "cet6:2022-06:set2:careful1",
+        "cet6:2022-06:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2022-06:set2:writing",
+      "translationId": "cet6:2022-06:set2:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2022-06-3",
+      "documentSha256": "20e759f939e8bd83d733c2cad611fdea25ee66346abf9752f4d0555a0068947b",
+      "pages": 15,
+      "chapters": {
+        "writing": 2,
+        "translation": 9
+      },
+      "readingIds": [
+        "cet6:2022-06:set1:cloze",
+        "cet6:2022-06:set1:matching",
+        "cet6:2022-06:set1:careful1",
+        "cet6:2022-06:set1:careful2"
+      ],
+      "newReadingQuestions": 0,
+      "writingId": "cet6:2022-06:set3:writing",
+      "translationId": "cet6:2022-06:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2022-09-1",
+      "documentSha256": "5cb6a0c0e642edc3be0abb3971f13fdbae8a9107d05eb96f758c22d27d6b0dc2",
+      "pages": 157,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 78,
+        "matching": 91,
+        "careful1": 117,
+        "careful2": 133,
+        "translation": 151
+      },
+      "readingIds": [
+        "cet6:2022-09:set1:cloze",
+        "cet6:2022-09:set1:matching",
+        "cet6:2022-09:set1:careful1",
+        "cet6:2022-09:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2022-09:set1:writing",
+      "translationId": "cet6:2022-09:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2022-09-2",
+      "documentSha256": "30e00b21d2c38143c510768416c960ecc5922d97cba9ccad1b1ec8c47270f786",
+      "pages": 13,
+      "chapters": {
+        "writing": 2,
+        "translation": 8
+      },
+      "readingIds": [
+        "cet6:2022-09:set1:cloze",
+        "cet6:2022-09:set1:matching",
+        "cet6:2022-09:set1:careful1",
+        "cet6:2022-09:set1:careful2"
+      ],
+      "newReadingQuestions": 0,
+      "writingId": "cet6:2022-09:set2:writing",
+      "translationId": "cet6:2022-09:set2:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2022-09-3",
+      "documentSha256": "9c2d407b5675b5bd0581c017b804b30a85f02e59519b6e2c33ff78a5a05b0f1a",
+      "pages": 14,
+      "chapters": {
+        "writing": 2,
+        "translation": 9
+      },
+      "readingIds": [
+        "cet6:2022-09:set1:cloze",
+        "cet6:2022-09:set1:matching",
+        "cet6:2022-09:set1:careful1",
+        "cet6:2022-09:set1:careful2"
+      ],
+      "newReadingQuestions": 0,
+      "writingId": "cet6:2022-09:set3:writing",
+      "translationId": "cet6:2022-09:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2023-12-1",
+      "documentSha256": "ef9d16ae2e0fabeb7624d22b282e28d62c9f1f64419e11f7a3f81112dbae7bdf",
+      "pages": 161,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 82,
+        "matching": 94,
+        "careful1": 122,
+        "careful2": 138,
+        "translation": 155
+      },
+      "readingIds": [
+        "cet6:2023-12:set1:cloze",
+        "cet6:2023-12:set1:matching",
+        "cet6:2023-12:set1:careful1",
+        "cet6:2023-12:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2023-12:set1:writing",
+      "translationId": "cet6:2023-12:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2023-12-2",
+      "documentSha256": "dc566b96d0e00d1e60229e40318a316d158e5fda0c70503edb8f4f44be8f2a5b",
+      "pages": 162,
+      "chapters": {
+        "writing": 12,
+        "listening": 18,
+        "cloze": 80,
+        "matching": 94,
+        "careful1": 121,
+        "careful2": 138,
+        "translation": 156
+      },
+      "readingIds": [
+        "cet6:2023-12:set2:cloze",
+        "cet6:2023-12:set2:matching",
+        "cet6:2023-12:set2:careful1",
+        "cet6:2023-12:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2023-12:set2:writing",
+      "translationId": "cet6:2023-12:set2:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2023-12-3",
+      "documentSha256": "7611a38c7faa8fd209f03a5a2ecbca015c96f0b4faa2e32151902224da549723",
+      "pages": 97,
+      "chapters": {
+        "writing": 9,
+        "cloze": 16,
+        "matching": 30,
+        "careful1": 57,
+        "careful2": 74,
+        "translation": 91
+      },
+      "readingIds": [
+        "cet6:2023-12:set3:cloze",
+        "cet6:2023-12:set3:matching",
+        "cet6:2023-12:set3:careful1",
+        "cet6:2023-12:set3:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2023-12:set3:writing",
+      "translationId": "cet6:2023-12:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2023-03-1",
+      "documentSha256": "2fd983c8028f9678868a7e576b316a83cdadccdd8d4d4884a44ea6824d1d9be9",
+      "pages": 153,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 76,
+        "matching": 90,
+        "careful1": 117,
+        "careful2": 132,
+        "translation": 148
+      },
+      "readingIds": [
+        "cet6:2023-03:set1:cloze",
+        "cet6:2023-03:set1:matching",
+        "cet6:2023-03:set1:careful1",
+        "cet6:2023-03:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2023-03:set1:writing",
+      "translationId": "cet6:2023-03:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2023-03-2",
+      "documentSha256": "309c16d2f71c9a8ac430b00dd379df94d29b3f54656c3575983d61749f020259",
+      "pages": 15,
+      "chapters": {
+        "writing": 2,
+        "translation": 9
+      },
+      "readingIds": [
+        "cet6:2023-03:set1:cloze",
+        "cet6:2023-03:set1:matching",
+        "cet6:2023-03:set1:careful1",
+        "cet6:2023-03:set1:careful2"
+      ],
+      "newReadingQuestions": 0,
+      "writingId": "cet6:2023-03:set2:writing",
+      "translationId": "cet6:2023-03:set2:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2023-03-3",
+      "documentSha256": "5e0bf0743599942152a0245f6a18b40c2c5d284bb4e591197dcb775375503a8b",
+      "pages": 14,
+      "chapters": {
+        "writing": 2,
+        "translation": 9
+      },
+      "readingIds": [
+        "cet6:2023-03:set1:cloze",
+        "cet6:2023-03:set1:matching",
+        "cet6:2023-03:set1:careful1",
+        "cet6:2023-03:set1:careful2"
+      ],
+      "newReadingQuestions": 0,
+      "writingId": "cet6:2023-03:set3:writing",
+      "translationId": "cet6:2023-03:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2023-06-1",
+      "documentSha256": "e5bcdfceaaadc1f73e28b5292f0ecf671006683b08c228116987c8e0ba34dbfa",
+      "pages": 161,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 82,
+        "matching": 95,
+        "careful1": 123,
+        "careful2": 140,
+        "translation": 156
+      },
+      "readingIds": [
+        "cet6:2023-06:set1:cloze",
+        "cet6:2023-06:set1:matching",
+        "cet6:2023-06:set1:careful1",
+        "cet6:2023-06:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2023-06:set1:writing",
+      "translationId": "cet6:2023-06:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2023-06-2",
+      "documentSha256": "9d64339b3cdbd46fd0eb4d0fd40628a0e64fbe7135a268d7f9222468458cee9e",
+      "pages": 159,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 81,
+        "matching": 95,
+        "careful1": 119,
+        "careful2": 135,
+        "translation": 154
+      },
+      "readingIds": [
+        "cet6:2023-06:set2:cloze",
+        "cet6:2023-06:set2:matching",
+        "cet6:2023-06:set2:careful1",
+        "cet6:2023-06:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2023-06:set2:writing",
+      "translationId": "cet6:2023-06:set2:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2023-06-3",
+      "documentSha256": "9de5af5fa40423ca28ee2c86643206b5c6e3a08272fb0bbb1ac2f9ba8bde9444",
+      "pages": 93,
+      "chapters": {
+        "writing": 9,
+        "cloze": 15,
+        "matching": 29,
+        "careful1": 55,
+        "careful2": 70,
+        "translation": 88
+      },
+      "readingIds": [
+        "cet6:2023-06:set3:cloze",
+        "cet6:2023-06:set3:matching",
+        "cet6:2023-06:set3:careful1",
+        "cet6:2023-06:set3:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2023-06:set3:writing",
+      "translationId": "cet6:2023-06:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2024-12-1",
+      "documentSha256": "8109e3249b6444942182eced362afeb611914c8c291c96a27b93a9c8c6ba417f",
+      "pages": 163,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 81,
+        "matching": 96,
+        "careful1": 125,
+        "careful2": 141,
+        "translation": 158
+      },
+      "readingIds": [
+        "cet6:2024-12:set1:cloze",
+        "cet6:2024-12:set1:matching",
+        "cet6:2024-12:set1:careful1",
+        "cet6:2024-12:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2024-12:set1:writing",
+      "translationId": "cet6:2024-12:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2024-12-2",
+      "documentSha256": "665a3d272347b89fd182f643d96e27a4d3812d986344a8019ee4b6514b199518",
+      "pages": 157,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 83,
+        "matching": 97,
+        "careful1": 119,
+        "careful2": 137,
+        "translation": 152
+      },
+      "readingIds": [
+        "cet6:2024-12:set2:cloze",
+        "cet6:2024-12:set2:matching",
+        "cet6:2024-12:set2:careful1",
+        "cet6:2024-12:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2024-12:set2:writing",
+      "translationId": "cet6:2024-12:set2:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2024-12-3",
+      "documentSha256": "3889c69390a06072ff264d268c70432edb1d94e85b89159c23c6f0f1a7e72736",
+      "pages": 95,
+      "chapters": {
+        "writing": 9,
+        "cloze": 16,
+        "matching": 30,
+        "careful1": 59,
+        "careful2": 74,
+        "translation": 89
+      },
+      "readingIds": [
+        "cet6:2024-12:set3:cloze",
+        "cet6:2024-12:set3:matching",
+        "cet6:2024-12:set3:careful1",
+        "cet6:2024-12:set3:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2024-12:set3:writing",
+      "translationId": "cet6:2024-12:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2024-06-1",
+      "documentSha256": "f8cdb54e9d5dfab15b883d1a52dc9f281fa542951ad668fe126181969164ea5e",
+      "pages": 158,
+      "chapters": {
+        "writing": 12,
+        "listening": 18,
+        "cloze": 81,
+        "matching": 94,
+        "careful1": 120,
+        "careful2": 135,
+        "translation": 153
+      },
+      "readingIds": [
+        "cet6:2024-06:set1:cloze",
+        "cet6:2024-06:set1:matching",
+        "cet6:2024-06:set1:careful1",
+        "cet6:2024-06:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2024-06:set1:writing",
+      "translationId": "cet6:2024-06:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2024-06-2",
+      "documentSha256": "bcced0c6fa9611a6196c8f27cdcedc16cc12c7b57616c0bbb00aab127cb2d582",
+      "pages": 155,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 84,
+        "matching": 95,
+        "careful1": 118,
+        "careful2": 135,
+        "translation": 149
+      },
+      "readingIds": [
+        "cet6:2024-06:set2:cloze",
+        "cet6:2024-06:set2:matching",
+        "cet6:2024-06:set2:careful1",
+        "cet6:2024-06:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2024-06:set2:writing",
+      "translationId": "cet6:2024-06:set2:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2024-06-3",
+      "documentSha256": "3de9991d9ce292d55956eab078ee855fdb64ec4b4378792d1429c341088a3200",
+      "pages": 94,
+      "chapters": {
+        "writing": 9,
+        "cloze": 16,
+        "matching": 29,
+        "careful1": 57,
+        "careful2": 71,
+        "translation": 89
+      },
+      "readingIds": [
+        "cet6:2024-06:set3:cloze",
+        "cet6:2024-06:set3:matching",
+        "cet6:2024-06:set3:careful1",
+        "cet6:2024-06:set3:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2024-06:set3:writing",
+      "translationId": "cet6:2024-06:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2025-12-1",
+      "documentSha256": "d6c29738aea6ae2079dc66af01f1b4a2e5096ffc587da55fc6841d60457957f6",
+      "pages": 165,
+      "chapters": {
+        "writing": 12,
+        "listening": 18,
+        "cloze": 83,
+        "matching": 97,
+        "careful1": 126,
+        "careful2": 142,
+        "translation": 160
+      },
+      "readingIds": [
+        "cet6:2025-12:set1:cloze",
+        "cet6:2025-12:set1:matching",
+        "cet6:2025-12:set1:careful1",
+        "cet6:2025-12:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2025-12:set1:writing",
+      "translationId": "cet6:2025-12:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2025-12-2",
+      "documentSha256": "29c941eb9f327e60f73e55b46448c5b3558492c60b6cdca7418dd2052c444af1",
+      "pages": 169,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 86,
+        "matching": 99,
+        "careful1": 129,
+        "careful2": 147,
+        "translation": 164
+      },
+      "readingIds": [
+        "cet6:2025-12:set2:cloze",
+        "cet6:2025-12:set2:matching",
+        "cet6:2025-12:set2:careful1",
+        "cet6:2025-12:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2025-12:set2:writing",
+      "translationId": "cet6:2025-12:set2:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2025-12-3",
+      "documentSha256": "ad96d5cf3a6f0b81aa25f1184de773a83e356b46aa986a62779fdb7ae4725439",
+      "pages": 96,
+      "chapters": {
+        "writing": 9,
+        "cloze": 15,
+        "matching": 30,
+        "careful1": 54,
+        "careful2": 73,
+        "translation": 91
+      },
+      "readingIds": [
+        "cet6:2025-12:set3:cloze",
+        "cet6:2025-12:set3:matching",
+        "cet6:2025-12:set3:careful1",
+        "cet6:2025-12:set3:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2025-12:set3:writing",
+      "translationId": "cet6:2025-12:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2025-06-1",
+      "documentSha256": "ce25813b12315fc243d4a474b83a731421a4ab4ac909944c052821afa9eb0a56",
+      "pages": 167,
+      "chapters": {
+        "writing": 13,
+        "listening": 20,
+        "cloze": 84,
+        "matching": 99,
+        "careful1": 129,
+        "careful2": 145,
+        "translation": 162
+      },
+      "readingIds": [
+        "cet6:2025-06:set1:cloze",
+        "cet6:2025-06:set1:matching",
+        "cet6:2025-06:set1:careful1",
+        "cet6:2025-06:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2025-06:set1:writing",
+      "translationId": "cet6:2025-06:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2025-06-2",
+      "documentSha256": "2c2cc8e3480fdd9f0dede9b7272af5673ce5dad1c3935790d6748d18e56f5696",
+      "pages": 162,
+      "chapters": {
+        "writing": 12,
+        "listening": 18,
+        "cloze": 82,
+        "matching": 95,
+        "careful1": 125,
+        "careful2": 141,
+        "translation": 157
+      },
+      "readingIds": [
+        "cet6:2025-06:set2:cloze",
+        "cet6:2025-06:set2:matching",
+        "cet6:2025-06:set2:careful1",
+        "cet6:2025-06:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2025-06:set2:writing",
+      "translationId": "cet6:2025-06:set2:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2025-06-3",
+      "documentSha256": "114f3e52f286bc647eb31710fe76dd0b89f8f543c9a47b428a0e72c44724426f",
+      "pages": 101,
+      "chapters": {
+        "writing": 9,
+        "cloze": 16,
+        "matching": 29,
+        "careful1": 60,
+        "careful2": 79,
+        "translation": 96
+      },
+      "readingIds": [
+        "cet6:2025-06:set3:cloze",
+        "cet6:2025-06:set3:matching",
+        "cet6:2025-06:set3:careful1",
+        "cet6:2025-06:set3:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2025-06:set3:writing",
+      "translationId": "cet6:2025-06:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    },
+    {
+      "id": "2026-06-1",
+      "documentSha256": "c6092fe72575206a2fdffc8c3abaf546d4ff1dbb1af24b813de5019b32a55dec",
+      "pages": 133,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 68,
+        "matching": 81,
+        "careful1": 102,
+        "careful2": 115,
+        "translation": 127
+      },
+      "readingIds": [
+        "cet6:2026-06:set1:cloze",
+        "cet6:2026-06:set1:matching",
+        "cet6:2026-06:set1:careful1",
+        "cet6:2026-06:set1:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2026-06:set1:writing",
+      "translationId": "cet6:2026-06:set1:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2026-06-2",
+      "documentSha256": "eb5b0d2c978c70a3739710972656a60fd75c119df7f205fde2bf647378cee21f",
+      "pages": 127,
+      "chapters": {
+        "writing": 12,
+        "listening": 19,
+        "cloze": 67,
+        "matching": 80,
+        "careful1": 99,
+        "careful2": 111,
+        "translation": 122
+      },
+      "readingIds": [
+        "cet6:2026-06:set2:cloze",
+        "cet6:2026-06:set2:matching",
+        "cet6:2026-06:set2:careful1",
+        "cet6:2026-06:set2:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2026-06:set2:writing",
+      "translationId": "cet6:2026-06:set2:translation",
+      "listeningStatus": "missing_audio"
+    },
+    {
+      "id": "2026-06-3",
+      "documentSha256": "f53032336706991cb0ef17544fa4007f13f1994dd6cda88d8eb6ead86b44d97a",
+      "pages": 80,
+      "chapters": {
+        "writing": 9,
+        "cloze": 16,
+        "matching": 29,
+        "careful1": 51,
+        "careful2": 64,
+        "translation": 75
+      },
+      "readingIds": [
+        "cet6:2026-06:set3:cloze",
+        "cet6:2026-06:set3:matching",
+        "cet6:2026-06:set3:careful1",
+        "cet6:2026-06:set3:careful2"
+      ],
+      "newReadingQuestions": 30,
+      "writingId": "cet6:2026-06:set3:writing",
+      "translationId": "cet6:2026-06:set3:translation",
+      "listeningStatus": "shared_with_set1"
+    }
+  ],
+  "readingArticles": 112,
+  "readingQuestions": 840,
+  "writingTasks": 33,
+  "translationTasks": 33,
+  "listeningEnabled": false,
+  "pendingListeningQuestions": 475,
+  "added": {
+    "readingArticles": 100,
+    "readingQuestions": 750,
+    "writingTasks": 30,
+    "translationTasks": 30
+  }
+}

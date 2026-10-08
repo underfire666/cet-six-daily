@@ -173,6 +173,8 @@
 }
 .audio-meta {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
   font-size: 13px;
   color: var(--muted);
@@ -192,6 +194,8 @@
   margin-bottom: 12px;
 }
 .rate-switch button {
+  min-height: 44px;
+  min-width: 44px;
   border: 1px solid var(--border, #dde2e5);
   background: #fff;
   border-radius: 10px;

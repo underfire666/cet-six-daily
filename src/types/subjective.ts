@@ -41,4 +41,4 @@ export interface SubjectiveFeedback {
   createdAt: string;
 }
 
-export type SubjectiveSessionMode = "daily" | "extra";
+export type SubjectiveSessionMode = "daily" | "extra" | "selected";

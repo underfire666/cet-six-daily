@@ -8,12 +8,18 @@ import { WritingComplete } from "./WritingComplete";
 
 export function WritingHome() {
   const route = useLocalPracticeRoute("writing");
+  const { store } = useWriting();
+  const goHome = () => {
+    const id = route.stage.id;
+    if (id && store.sessions[id]?.mode === "selected") route.goToExams();
+    else route.goHome();
+  };
   if (route.stage.kind === "session") {
     const id = route.stage.id;
-    return <WritingSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={route.goHome} />;
+    return <WritingSessionPlayer id={id} onComplete={() => route.openComplete(id)} onExit={goHome} />;
   }
   if (route.stage.kind === "complete")
-    return <WritingComplete id={route.stage.id} onSession={route.openSession} onHome={route.goHome} />;
+    return <WritingComplete id={route.stage.id} onSession={route.openSession} onHome={goHome} />;
   return <WritingDashboard onSession={route.openSession} />;
 }
 

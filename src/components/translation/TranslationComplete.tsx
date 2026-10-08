@@ -6,11 +6,17 @@ import { useRouter } from "next/navigation";
 import { Check, Languages, Zap } from "lucide-react";
 
 import { useTranslation } from "./TranslationProvider";
+import { todayInShanghai } from "@/lib/dates";
+import { examReturnHref } from "@/lib/exam-browse-route";
 
 export function TranslationComplete({ id, onSession, onHome }: { id: string; onSession?: (id: string) => void; onHome?: () => void }) {
   const { ready, store, dailyComplete, start } = useTranslation();
   const router = useRouter();
   const session = store.sessions[id];
+  const returnToCatalog = () => {
+    if (onHome) onHome();
+    else router.push(examReturnHref(window.location.search) ?? "/practice/exams");
+  };
 
   if (!ready) return <div className="exercise-loading">正在结算…</div>;
   if (!session || !session.applied) {
@@ -24,7 +30,18 @@ export function TranslationComplete({ id, onSession, onHome }: { id: string; onS
     );
   }
   const task = translationTaskById(session.taskId)!;
+  const selected = session.mode === "selected";
+  const completedDate = session.completedAt ? todayInShanghai(new Date(session.completedAt)) : null;
+  const sameDayRepeat = Object.values(store.sessions).some((previous) =>
+    previous.id !== session.id && previous.applied && previous.taskId === session.taskId &&
+    previous.completedAt && session.completedAt && previous.completedAt <= session.completedAt &&
+    todayInShanghai(new Date(previous.completedAt)) === completedDate,
+  );
   const next = () => {
+    if (selected) {
+      returnToCatalog();
+      return;
+    }
     const mode =
       session.mode === "extra" || dailyComplete ? "extra" : "daily";
     const nextId = start(mode);
@@ -63,15 +80,23 @@ export function TranslationComplete({ id, onSession, onHome }: { id: string; onS
         </span>
         <strong>+{session.rewardXp ?? 0} XP</strong>
       </div>
+      {selected && (session.rewardXp ?? 0) === 0 && (
+        <p className="subjective-complete-sub" role="status">
+          {sameDayRepeat
+            ? "这道题今天已计入 XP，重复练习不重复奖励。"
+            : "这道题已获得首次奖励，本次巩固未获得表现分。"}
+        </p>
+      )}
       <div className="subjective-complete-actions">
         <button className="subjective-button" onClick={next}>
           <Languages size={18} />
-          {session.mode === "daily" && !dailyComplete
+          {selected ? "返回真题题库" : session.mode === "daily" && !dailyComplete
             ? "继续下一篇"
             : "再练一篇"}
         </button>
-        {onHome ? <button className="subjective-text-button" onClick={onHome}>返回翻译首页</button> :
-          <Link className="subjective-text-button" href="/practice/translation">返回翻译首页</Link>}
+        {selected ? <Link className="subjective-text-button" href="/">返回学习首页</Link> :
+          onHome ? <button className="subjective-text-button" onClick={onHome}>返回翻译首页</button> :
+            <Link className="subjective-text-button" href="/practice/translation">返回翻译首页</Link>}
       </div>
     </main>
   );

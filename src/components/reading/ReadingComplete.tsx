@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { BookOpen, Check, Zap } from "lucide-react";
 
 import { readingLesson } from "@/lib/reading/questions";
+import { todayInShanghai } from "@/lib/dates";
+import { examReturnHref } from "@/lib/exam-browse-route";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useReading } from "./ReadingProvider";
 
@@ -13,7 +15,15 @@ export function ReadingComplete({ id, onSession, onHome }: { id: string; onSessi
   const { ready, store, dailyComplete, start } = useReading();
   const router = useRouter();
   const session = store.sessions[id];
+  const returnToCatalog = () => {
+    if (onHome) onHome();
+    else router.push(examReturnHref(window.location.search) ?? "/practice/exams");
+  };
   const nextArticle = () => {
+    if (session?.mode === "selected") {
+      returnToCatalog();
+      return;
+    }
     const mode =
       session?.mode === "extra" || dailyComplete ? "extra" : "daily";
     const nextId = start(mode);
@@ -43,6 +53,13 @@ export function ReadingComplete({ id, onSession, onHome }: { id: string; onSessi
   }).length;
   const needImprove = unresolvedQuestions(session.lesson, definition).length;
   const collected = session.collectedWordIds.length;
+  const selected = session.mode === "selected";
+  const completedDate = session.completedAt ? todayInShanghai(new Date(session.completedAt)) : null;
+  const sameDayRepeat = Object.values(store.sessions).some((previous) =>
+    previous.id !== session.id && previous.applied && previous.articleId === session.articleId &&
+    previous.completedAt && session.completedAt && previous.completedAt <= session.completedAt &&
+    todayInShanghai(new Date(previous.completedAt)) === completedDate,
+  );
   return (
     <main className="reading-complete">
       <div className="reading-complete-badge">
@@ -77,15 +94,23 @@ export function ReadingComplete({ id, onSession, onHome }: { id: string; onSessi
         </span>
         <strong>+{session.rewardXp ?? 0} XP</strong>
       </div>
+      {selected && (session.rewardXp ?? 0) === 0 && (
+        <p className="reading-complete-sub" role="status">
+          {sameDayRepeat
+            ? "这组题今天已计入 XP，重复练习不重复奖励。"
+            : "这组题已获得首次奖励，本次巩固未获得答题表现分。"}
+        </p>
+      )}
       <div className="reading-complete-actions">
         <button className="reading-button" onClick={nextArticle}>
           <BookOpen size={18} />
-          {session.mode === "daily" && !dailyComplete
+          {selected ? "返回真题题库" : session.mode === "daily" && !dailyComplete
             ? "继续下一篇"
             : "今天再读一篇"}
         </button>
-        {onHome ? <button className="reading-text-button" onClick={onHome}>返回阅读首页</button> :
-          <Link className="reading-text-button" href="/practice/reading">返回阅读首页</Link>}
+        {selected ? <Link className="reading-text-button" href="/">返回学习首页</Link> :
+          onHome ? <button className="reading-text-button" onClick={onHome}>返回阅读首页</button> :
+            <Link className="reading-text-button" href="/practice/reading">返回阅读首页</Link>}
       </div>
     </main>
   );

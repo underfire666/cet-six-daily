@@ -1,5 +1,6 @@
 import { listeningMaterialById } from "@/content/learning";
-import { selectContent } from "@/content/selector";
+import { getExamExercise } from "@/content/exam-catalog";
+import { selectPracticeContent as selectContent } from "@/content/selector";
 import { getListeningMaterials } from "@/content/learning";
 
 import { todayInShanghai } from "@/lib/dates";
@@ -65,20 +66,18 @@ function pickExtraMaterial(
       )
       .map((s) => s.materialId),
   );
-  const fresh = getListeningMaterials()
-    .map((m) => m.id)
-    .find((id) => !planned.has(id) && !completedToday.has(id));
-  if (fresh) return fresh;
-  return selectContent({pool:getListeningMaterials(),limit:1,seed:date+":extra:"+Object.keys(store.sessions).length,excludeIds:new Set([...planned,...completedToday]),idOf:item=>item.id,allowRepeat:true}).items[0]?.id;
+  const options = {pool:getListeningMaterials(),limit:1,seed:date+":extra:"+Object.keys(store.sessions).length,excludeIds:new Set([...planned,...completedToday]),idOf:(item: ReturnType<typeof getListeningMaterials>[number])=>item.id};
+  return selectContent(options).items[0]?.id ?? selectContent({...options,allowRepeat:true}).items[0]?.id;
 }
 
 export function startListening(
   store: ListeningStore,
-  mode: ListeningSessionMode,
+  mode: Exclude<ListeningSessionMode, "selected">,
   date: string,
   now: string,
   id: string,
 ): { store: ListeningStore; id?: string } {
+  if (mode !== "daily" && mode !== "extra") return { store };
   const active = Object.values(store.sessions).find(
     (s) =>
       s.phase !== "complete" &&
@@ -121,6 +120,26 @@ export function startListening(
     },
     id,
   };
+}
+
+/** Explicit exam selection stays independent of daily plans and extra practice gates. */
+export function startSelectedListening(
+  store: ListeningStore,
+  contentId: string,
+  date: string,
+  now: string,
+  id: string,
+): { store: ListeningStore; id?: string } {
+  if (!getExamExercise("listening", contentId)) return { store };
+  const content = listeningMaterialById(contentId);
+  if (!content) return { store };
+  const active = Object.values(store.sessions).find(
+    session => session.mode === "selected" && session.materialId === contentId && session.phase !== "complete",
+  );
+  if (active) return { store, id: active.id };
+  // Canonical IDs also resume the same pending exercise from sets that share content.
+  const session = createListeningSession(id, "selected", date, content, now);
+  return { store: { ...store, sessions: { ...store.sessions, [id]: session } }, id };
 }
 
 export function updateListening(

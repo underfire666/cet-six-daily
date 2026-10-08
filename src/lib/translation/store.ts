@@ -1,5 +1,6 @@
 import { translationTaskById } from "@/content/learning";
-import { selectContent } from "@/content/selector";
+import { getExamExercise } from "@/content/exam-catalog";
+import { selectPracticeContent as selectContent } from "@/content/selector";
 import { getTranslationTasks } from "@/content/learning";
 
 import { todayInShanghai } from "@/lib/dates";
@@ -63,11 +64,12 @@ function pickExtraTask(store: TranslationStore, plannedIds: string[]): string | 
 
 export function startTranslation(
   store: TranslationStore,
-  mode: SubjectiveSessionMode,
+  mode: Exclude<SubjectiveSessionMode, "selected">,
   date: string,
   now: string,
   id: string,
 ): { store: TranslationStore; id?: string } {
+  if (mode !== "daily" && mode !== "extra") return { store };
   const active = Object.values(store.sessions).find(
     (s) =>
       s.phase !== "complete" &&
@@ -105,6 +107,26 @@ export function startTranslation(
     },
     id,
   };
+}
+
+/** Explicit exam selection stays independent of daily plans and extra practice gates. */
+export function startSelectedTranslation(
+  store: TranslationStore,
+  contentId: string,
+  date: string,
+  now: string,
+  id: string,
+): { store: TranslationStore; id?: string } {
+  if (!getExamExercise("translation", contentId)) return { store };
+  const content = translationTaskById(contentId);
+  if (!content) return { store };
+  const active = Object.values(store.sessions).find(
+    session => session.mode === "selected" && session.taskId === contentId && session.phase !== "complete",
+  );
+  if (active) return { store, id: active.id };
+  // Canonical IDs also resume the same pending exercise from sets that share content.
+  const session = createTranslationSession(id, "selected", date, content, now);
+  return { store: { ...store, sessions: { ...store.sessions, [id]: session } }, id };
 }
 
 export function updateTranslation(
