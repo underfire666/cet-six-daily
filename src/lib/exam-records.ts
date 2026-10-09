@@ -16,7 +16,10 @@ export interface PracticeRecord {
   examSet: string | null;
   examTitle: string | null;
   exerciseTitle: string | null;
-  sharedWith: string | null;
+  /** All set numbers that share this canonical content, e.g. ["1","3"] */
+  sharedSets: string[];
+  /** Whether the original user-selected set is known from session metadata */
+  originalSetKnown: boolean;
   status: PracticeRecordStatus;
   phase: string;
   startedAt: string;
@@ -44,39 +47,52 @@ export function moduleLabel(module: ExamModule): string {
   return moduleLabels[module];
 }
 
-/** Build a lookup from content ID to exam catalog exercise metadata. */
-function buildContentLookup() {
+interface ContentMeta {
+  examId: string;
+  examYear: string;
+  examPeriod: string;
+  examSet: string;
+  examTitle: string;
+  exerciseTitle: string;
+  questionCount: number;
+  /** All set numbers sharing this content, sorted */
+  sharedSets: string[];
+}
+
+/** Build a lookup from canonical content ID to full metadata including all sharing sets. */
+function buildContentLookup(): Map<string, ContentMeta> {
   const catalog = getExamCatalog();
-  const map = new Map<string, {
-    examId: string;
-    examYear: string;
-    examPeriod: string;
-    examSet: string;
-    examTitle: string;
-    exerciseTitle: string;
-    sharedWith: string | null;
-    questionCount: number;
-  }>();
+  // First pass: collect all sets for each content ID
+  const setsByContent = new Map<string, Set<string>>();
+  const metaByContent = new Map<string, Omit<ContentMeta, "sharedSets">>();
+
   for (const entry of catalog) {
     for (const mod of ["listening", "reading", "translation", "writing"] as ExamModule[]) {
-      const sharedWith =
-        mod === "listening" ? entry.listeningSharedWith ?? null :
-        mod === "reading" ? entry.readingSharedWith ?? null : null;
       for (const exercise of entry.exercises[mod]) {
-        if (!map.has(exercise.id)) {
-          map.set(exercise.id, {
+        if (!setsByContent.has(exercise.id)) {
+          setsByContent.set(exercise.id, new Set());
+        }
+        setsByContent.get(exercise.id)!.add(entry.set);
+        if (!metaByContent.has(exercise.id)) {
+          metaByContent.set(exercise.id, {
             examId: entry.id,
             examYear: entry.year,
             examPeriod: entry.period,
             examSet: entry.set,
             examTitle: entry.title,
             exerciseTitle: exercise.title,
-            sharedWith,
             questionCount: exercise.questionCount,
           });
         }
       }
     }
+  }
+
+  // Second pass: build final map with sorted sharedSets
+  const map = new Map<string, ContentMeta>();
+  for (const [id, meta] of metaByContent) {
+    const sharedSets = [...(setsByContent.get(id) ?? [meta.examSet])].sort();
+    map.set(id, { ...meta, sharedSets });
   }
   return map;
 }
@@ -101,11 +117,7 @@ function countAnswered(
 function toRecord(
   module: ExamModule,
   session: ListeningSession | ReadingSession | TranslationSession | WritingSession,
-  lookup: Map<string, {
-    examId: string; examYear: string; examPeriod: string; examSet: string;
-    examTitle: string; exerciseTitle: string; sharedWith: string | null;
-    questionCount: number;
-  }>,
+  lookup: Map<string, ContentMeta>,
 ): PracticeRecord | null {
   if (session.mode !== "selected") return null;
   const contentId = sessionContentId(module, session);
@@ -119,6 +131,12 @@ function toRecord(
       ? countAnswered(session as ListeningSession | ReadingSession)
       : session.phase === "complete" ? 1 : (session as TranslationSession | WritingSession).draft ? 1 : 0;
 
+  // Historical sessions don't store the original exam set selection.
+  // We cannot assert the user picked set 1; we only know the canonical content
+  // and which sets share it.
+  const sharedSets = meta?.sharedSets ?? [];
+  const originalSetKnown = false;
+
   return {
     sessionId: session.id,
     module,
@@ -129,7 +147,8 @@ function toRecord(
     examSet: meta?.examSet ?? null,
     examTitle: meta?.examTitle ?? null,
     exerciseTitle: meta?.exerciseTitle ?? null,
-    sharedWith: meta?.sharedWith ?? null,
+    sharedSets,
+    originalSetKnown,
     status: isCompleted ? "completed" : "in_progress",
     phase: session.phase,
     startedAt: session.startedAt,
@@ -207,10 +226,20 @@ export function formatShanghaiTime(iso: string | null): string {
   }
 }
 
-export function practiceSessionHref(module: ExamModule, sessionId: string): string {
-  return `/practice/${module}/session/${sessionId}`;
+export function practiceSessionHref(module: ExamModule, sessionId: string, returnTo?: string): string {
+  const base = `/practice/${module}/session/${sessionId}`;
+  if (returnTo) {
+    const sep = base.includes("?") ? "&" : "?";
+    return `${base}${sep}returnTo=${encodeURIComponent(returnTo)}`;
+  }
+  return base;
 }
 
-export function practiceRecordReviewHref(module: ExamModule, sessionId: string): string {
-  return `/practice/exams/records/${module}/${sessionId}`;
+export function practiceRecordReviewHref(module: ExamModule, sessionId: string, returnTo?: string): string {
+  const base = `/practice/exams/records/${module}/${sessionId}`;
+  if (returnTo) {
+    const sep = base.includes("?") ? "&" : "?";
+    return `${base}${sep}returnTo=${encodeURIComponent(returnTo)}`;
+  }
+  return base;
 }

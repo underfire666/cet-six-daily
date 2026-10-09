@@ -8,6 +8,7 @@ import { Check, Headphones, Repeat, Zap } from "lucide-react";
 import { listeningLesson } from "@/lib/listening/questions";
 import { todayInShanghai } from "@/lib/dates";
 import { examReturnHref } from "@/lib/exam-browse-route";
+import { completeExitHref } from "@/lib/exam-records-route";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useListening } from "./ListeningProvider";
 
@@ -17,7 +18,7 @@ export function ListeningComplete({ id, onSession, onHome }: { id: string; onSes
   const session = store.sessions[id];
   const returnToCatalog = () => {
     if (onHome) onHome();
-    else router.push(examReturnHref(window.location.search) ?? "/practice/exams");
+    else router.push(completeExitHref(examReturnHref(window.location.search) ?? "/practice/exams"));
   };
   const nextGroup = () => {
     if (session?.mode === "selected") {

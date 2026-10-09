@@ -20,6 +20,7 @@ import { AnswerFeedback } from "../lesson/AnswerFeedback";
 import { AiHint, LessonExitDialog, LessonDialog } from "../lesson/LessonDialog";
 import { ReadingPassage } from "./ReadingPassage";
 import { WordLookupSheet } from "./WordLookupSheet";
+import { sessionExitHref } from "@/lib/exam-records-route";
 
 export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; onComplete?: () => void; onExit?: () => void }) {
   const { ready, store, dispatch, notice } = useReading();
@@ -193,7 +194,7 @@ export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; o
           onExit={() => {
             setDialog(null);
             if (onExit) onExit();
-            else router.push(session.mode === "selected" ? "/practice/exams" : "/practice/reading");
+            else router.push(sessionExitHref(session.mode, "/practice/reading"));
           }}
         />
       )}

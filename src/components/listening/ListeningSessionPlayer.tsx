@@ -25,6 +25,7 @@ import {
 import { AudioPlayer } from "./AudioPlayer";
 import { ListeningTranscript } from "./ListeningTranscript";
 import { BookmarkPlus, BookmarkCheck } from "lucide-react";
+import { sessionExitHref } from "@/lib/exam-records-route";
 
 function LookupSheet({
   material,
@@ -301,7 +302,7 @@ export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string;
           onExit={() => {
             setDialog(null);
             if (onExit) onExit();
-            else router.push(session.mode === "selected" ? "/practice/exams" : "/practice/listening");
+            else router.push(sessionExitHref(session.mode, "/practice/listening"));
           }}
         />
       )}

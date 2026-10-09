@@ -1,8 +1,16 @@
 # 六级日常项目上下文
 
-## 当前开发版本：V14.10.0 真题学习记录与回顾（14.10.0，本地验收 PASS，2026-10-08）
+## 当前开发版本：V14.10.1 真题学习记录修补版（14.10.1，本地验收 PASS，2026-10-09）
 
-应用版本：14.10.0；阶段：V14.10.0 CET-6 Practice Records & Review。package 与锁文件同步，关于页读取同一版本；不表示已发布 GitHub Release。
+应用版本：14.10.1；阶段：V14.10.1 CET-6 Practice Records Fix。package 与锁文件同步，关于页读取同一版本；不表示已发布 GitHub Release。
+
+- V14.10.1 修复 V14.10.0 验收审计发现的 7 个问题：未完成练习回顾泄露答案、返回链路丢失筛选、复测结果标签错误、共享题目套卷标识不全、详细解析未展示、回顾音频暂停后重播归零、触控区域不足 44px。
+- 新增 `safeRecordsReturnUrl()` / `sessionExitHref()` / `completeExitHref()` 安全返回地址验证，记录页筛选状态通过 `returnTo` 参数传递到 session 和回顾页，退出后正确返回带筛选的记录页。
+- `ExamRecordReview` 未完成 session 只显示进度和继续练习入口，不渲染答案/解析；完成后显示全部作答记录（初答/重试/复测）、最终结果标签、正确答案标记、短解析+详细解析。
+- 回顾页音频改为始终渲染 `<audio>` 元素 + `useRef` + `play()/pause()` 控制，暂停后重播保留进度；页面卸载时自动暂停。
+- `buildContentLookup()` 重构为两阶段收集所有共享套卷，`PracticeRecord.sharedSets: string[]` 替代 `sharedWith`，历史 session 标记 `originalSetKnown=false`。
+- 新增 27 个回归测试（`tests/v14-exam-records-fix.test.ts`），覆盖安全 URL 验证、returnTo 编码、共享套卷、结果标签逻辑、数据不变性。
+- 1313/1313 tests PASS，8/8 gates PASS（test/typecheck/lint/build/content:validate/content:stats/content:rights/content:audio-validate）。
 
 - 新增统一学习记录入口 `/practice/exams/records`，从听力、阅读、翻译、写作四项 store 聚合所有 `mode="selected"` 的真题选练会话。
 - 记录列表支持未完成/已完成状态筛选和四项专项筛选，筛选状态通过 URL query 保存。未完成按开始时间倒序，已完成按完成时间倒序。

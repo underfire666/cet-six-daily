@@ -8,6 +8,7 @@ import { BookOpen, Check, Zap } from "lucide-react";
 import { readingLesson } from "@/lib/reading/questions";
 import { todayInShanghai } from "@/lib/dates";
 import { examReturnHref } from "@/lib/exam-browse-route";
+import { completeExitHref } from "@/lib/exam-records-route";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useReading } from "./ReadingProvider";
 
@@ -17,7 +18,7 @@ export function ReadingComplete({ id, onSession, onHome }: { id: string; onSessi
   const session = store.sessions[id];
   const returnToCatalog = () => {
     if (onHome) onHome();
-    else router.push(examReturnHref(window.location.search) ?? "/practice/exams");
+    else router.push(completeExitHref(examReturnHref(window.location.search) ?? "/practice/exams"));
   };
   const nextArticle = () => {
     if (session?.mode === "selected") {

@@ -8,6 +8,7 @@ import { Check, Languages, Zap } from "lucide-react";
 import { useTranslation } from "./TranslationProvider";
 import { todayInShanghai } from "@/lib/dates";
 import { examReturnHref } from "@/lib/exam-browse-route";
+import { completeExitHref } from "@/lib/exam-records-route";
 
 export function TranslationComplete({ id, onSession, onHome }: { id: string; onSession?: (id: string) => void; onHome?: () => void }) {
   const { ready, store, dailyComplete, start } = useTranslation();
@@ -15,7 +16,7 @@ export function TranslationComplete({ id, onSession, onHome }: { id: string; onS
   const session = store.sessions[id];
   const returnToCatalog = () => {
     if (onHome) onHome();
-    else router.push(examReturnHref(window.location.search) ?? "/practice/exams");
+    else router.push(completeExitHref(examReturnHref(window.location.search) ?? "/practice/exams"));
   };
 
   if (!ready) return <div className="exercise-loading">正在结算…</div>;

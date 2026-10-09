@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, BookOpen, Check, Headphones, Languages, NotebookPen, Volume2, X } from "lucide-react";
+import { useParams, useSearchParams } from "next/navigation";
+import { ArrowLeft, BookOpen, Check, Headphones, Languages, NotebookPen, Pause, Volume2, X } from "lucide-react";
 import type { ExamModule } from "@/content/exam-catalog";
 import { listeningMaterialById, readingArticleById, translationTaskById, writingTaskById } from "@/content/learning";
 import { listeningLesson } from "@/lib/listening/questions";
@@ -12,7 +12,8 @@ import { useListening } from "@/components/listening/ListeningProvider";
 import { useReading } from "@/components/reading/ReadingProvider";
 import { useTranslation } from "@/components/translation/TranslationProvider";
 import { useWriting } from "@/components/writing/WritingProvider";
-import { formatShanghaiTime, moduleLabel } from "@/lib/exam-records";
+import { formatShanghaiTime, moduleLabel, practiceSessionHref } from "@/lib/exam-records";
+import { safeRecordsReturnUrl } from "@/lib/exam-records-route";
 import type { AnswerRecord } from "@/types/session";
 import type { ListeningSession } from "@/types/listening";
 import type { ReadingSession } from "@/types/reading";
@@ -26,14 +27,60 @@ const moduleIcons: Record<ExamModule, typeof Headphones> = {
   writing: NotebookPen,
 };
 
+/** Determine the final result label considering initial, retry, and retest phases. */
 function resultLabel(record: AnswerRecord): string {
+  // Retest takes precedence as the latest phase
+  if (record.retest && record.retest.length > 0) {
+    const lastRetest = record.retest[record.retest.length - 1];
+    if (lastRetest.correct) return "复测答对";
+    return "复测答错";
+  }
   if (record.initialResult === "first_try_correct") return "首次答对";
   if (record.initialResult === "second_try_correct") return "重试答对";
   if (record.initialResult === "ai_hint_correct") return "提示后答对";
   if (record.initialResult === "wrong") return "答错";
-  if (record.retestResult === "first_try_correct") return "复测答对";
-  if (record.retestResult === "wrong") return "复测答错";
+  if (record.initialResult === "unmastered") return "未掌握";
   return "未完成";
+}
+
+/** Is the final answer correct (considering retest as latest). */
+function isFinalCorrect(record: AnswerRecord): boolean {
+  if (record.retest && record.retest.length > 0) {
+    return record.retest[record.retest.length - 1].correct;
+  }
+  if (record.initial && record.initial.length > 0) {
+    return record.initial[record.initial.length - 1].correct;
+  }
+  return false;
+}
+
+/** Get the user's final selected option (latest across initial and retest). */
+function finalUserAnswer(record: AnswerRecord): string | null {
+  if (record.retest && record.retest.length > 0) {
+    return record.retest[record.retest.length - 1].optionId;
+  }
+  if (record.initial && record.initial.length > 0) {
+    return record.initial[record.initial.length - 1].optionId;
+  }
+  return null;
+}
+
+/** Render attempt history as readable text. */
+function attemptHistory(record: AnswerRecord): string {
+  const parts: string[] = [];
+  if (record.initial && record.initial.length > 0) {
+    const initialText = record.initial
+      .map((a, i) => `${i === 0 ? "初答" : `重试${i}`}: ${a.optionId}${a.hinted ? "(提示)" : ""}${a.correct ? "✓" : "✗"}`)
+      .join(" → ");
+    parts.push(initialText);
+  }
+  if (record.retest && record.retest.length > 0) {
+    const retestText = record.retest
+      .map((a, i) => `复测${i + 1}: ${a.optionId}${a.correct ? "✓" : "✗"}`)
+      .join(" → ");
+    parts.push(retestText);
+  }
+  return parts.join(" | ");
 }
 
 function ObjectiveReview({
@@ -48,7 +95,30 @@ function ObjectiveReview({
     : (session as ReadingSession).articleId;
   const material = module === "listening" ? listeningMaterialById(contentId) : readingArticleById(contentId);
   const [showTranscript, setShowTranscript] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
+
+  // Stop audio when component unmounts
+  useEffect(() => {
+    const audio = audioRef.current;
+    return () => {
+      if (audio) {
+        audio.pause();
+      }
+    };
+  }, []);
+
+  const toggleAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play().catch(() => setAudioPlaying(false));
+      setAudioPlaying(true);
+    } else {
+      audio.pause();
+      setAudioPlaying(false);
+    }
+  };
 
   if (!material) {
     return <div className="er-review-error">题目内容已不可用（contentId: {contentId}）。</div>;
@@ -56,27 +126,32 @@ function ObjectiveReview({
 
   const lesson = module === "listening" ? listeningLesson(material as never) : readingLesson(material as never);
   const records = session.lesson?.records ?? {};
+  const audioSrc = module === "listening"
+    ? (material as { audio?: { src?: string } }).audio?.src
+    : undefined;
 
   return (
     <div className="er-review-content">
-      {module === "listening" && (material as { audio?: { src?: string; type?: string } }).audio?.src && (
+      {audioSrc && (
         <div className="er-review-audio">
           <button
             className="er-audio-btn"
-            onClick={() => setAudioPlaying(!audioPlaying)}
+            onClick={toggleAudio}
             aria-label={audioPlaying ? "暂停音频" : "播放音频"}
           >
-            <Volume2 size={18} />{audioPlaying ? "播放中（回顾模式不修改统计）" : "播放音频（回顾模式）"}
+            {audioPlaying ? <Pause size={18} /> : <Volume2 size={18} />}
+            {audioPlaying ? "暂停音频（回顾模式）" : "播放音频（回顾模式）"}
           </button>
-          {audioPlaying && (
-            <audio
-              src={(material as { audio: { src: string } }).audio.src}
-              controls
-              autoPlay
-              onEnded={() => setAudioPlaying(false)}
-              className="er-audio-player"
-            />
-          )}
+          <audio
+            ref={audioRef}
+            src={audioSrc}
+            controls
+            className="er-audio-player"
+            onPlay={() => setAudioPlaying(true)}
+            onPause={() => setAudioPlaying(false)}
+            onEnded={() => setAudioPlaying(false)}
+            preload="metadata"
+          />
         </div>
       )}
 
@@ -98,17 +173,21 @@ function ObjectiveReview({
       <div className="er-questions">
         {lesson.questions.map((q, idx) => {
           const record = records[q.id];
-          const userAnswer = record?.initial?.[record.initial.length - 1]?.optionId ??
-            record?.retest?.[record.retest.length - 1]?.optionId ?? null;
-          const isCorrect = userAnswer === q.answerId;
+          const hasRecord = !!record && ((record.initial?.length ?? 0) > 0 || (record.retest?.length ?? 0) > 0);
+          const userAnswer = hasRecord ? finalUserAnswer(record!) : null;
+          const correct = hasRecord ? isFinalCorrect(record!) : false;
           return (
             <div key={q.id} className="er-question">
               <div className="er-question-head">
                 <span className="er-q-num">{idx + 1}</span>
-                <span className={`er-q-result${isCorrect ? " is-correct" : " is-wrong"}`}>
-                  {isCorrect ? <Check size={13} /> : <X size={13} />}
-                  {record ? resultLabel(record) : "未作答"}
-                </span>
+                {hasRecord ? (
+                  <span className={`er-q-result${correct ? " is-correct" : " is-wrong"}`}>
+                    {correct ? <Check size={13} /> : <X size={13} />}
+                    {resultLabel(record!)}
+                  </span>
+                ) : (
+                  <span className="er-q-result">未作答</span>
+                )}
               </div>
               <p className="er-q-prompt">{q.prompt}</p>
               <div className="er-options">
@@ -118,25 +197,30 @@ function ObjectiveReview({
                   return (
                     <div
                       key={opt.id}
-                      className={`er-option${isAnswer ? " is-answer" : ""}${isUser && !isAnswer ? " is-user-wrong" : ""}`}
+                      className={`er-option${isAnswer ? " is-answer" : ""}${isUser && !isAnswer ? " is-user-wrong" : ""}${isUser && isAnswer ? " is-user-correct" : ""}`}
                     >
                       <span className="er-option-id">{opt.id}</span>
                       <span className="er-option-text">{opt.text}</span>
                       {isAnswer && <span className="er-option-tag">正确答案</span>}
                       {isUser && !isAnswer && <span className="er-option-tag er-tag-wrong">你的选择</span>}
+                      {isUser && isAnswer && <span className="er-option-tag er-tag-correct">你的选择</span>}
                     </div>
                   );
                 })}
               </div>
-              {record && (record.initial?.length ?? 0) > 1 && (
+              {hasRecord && ((record!.initial?.length ?? 0) > 1 || (record!.retest?.length ?? 0) > 0) && (
                 <p className="er-attempts">
-                  作答记录：{record.initial.map((a, i) => `${i + 1}. ${a.optionId}${a.hinted ? "(提示)" : ""}`).join(" → ")}
-                  {record.retest?.length ? ` → 复测：${record.retest.map((a) => a.optionId).join(", ")}` : ""}
+                  作答记录：{attemptHistory(record!)}
                 </p>
               )}
               {q.explanation && (
                 <div className="er-explanation">
                   <strong>解析：</strong>{q.explanation}
+                </div>
+              )}
+              {q.details && (
+                <div className="er-explanation er-explanation-detailed">
+                  <strong>详细解析：</strong>{q.details}
                 </div>
               )}
             </div>
@@ -235,10 +319,43 @@ function SubjectiveReview({
   );
 }
 
+/** Incomplete session view: only progress and continue link, no answers. */
+function IncompleteReview({
+  mod,
+  session,
+  returnTo,
+}: {
+  mod: ExamModule;
+  session: ListeningSession | ReadingSession | TranslationSession | WritingSession;
+  returnTo: string;
+}) {
+  const isObjective = mod === "listening" || mod === "reading";
+  const answeredCount = isObjective
+    ? Object.values((session as ListeningSession | ReadingSession).lesson?.records ?? {}).filter(
+        (r) => (r.initial?.length ?? 0) > 0 || (r.retest?.length ?? 0) > 0,
+      ).length
+    : (session as TranslationSession | WritingSession).draft ? 1 : 0;
+
+  return (
+    <div className="er-review-incomplete">
+      <div className="er-review-notice" role="alert">
+        <div>
+          <strong>这是未完成的练习。</strong>
+          <p>完成后才能查看答案与解析。当前进度：{answeredCount} 题已作答。</p>
+        </div>
+        <Link className="er-action" href={practiceSessionHref(mod, session.id, returnTo)}>继续练习</Link>
+      </div>
+    </div>
+  );
+}
+
 export function ExamRecordReview() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const mod = params.module as ExamModule;
   const sessionId = params.sessionId as string;
+  const rawReturnTo = searchParams.get("returnTo");
+  const returnTo = safeRecordsReturnUrl(rawReturnTo) ?? "/practice/exams/records";
 
   const listening = useListening();
   const reading = useReading();
@@ -261,11 +378,11 @@ export function ExamRecordReview() {
     return (
       <main className="exam-page">
         <header className="exam-header">
-          <Link className="exam-back" href="/practice/exams/records" aria-label="返回学习记录"><ArrowLeft size={20} /></Link>
+          <Link className="exam-back" href={returnTo} aria-label="返回学习记录"><ArrowLeft size={20} /></Link>
           <div><p className="exam-eyebrow">学习记录</p><h1>无效的专项</h1></div>
         </header>
         <section className="exam-empty"><h2>无效的专项类型</h2><p>请返回学习记录列表。</p>
-          <Link className="exam-action" href="/practice/exams/records">返回学习记录</Link></section>
+          <Link className="exam-action" href={returnTo}>返回学习记录</Link></section>
       </main>
     );
   }
@@ -278,12 +395,12 @@ export function ExamRecordReview() {
     return (
       <main className="exam-page">
         <header className="exam-header">
-          <Link className="exam-back" href="/practice/exams/records" aria-label="返回学习记录"><ArrowLeft size={20} /></Link>
+          <Link className="exam-back" href={returnTo} aria-label="返回学习记录"><ArrowLeft size={20} /></Link>
           <div><p className="exam-eyebrow">学习记录</p><h1>记录不存在</h1></div>
         </header>
         <section className="exam-empty"><h2>没有找到这条学习记录</h2>
           <p>该会话可能已被清除或不存在。</p>
-          <Link className="exam-action" href="/practice/exams/records">返回学习记录</Link></section>
+          <Link className="exam-action" href={returnTo}>返回学习记录</Link></section>
       </main>
     );
   }
@@ -292,12 +409,12 @@ export function ExamRecordReview() {
     return (
       <main className="exam-page">
         <header className="exam-header">
-          <Link className="exam-back" href="/practice/exams/records" aria-label="返回学习记录"><ArrowLeft size={20} /></Link>
+          <Link className="exam-back" href={returnTo} aria-label="返回学习记录"><ArrowLeft size={20} /></Link>
           <div><p className="exam-eyebrow">学习记录</p><h1>非真题选练记录</h1></div>
         </header>
         <section className="exam-empty"><h2>这条记录不属于真题选练</h2>
           <p>学习记录仅展示真题选练会话。</p>
-          <Link className="exam-action" href="/practice/exams/records">返回学习记录</Link></section>
+          <Link className="exam-action" href={returnTo}>返回学习记录</Link></section>
       </main>
     );
   }
@@ -307,7 +424,7 @@ export function ExamRecordReview() {
   return (
     <main className="exam-page er-review-page">
       <header className="exam-header">
-        <Link className="exam-back" href="/practice/exams/records" aria-label="返回学习记录"><ArrowLeft size={20} /></Link>
+        <Link className="exam-back" href={returnTo} aria-label="返回学习记录"><ArrowLeft size={20} /></Link>
         <div style={{ flex: 1 }}>
           <p className="exam-eyebrow">学习记录 · 只读回顾</p>
           <h1>{moduleLabel(mod)}练习回顾</h1>
@@ -323,21 +440,20 @@ export function ExamRecordReview() {
         {session.applied && session.rewardXp != null && <span className="er-xp">+{session.rewardXp} XP</span>}
       </div>
 
-      {!isCompleted && (
-        <div className="er-review-notice" role="alert">
-          这是未完成的练习。回顾页面为只读模式，不会修改学习进度。
-          <Link className="er-action" href={`/practice/${mod}/session/${sessionId}`}>继续练习</Link>
-        </div>
-      )}
-
-      {(mod === "listening" || mod === "reading") ? (
-        <ObjectiveReview module={mod} session={session as ListeningSession | ReadingSession} />
+      {!isCompleted ? (
+        <IncompleteReview mod={mod} session={session} returnTo={returnTo} />
       ) : (
-        <SubjectiveReview module={mod} session={session as TranslationSession | WritingSession} />
+        <>
+          {(mod === "listening" || mod === "reading") ? (
+            <ObjectiveReview module={mod} session={session as ListeningSession | ReadingSession} />
+          ) : (
+            <SubjectiveReview module={mod} session={session as TranslationSession | WritingSession} />
+          )}
+        </>
       )}
 
       <div className="er-review-footer">
-        <Link className="er-action er-action-secondary" href="/practice/exams/records">返回学习记录</Link>
+        <Link className="er-action er-action-secondary" href={returnTo}>返回学习记录</Link>
       </div>
     </main>
   );

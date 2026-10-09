@@ -195,8 +195,8 @@ test("collectPracticeRecords: sessions with unknown contentId get null exam meta
 
 test("filterRecords: filters by status", () => {
   const records: PracticeRecord[] = [
-    { sessionId: "a", module: "reading", contentId: "c1", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "in_progress", phase: "quiz", startedAt: "2026-09-29T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 2 },
-    { sessionId: "b", module: "reading", contentId: "c2", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "completed", phase: "complete", startedAt: "2026-09-28T10:00:00Z", completedAt: "2026-09-28T10:30:00Z", xp: 10, questionCount: 5, answeredCount: 5 },
+    { sessionId: "a", module: "reading", contentId: "c1", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "in_progress", phase: "quiz", startedAt: "2026-09-29T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 2 },
+    { sessionId: "b", module: "reading", contentId: "c2", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "completed", phase: "complete", startedAt: "2026-09-28T10:00:00Z", completedAt: "2026-09-28T10:30:00Z", xp: 10, questionCount: 5, answeredCount: 5 },
   ];
   assert.equal(filterRecords(records, "in_progress", "all").length, 1);
   assert.equal(filterRecords(records, "completed", "all").length, 1);
@@ -205,8 +205,8 @@ test("filterRecords: filters by status", () => {
 
 test("filterRecords: filters by module", () => {
   const records: PracticeRecord[] = [
-    { sessionId: "a", module: "reading", contentId: "c1", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "in_progress", phase: "quiz", startedAt: "2026-09-29T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 2 },
-    { sessionId: "b", module: "listening", contentId: "c2", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "in_progress", phase: "question", startedAt: "2026-09-29T11:00:00Z", completedAt: null, xp: null, questionCount: 3, answeredCount: 1 },
+    { sessionId: "a", module: "reading", contentId: "c1", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "in_progress", phase: "quiz", startedAt: "2026-09-29T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 2 },
+    { sessionId: "b", module: "listening", contentId: "c2", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "in_progress", phase: "question", startedAt: "2026-09-29T11:00:00Z", completedAt: null, xp: null, questionCount: 3, answeredCount: 1 },
   ];
   assert.equal(filterRecords(records, "all", "reading").length, 1);
   assert.equal(filterRecords(records, "all", "listening").length, 1);
@@ -215,10 +215,10 @@ test("filterRecords: filters by module", () => {
 
 test("sortRecords: in_progress sorted by startedAt desc, completed by completedAt desc", () => {
   const records: PracticeRecord[] = [
-    { sessionId: "old-complete", module: "reading", contentId: "c1", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "completed", phase: "complete", startedAt: "2026-09-27T10:00:00Z", completedAt: "2026-09-27T10:30:00Z", xp: 10, questionCount: 5, answeredCount: 5 },
-    { sessionId: "new-inprogress", module: "reading", contentId: "c2", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "in_progress", phase: "quiz", startedAt: "2026-09-29T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 2 },
-    { sessionId: "new-complete", module: "reading", contentId: "c3", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "completed", phase: "complete", startedAt: "2026-09-28T10:00:00Z", completedAt: "2026-09-28T10:30:00Z", xp: 10, questionCount: 5, answeredCount: 5 },
-    { sessionId: "old-inprogress", module: "reading", contentId: "c4", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "in_progress", phase: "quiz", startedAt: "2026-09-28T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 1 },
+    { sessionId: "old-complete", module: "reading", contentId: "c1", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "completed", phase: "complete", startedAt: "2026-09-27T10:00:00Z", completedAt: "2026-09-27T10:30:00Z", xp: 10, questionCount: 5, answeredCount: 5 },
+    { sessionId: "new-inprogress", module: "reading", contentId: "c2", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "in_progress", phase: "quiz", startedAt: "2026-09-29T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 2 },
+    { sessionId: "new-complete", module: "reading", contentId: "c3", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "completed", phase: "complete", startedAt: "2026-09-28T10:00:00Z", completedAt: "2026-09-28T10:30:00Z", xp: 10, questionCount: 5, answeredCount: 5 },
+    { sessionId: "old-inprogress", module: "reading", contentId: "c4", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "in_progress", phase: "quiz", startedAt: "2026-09-28T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 1 },
   ];
   const sorted = sortRecords(records);
   assert.equal(sorted[0].sessionId, "new-inprogress");
@@ -229,8 +229,8 @@ test("sortRecords: in_progress sorted by startedAt desc, completed by completedA
 
 test("sortRecords: in_progress always comes before completed", () => {
   const records: PracticeRecord[] = [
-    { sessionId: "complete", module: "reading", contentId: "c1", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "completed", phase: "complete", startedAt: "2026-09-30T10:00:00Z", completedAt: "2026-09-30T10:30:00Z", xp: 10, questionCount: 5, answeredCount: 5 },
-    { sessionId: "inprogress", module: "reading", contentId: "c2", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedWith: null, status: "in_progress", phase: "quiz", startedAt: "2026-09-01T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 2 },
+    { sessionId: "complete", module: "reading", contentId: "c1", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "completed", phase: "complete", startedAt: "2026-09-30T10:00:00Z", completedAt: "2026-09-30T10:30:00Z", xp: 10, questionCount: 5, answeredCount: 5 },
+    { sessionId: "inprogress", module: "reading", contentId: "c2", examId: null, examYear: null, examPeriod: null, examSet: null, examTitle: null, exerciseTitle: null, sharedSets: [], originalSetKnown: false, status: "in_progress", phase: "quiz", startedAt: "2026-09-01T10:00:00Z", completedAt: null, xp: null, questionCount: 5, answeredCount: 2 },
   ];
   const sorted = sortRecords(records);
   assert.equal(sorted[0].sessionId, "inprogress");

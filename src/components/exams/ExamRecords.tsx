@@ -39,9 +39,10 @@ const moduleOptions: { value: "all" | ExamModule; label: string }[] = [
   ...examModules.map((m) => ({ value: m as ExamModule, label: moduleLabel(m) })),
 ];
 
-function RecordCard({ record }: { record: PracticeRecord }) {
+function RecordCard({ record, returnTo }: { record: PracticeRecord; returnTo: string }) {
   const Icon = moduleIcons[record.module];
   const isCompleted = record.status === "completed";
+  const isShared = record.sharedSets.length > 1;
   return (
     <article className="er-record">
       <span className={`er-record-icon${isCompleted ? " is-complete" : ""}`}>
@@ -57,7 +58,11 @@ function RecordCard({ record }: { record: PracticeRecord }) {
         </div>
         <p className="er-record-exam">
           {record.examTitle ?? "共用题目（来源套卷未确定）"}
-          {record.sharedWith ? ` · 与第 ${record.sharedWith} 套共用` : ""}
+          {isShared && !record.originalSetKnown
+            ? ` · 第 ${record.sharedSets.join("、")} 套共用`
+            : isShared
+              ? ` · 与第 ${record.sharedSets.filter(s => s !== record.examSet).join("、")} 套共用`
+              : ""}
         </p>
         <div className="er-record-meta">
           <span>{moduleLabel(record.module)}</span>
@@ -83,11 +88,11 @@ function RecordCard({ record }: { record: PracticeRecord }) {
       </div>
       <div className="er-record-actions">
         {isCompleted ? (
-          <Link className="er-action er-action-secondary" href={practiceRecordReviewHref(record.module, record.sessionId)}>
+          <Link className="er-action er-action-secondary" href={practiceRecordReviewHref(record.module, record.sessionId, returnTo)}>
             查看记录
           </Link>
         ) : (
-          <Link className="er-action" href={practiceSessionHref(record.module, record.sessionId)}>
+          <Link className="er-action" href={practiceSessionHref(record.module, record.sessionId, returnTo)}>
             <Play size={15} />继续练习
           </Link>
         )}
@@ -126,6 +131,9 @@ export function ExamRecords() {
     window.history.replaceState(null, "", examRecordsHref(next));
     window.scrollTo({ top: 0 });
   };
+
+  // Current records page URL with filters, used as returnTo for session/review links
+  const returnTo = examRecordsHref(state);
 
   return (
     <main className="exam-page er-page">
@@ -181,7 +189,7 @@ export function ExamRecords() {
       ) : (
         <div className="er-list">
           {records.map((record) => (
-            <RecordCard key={`${record.module}-${record.sessionId}`} record={record} />
+            <RecordCard key={`${record.module}-${record.sessionId}`} record={record} returnTo={returnTo} />
           ))}
         </div>
       )}
