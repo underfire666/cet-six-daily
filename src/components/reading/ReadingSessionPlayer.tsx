@@ -2,7 +2,7 @@
 import { readingArticleById, readingWordByKey } from "@/content/learning";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Sparkles } from "lucide-react";
 
@@ -20,13 +20,14 @@ import { AnswerFeedback } from "../lesson/AnswerFeedback";
 import { AiHint, LessonExitDialog, LessonDialog } from "../lesson/LessonDialog";
 import { ReadingPassage } from "./ReadingPassage";
 import { WordLookupSheet } from "./WordLookupSheet";
-import { sessionExitHref } from "@/lib/exam-records-route";
+import { practiceCompleteHref, sessionExitHref } from "@/lib/exam-records-route";
 
 export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; onComplete?: () => void; onExit?: () => void }) {
   const { ready, store, dispatch, notice } = useReading();
   const vocabulary = useVocabulary();
   const { settings } = useLearning();
   const router = useRouter();
+  const search = useSearchParams().toString();
   const [dialog, setDialog] = useState<"hint" | "exit" | "passage" | null>(
     null,
   );
@@ -35,9 +36,9 @@ export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; o
   useEffect(() => {
     if (session?.phase === "complete") {
       if (onComplete) onComplete();
-      else router.replace(`/practice/reading/complete/${id}`);
+      else router.replace(practiceCompleteHref("reading", id, search));
     }
-  }, [session?.phase, id, router, onComplete]);
+  }, [session?.phase, id, router, onComplete, search]);
   if (!ready) return <div className="exercise-loading">正在准备阅读…</div>;
   if (!session)
     return (
@@ -194,7 +195,7 @@ export function ReadingSessionPlayer({ id, onComplete, onExit }: { id: string; o
           onExit={() => {
             setDialog(null);
             if (onExit) onExit();
-            else router.push(sessionExitHref(session.mode, "/practice/reading"));
+            else router.push(sessionExitHref(session.mode, "/practice/reading", search));
           }}
         />
       )}

@@ -1,19 +1,22 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Check, NotebookPen, Zap } from "lucide-react";
 import { useWriting } from "./WritingProvider";
 import { todayInShanghai } from "@/lib/dates";
 import { examReturnHref } from "@/lib/exam-browse-route";
-import { completeExitHref } from "@/lib/exam-records-route";
+import { completeExitHref, recordsReturnFromSearch } from "@/lib/exam-records-route";
 
 export function WritingComplete({ id, onSession, onHome }: { id: string; onSession?: (id: string) => void; onHome?: () => void }) {
   const { ready, store, dailyComplete, start } = useWriting();
   const router = useRouter();
+  const search = useSearchParams().toString();
+  const exitHref = completeExitHref(examReturnHref(search) ?? "/practice/exams", search);
+  const selectedReturnLabel = recordsReturnFromSearch(search) ? "返回学习记录" : "返回真题题库";
   const session = store.sessions[id];
   const returnToCatalog = () => {
     if (onHome) onHome();
-    else router.push(completeExitHref(examReturnHref(window.location.search) ?? "/practice/exams"));
+    else router.push(exitHref);
   };
 
   if (!ready) return <div className="exercise-loading">正在结算…</div>;
@@ -87,7 +90,7 @@ export function WritingComplete({ id, onSession, onHome }: { id: string; onSessi
       <div className="subjective-complete-actions">
         <button className="subjective-button" onClick={next}>
           <NotebookPen size={18} />
-          {selected ? "返回真题题库" : session.mode === "daily" && !dailyComplete
+          {selected ? selectedReturnLabel : session.mode === "daily" && !dailyComplete
             ? "继续下一篇"
             : "再写一篇"}
         </button>

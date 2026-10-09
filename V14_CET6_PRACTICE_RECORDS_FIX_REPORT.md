@@ -1,15 +1,15 @@
-# V14.10.1 CET-6 Practice Records Fix Report
+# V14.10.1 CET-6 Practice Records Fix Report（历史记录）
 
 **版本**: 14.10.0 → 14.10.1
 **日期**: 2026-10-09
 **分支**: feature/v14-real-content-rights
-**状态**: 开发完成，等待验收
+**状态**: 浏览器复核未通过；剩余返回问题已由 V14.10.2 修补，见 `V14_CET6_PRACTICE_RECORDS_RETURN_FIX_REPORT.md`。
 
 ---
 
 ## 一、修复清单
 
-V14.10.0 浏览器验收审计（`output/playwright/records-audit/AUDIT.md`）发现 7 个问题，本轮全部修复：
+V14.10.0 浏览器验收审计发现 7 个问题。以下为 V14.10.1 原实施记录；后续复核确认其返回链路仍有三类缺口，不能据此认定全部验收通过。复核证据见 `output/playwright/records-fix-audit/AUDIT.md`，最新修补见 V14.10.2 报告。
 
 ### P1: 未完成练习提前显示答案
 - **问题**: 直接访问未完成记录回顾地址，阅读显示正确答案、翻译显示参考译文。
@@ -145,11 +145,11 @@ V14.10.0 浏览器验收审计（`output/playwright/records-audit/AUDIT.md`）�
 
 - 分支: `feature/v14-real-content-rights`
 - 基线 commit: `9862580` (V14.7–V14.10.0)
-- 当前: worktree dirty（V14.10.1 修改未提交）
+- V14.10.1 已提交于 `f9f42f63d3a4d852390c4332890fdf60a7cf093b`；复核时 worktree clean，原“修改未提交”状态已过时。当前 V14.10.2 本地修改状态见最新报告。
 - v12.0 tag: `697772d9412d9d1a4253e099a001734a5230e264`（未变动）
 
 ---
 
 ## 六、结论
 
-V14.10.1 修复了 V14.10.0 验收审计发现的全部 7 个问题，1313/1313 测试通过，8/8 gates 通过，浏览器 E2E 验证核心修复点正常。等待验收后提交 commit 并推送。
+V14.10.1 的 1313/1313 测试和 8/8 gates 通过，但独立浏览器复核仍发现三类返回问题，因此功能验收未通过。V14.10.2 已完成这些修补及完整回归；当前结果和 Git 状态以 `V14_CET6_PRACTICE_RECORDS_RETURN_FIX_REPORT.md` 与 PROJECT_CONTEXT.md 当前章节为准。

@@ -1,7 +1,7 @@
 {
   "name": "cet-six-daily",
-  "version": "14.10.1",
-  "appPhase": "V14.10.1 CET-6 Practice Records Fix",
+  "version": "14.10.2",
+  "appPhase": "V14.10.2 CET-6 Practice Records Return Fix",
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",

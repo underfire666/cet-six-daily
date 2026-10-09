@@ -3,15 +3,16 @@ import { translationTaskById } from "@/content/learning";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, ChevronDown, Languages } from "lucide-react";
 
 import { useTranslation } from "./TranslationProvider";
-import { sessionExitHref } from "@/lib/exam-records-route";
+import { practiceCompleteHref, recordsReturnFromSearch, sessionExitHref } from "@/lib/exam-records-route";
 
 export function TranslationSessionPlayer({ id, onComplete, onExit }: { id: string; onComplete?: () => void; onExit?: () => void }) {
   const { ready, store, dispatch, lastSaveOk } = useTranslation();
   const router = useRouter();
+  const search = useSearchParams().toString();
   const session = store.sessions[id];
   const task = session ? translationTaskById(session.taskId) : undefined;
   const [showRef, setShowRef] = useState(false);
@@ -68,14 +69,14 @@ export function TranslationSessionPlayer({ id, onComplete, onExit }: { id: strin
   const finish = () => {
     dispatch(id, { type: "finish", now: new Date().toISOString() });
     if (onComplete) onComplete();
-    else router.push(`/practice/translation/complete/${id}`);
+    else router.push(practiceCompleteHref("translation", id, search));
   };
 
   return (
     <main className="subjective-session">
       <header className="subjective-session-bar">
         {onExit ? <button className="exercise-icon-button" onClick={onExit} aria-label="关闭"><ArrowLeft size={19} /></button> :
-          <Link href={sessionExitHref(session.mode, "/practice/translation")} aria-label="关闭"><ArrowLeft size={19} /></Link>}
+          <Link href={sessionExitHref(session.mode, "/practice/translation", search)} aria-label="关闭"><ArrowLeft size={19} /></Link>}
         <span>翻译 · {task.title}</span>
         <small>{session.mode === "daily" ? "每日任务" : session.mode === "selected" ? "真题选练" : "额外练习"}</small>
       </header>
@@ -226,7 +227,7 @@ export function TranslationSessionPlayer({ id, onComplete, onExit }: { id: strin
             {session.phase === "complete" && (onExit ? (
               <button className="subjective-button" onClick={onExit}><ArrowLeft size={18} />返回翻译</button>
             ) : (
-              <Link className="subjective-button" href={sessionExitHref(session.mode, "/practice/translation")}><ArrowLeft size={18} />{session.mode === "selected" ? "返回学习记录" : "返回翻译"}</Link>
+              <Link className="subjective-button" href={sessionExitHref(session.mode, "/practice/translation", search)}><ArrowLeft size={18} />{session.mode === "selected" ? (recordsReturnFromSearch(search) ? "返回学习记录" : "返回真题题库") : "返回翻译"}</Link>
             ))}
           </section>
         )}

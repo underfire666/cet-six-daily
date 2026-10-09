@@ -1,10 +1,13 @@
 /**
- * V14.10.1: Exam Practice Records Fix regression tests.
+ * Exam Practice Records Fix regression tests.
  * Covers: safe return URL validation, shared sets lookup,
  * returnTo href encoding, result label logic, and data integrity.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { listeningMaterialById } from "../src/content/learning";
+import { createListeningSession } from "../src/lib/listening/session";
+import { attemptHistory, finalUserAnswer, isFinalCorrect, resultLabel } from "../src/lib/exam-record-review";
 import {
   safeRecordsReturnUrl,
   recordsReturnParam,
@@ -146,16 +149,13 @@ test("collectPracticeRecords: sharedSets contains all sharing sets", () => {
   const records = collectPracticeRecords(stores);
   assert.equal(records.length, 1);
   const record = records[0];
-  assert.ok(Array.isArray(record.sharedSets));
-  assert.ok(record.sharedSets.length >= 1);
-  // The canonical set should be in sharedSets
-  assert.ok(record.sharedSets.includes("1"));
+  assert.deepEqual(record.sharedSets, ["1", "3"]);
   // originalSetKnown should be false for historical sessions
   assert.equal(record.originalSetKnown, false);
 });
 
 test("collectPracticeRecords: non-shared content has single sharedSet", () => {
-  // Use a content ID that likely only appears in one set
+  // The December 2024 set 1 reading content is not shared with other sets.
   const stores: PracticeRecordStores = {
     listening: { sessions: {} },
     reading: { sessions: { "rs-unique": makeReadingSession({ articleId: "cet6:2024-12:set1:careful1" }) } },
@@ -163,47 +163,31 @@ test("collectPracticeRecords: non-shared content has single sharedSet", () => {
     writing: { sessions: {} },
   };
   const records = collectPracticeRecords(stores);
-  if (records.length > 0) {
-    assert.ok(Array.isArray(records[0].sharedSets));
-    assert.ok(records[0].sharedSets.length >= 1);
-  }
+  assert.equal(records.length, 1);
+  assert.deepEqual(records[0].sharedSets, ["1"]);
 });
 
-// ─── Result label logic (mirrors ExamRecordReview helpers) ──────────────────
+test("collectPracticeRecords: listening sharedSets includes sets 2 and 3", () => {
+  const material = listeningMaterialById("cet6:2024-12:set2:listening:g1");
+  assert.ok(material, "The real shared listening material must exist");
+  const session = createListeningSession(
+    "ls-shared-test", "selected", "2026-09-29", material, "2026-09-29T11:00:00.000Z",
+  );
+  const stores: PracticeRecordStores = {
+    listening: { sessions: { [session.id]: session } },
+    reading: { sessions: {} },
+    translation: { sessions: {} },
+    writing: { sessions: {} },
+  };
+  const records = collectPracticeRecords(stores);
+  assert.equal(records.length, 1);
+  assert.equal(records[0].module, "listening");
+  assert.equal(records[0].contentId, material.id);
+  assert.deepEqual(records[0].sharedSets, ["2", "3"]);
+  assert.equal(records[0].originalSetKnown, false);
+});
 
-function resultLabel(record: AnswerRecord): string {
-  if (record.retest && record.retest.length > 0) {
-    const lastRetest = record.retest[record.retest.length - 1];
-    if (lastRetest.correct) return "复测答对";
-    return "复测答错";
-  }
-  if (record.initialResult === "first_try_correct") return "首次答对";
-  if (record.initialResult === "second_try_correct") return "重试答对";
-  if (record.initialResult === "ai_hint_correct") return "提示后答对";
-  if (record.initialResult === "wrong") return "答错";
-  if (record.initialResult === "unmastered") return "未掌握";
-  return "未完成";
-}
-
-function isFinalCorrect(record: AnswerRecord): boolean {
-  if (record.retest && record.retest.length > 0) {
-    return record.retest[record.retest.length - 1].correct;
-  }
-  if (record.initial && record.initial.length > 0) {
-    return record.initial[record.initial.length - 1].correct;
-  }
-  return false;
-}
-
-function finalUserAnswer(record: AnswerRecord): string | null {
-  if (record.retest && record.retest.length > 0) {
-    return record.retest[record.retest.length - 1].optionId;
-  }
-  if (record.initial && record.initial.length > 0) {
-    return record.initial[record.initial.length - 1].optionId;
-  }
-  return null;
-}
+// ─── Production review helpers ─────────────────────────────────────────────
 
 function makeAnswerRecord(overrides: Partial<AnswerRecord> = {}): AnswerRecord {
   return {
@@ -283,6 +267,28 @@ test("resultLabel: retest takes precedence over initial", () => {
   assert.equal(isFinalCorrect(record), false);
 });
 
+test("attemptHistory: preserves initial, retry, hint, and retest outcomes", () => {
+  const record = makeAnswerRecord({
+    initial: [
+      { optionId: "A", correct: false, hinted: false },
+      { optionId: "C", correct: false, hinted: true },
+    ],
+    retest: [{ optionId: "B", correct: true, hinted: true }],
+    retestResult: "ai_hint_correct",
+  });
+  const snapshot = structuredClone(record);
+  assert.equal(attemptHistory(record), "初答: A✗ → 重试1: C(提示)✗ | 复测1: B✓");
+  assert.equal(resultLabel(record), "复测答对");
+  assert.equal(isFinalCorrect(record), true);
+  assert.equal(finalUserAnswer(record), "B");
+  assert.deepEqual(record, snapshot);
+});
+
+test("attemptHistory: no attempts produces no history", () => {
+  const record = makeAnswerRecord({ initial: [], retest: [], initialResult: undefined });
+  assert.equal(attemptHistory(record), "");
+});
+
 // ─── readExamRecords / examRecordsHref roundtrip ────────────────────────────
 
 test("readExamRecords + examRecordsHref: roundtrip preserves filters", () => {
@@ -315,7 +321,9 @@ test("collectPracticeRecords: does not mutate input stores", () => {
 
 // ─── Version consistency ────────────────────────────────────────────────────
 
-test("package version is 14.10.1", async () => {
+test("package and lockfile versions stay consistent", async () => {
   const pkg = await import("../package.json", { with: { type: "json" } });
-  assert.equal(pkg.default.version, "14.10.1");
+  const lock = await import("../package-lock.json", { with: { type: "json" } });
+  assert.equal(lock.default.version, pkg.default.version);
+  assert.equal(lock.default.packages[""].version, pkg.default.version);
 });

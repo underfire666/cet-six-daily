@@ -2,23 +2,26 @@
 import { listeningMaterialById } from "@/content/learning";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Headphones, Repeat, Zap } from "lucide-react";
 
 import { listeningLesson } from "@/lib/listening/questions";
 import { todayInShanghai } from "@/lib/dates";
 import { examReturnHref } from "@/lib/exam-browse-route";
-import { completeExitHref } from "@/lib/exam-records-route";
+import { completeExitHref, recordsReturnFromSearch } from "@/lib/exam-records-route";
 import { unresolvedQuestions } from "../lesson/UnmasteredReview";
 import { useListening } from "./ListeningProvider";
 
 export function ListeningComplete({ id, onSession, onHome }: { id: string; onSession?: (id: string) => void; onHome?: () => void }) {
   const { ready, store, dailyComplete, start } = useListening();
   const router = useRouter();
+  const search = useSearchParams().toString();
+  const exitHref = completeExitHref(examReturnHref(search) ?? "/practice/exams", search);
+  const selectedReturnLabel = recordsReturnFromSearch(search) ? "返回学习记录" : "返回真题题库";
   const session = store.sessions[id];
   const returnToCatalog = () => {
     if (onHome) onHome();
-    else router.push(completeExitHref(examReturnHref(window.location.search) ?? "/practice/exams"));
+    else router.push(exitHref);
   };
   const nextGroup = () => {
     if (session?.mode === "selected") {
@@ -112,7 +115,7 @@ export function ListeningComplete({ id, onSession, onHome }: { id: string; onSes
       <div className="listening-complete-actions">
         <button className="listening-button" onClick={nextGroup}>
           <Headphones size={18} />
-          {selected ? "返回真题题库" : session.mode === "daily" && !dailyComplete
+          {selected ? selectedReturnLabel : session.mode === "daily" && !dailyComplete
             ? "继续下一组"
             : "今天再听一组"}
         </button>

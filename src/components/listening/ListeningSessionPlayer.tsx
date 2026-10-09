@@ -2,7 +2,7 @@
 import { listeningMaterialById, listeningWordByKey } from "@/content/learning";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Headphones, RotateCcw, Sparkles } from "lucide-react";
 
@@ -25,7 +25,7 @@ import {
 import { AudioPlayer } from "./AudioPlayer";
 import { ListeningTranscript } from "./ListeningTranscript";
 import { BookmarkPlus, BookmarkCheck } from "lucide-react";
-import { sessionExitHref } from "@/lib/exam-records-route";
+import { practiceCompleteHref, sessionExitHref } from "@/lib/exam-records-route";
 
 function LookupSheet({
   material,
@@ -86,6 +86,7 @@ export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string;
   const vocabulary = useVocabulary();
   const { settings } = useLearning();
   const router = useRouter();
+  const search = useSearchParams().toString();
   const [dialog, setDialog] = useState<"hint" | "exit" | "transcript" | null>(
     null,
   );
@@ -94,9 +95,9 @@ export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string;
   useEffect(() => {
     if (session?.phase === "complete") {
       if (onComplete) onComplete();
-      else router.replace(`/practice/listening/complete/${id}`);
+      else router.replace(practiceCompleteHref("listening", id, search));
     }
-  }, [session?.phase, id, router, onComplete]);
+  }, [session?.phase, id, router, onComplete, search]);
   if (!ready) return <div className="exercise-loading">正在准备听力…</div>;
   if (!session)
     return (
@@ -302,7 +303,7 @@ export function ListeningSessionPlayer({ id, onComplete, onExit }: { id: string;
           onExit={() => {
             setDialog(null);
             if (onExit) onExit();
-            else router.push(sessionExitHref(session.mode, "/practice/listening"));
+            else router.push(sessionExitHref(session.mode, "/practice/listening", search));
           }}
         />
       )}

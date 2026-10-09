@@ -1,4 +1,5 @@
 import { examModules, type ExamModule } from "@/content/exam-catalog";
+import { examReturnHref } from "./exam-browse-route";
 import type { RecordFilterModule, RecordFilterStatus } from "./exam-records";
 
 export interface ExamRecordsState {
@@ -66,13 +67,11 @@ export function recordsReturnParam(state: ExamRecordsState): string {
 }
 
 /**
- * Read and validate returnTo from the current page URL.
- * Returns the safe records page URL, or null if not present/invalid.
- * Call in client components after mount (window available).
+ * Resolve a records destination from explicit route parameters.
+ * Reading window.location during a client navigation can return the previous URL.
  */
-export function readReturnToFromLocation(): string | null {
-  if (typeof window === "undefined") return null;
-  const params = new URLSearchParams(window.location.search);
+export function recordsReturnFromSearch(search: string): string | null {
+  const params = new URLSearchParams(search);
   return safeRecordsReturnUrl(params.get("returnTo"));
 }
 
@@ -81,25 +80,26 @@ export function readReturnToFromLocation(): string | null {
  * Prefers validated returnTo (records page), falls back to exam browser,
  * then module home for non-selected modes.
  */
-export function sessionExitHref(mode: string, moduleHome: string): string {
-  const returnTo = readReturnToFromLocation();
-  if (returnTo) return returnTo;
-  return mode === "selected" ? "/practice/exams" : moduleHome;
+export function sessionExitHref(mode: string, moduleHome: string, search: string): string {
+  if (mode !== "selected") return moduleHome;
+  return recordsReturnFromSearch(search) ?? examReturnHref(search) ?? "/practice/exams";
 }
 
 /**
- * Combined exit resolver for Complete pages: checks returnTo (records) first,
- * then exam param (exam browser), then falls back to default.
+ * Prefer a records return destination, otherwise preserve the caller's already
+ * validated catalog destination, including its original filters.
  */
-export function completeExitHref(defaultHref: string): string {
-  const returnTo = readReturnToFromLocation();
-  if (returnTo) return returnTo;
-  // Fall back to exam browser if exam param present
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("exam")) {
-      return "/practice/exams";
-    }
-  }
-  return defaultHref;
+export function completeExitHref(defaultHref: string, search: string): string {
+  return recordsReturnFromSearch(search) ?? defaultHref;
+}
+
+/** Carry only validated return context from the original session to settlement. */
+export function practiceCompleteHref(module: ExamModule, sessionId: string, search: string): string {
+  if (!examModules.includes(module) || !/^[\w:-]{1,128}$/.test(sessionId)) return "/practice/exams";
+  const catalogHref = examReturnHref(search);
+  const params = new URLSearchParams(catalogHref?.split("?")[1] ?? "");
+  const returnTo = recordsReturnFromSearch(search);
+  if (returnTo) params.set("returnTo", returnTo);
+  const query = params.toString();
+  return `/practice/${module}/complete/${sessionId}${query ? `?${query}` : ""}`;
 }

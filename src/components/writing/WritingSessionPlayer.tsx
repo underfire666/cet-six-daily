@@ -3,16 +3,17 @@ import { writingTaskById } from "@/content/learning";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, ChevronDown, NotebookPen } from "lucide-react";
 
 import { countWords } from "@/lib/writing/scoring";
 import { useWriting } from "./WritingProvider";
-import { sessionExitHref } from "@/lib/exam-records-route";
+import { practiceCompleteHref, recordsReturnFromSearch, sessionExitHref } from "@/lib/exam-records-route";
 
 export function WritingSessionPlayer({ id, onComplete, onExit }: { id: string; onComplete?: () => void; onExit?: () => void }) {
   const { ready, store, dispatch, lastSaveOk } = useWriting();
   const router = useRouter();
+  const search = useSearchParams().toString();
   const session = store.sessions[id];
   const task = session ? writingTaskById(session.taskId) : undefined;
   const [showRef, setShowRef] = useState(false);
@@ -69,14 +70,14 @@ export function WritingSessionPlayer({ id, onComplete, onExit }: { id: string; o
   const finish = () => {
     dispatch(id, { type: "finish", now: new Date().toISOString() });
     if (onComplete) onComplete();
-    else router.push(`/practice/writing/complete/${id}`);
+    else router.push(practiceCompleteHref("writing", id, search));
   };
 
   return (
     <main className="subjective-session">
       <header className="subjective-session-bar">
         {onExit ? <button className="exercise-icon-button" onClick={onExit} aria-label="关闭"><ArrowLeft size={19} /></button> :
-          <Link href={sessionExitHref(session.mode, "/practice/writing")} aria-label="关闭"><ArrowLeft size={19} /></Link>}
+          <Link href={sessionExitHref(session.mode, "/practice/writing", search)} aria-label="关闭"><ArrowLeft size={19} /></Link>}
         <span>写作 · {task.title}</span>
         <small>{session.mode === "daily" ? "每日任务" : session.mode === "selected" ? "真题选练" : "额外练习"}</small>
       </header>
@@ -261,7 +262,7 @@ export function WritingSessionPlayer({ id, onComplete, onExit }: { id: string; o
             {session.phase === "complete" && (onExit ? (
               <button className="subjective-button" onClick={onExit}><ArrowLeft size={18} />返回写作</button>
             ) : (
-              <Link className="subjective-button" href={sessionExitHref(session.mode, "/practice/writing")}><ArrowLeft size={18} />{session.mode === "selected" ? "返回学习记录" : "返回写作"}</Link>
+              <Link className="subjective-button" href={sessionExitHref(session.mode, "/practice/writing", search)}><ArrowLeft size={18} />{session.mode === "selected" ? (recordsReturnFromSearch(search) ? "返回学习记录" : "返回真题题库") : "返回写作"}</Link>
             ))}
           </section>
         )}
