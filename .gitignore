@@ -15,5 +15,6 @@ shots/
 .env
 .env.local
 .env.*.local
+.env.production
 prisma/*.db
 prisma/*.db-journal

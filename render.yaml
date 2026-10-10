@@ -1,0 +1,49 @@
+# Deployment template only. Review DEPLOYMENT.md and approve the paid resources
+# before creating this Blueprint. This file does not create anything locally.
+# Disable Blueprint Auto Sync in the dashboard as well as service auto-deploys.
+previews:
+  generation: off
+
+services:
+  - type: web
+    name: cet-six-daily
+    runtime: docker
+    plan: 0.5c-512mb
+    region: singapore
+    numInstances: 1
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: off
+    preDeployCommand: npm run db:migrate
+    healthCheckPath: /api/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOSTNAME
+        value: 0.0.0.0
+      - key: PORT
+        value: "10000"
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cet-six-daily-db
+          property: connectionString
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: AUTH_TRUST_HOST
+        value: "true"
+      - key: AUTH_URL
+        fromService:
+          type: web
+          name: cet-six-daily
+          envVarKey: RENDER_EXTERNAL_URL
+
+databases:
+  - name: cet-six-daily-db
+    plan: 0.1c-256mb
+    region: singapore
+    postgresMajorVersion: "17"
+    diskSizeGB: 1
+    storageAutoscalingEnabled: false
+    ipAllowList: []

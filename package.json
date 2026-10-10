@@ -1,7 +1,7 @@
 {
   "name": "cet-six-daily",
-  "version": "14.10.2",
-  "appPhase": "V14.10.2 CET-6 Practice Records Return Fix",
+  "version": "15.0.0",
+  "appPhase": "V15 Deployment Preparation",
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
@@ -13,7 +13,12 @@
     "content:validate": "tsx scripts/content-validate.ts",
     "content:stats": "tsx scripts/content-stats.ts",
     "content:rights": "tsx scripts/content-rights.ts",
-    "content:audio-validate": "tsx scripts/content-audio-validate.ts"
+    "content:audio-validate": "tsx scripts/content-audio-validate.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "deploy:check": "node scripts/deploy-check.mjs",
+    "deploy:prepare": "node scripts/prepare-standalone.mjs",
+    "start:production": "node scripts/start-production.mjs --standalone"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.11.3",

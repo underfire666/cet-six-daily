@@ -1,8 +1,23 @@
 # 六级日常项目上下文
 
-## 当前开发版本：V14.10.2 学习记录返回修补版（14.10.2，本地验收 PASS，2026-10-09）
+## 当前开发版本：V15 上线准备（15.0.0，尚未公网部署，2026-10-10）
 
-应用版本：14.10.2；阶段：V14.10.2 CET-6 Practice Records Return Fix。package、锁文件与关于页版本一致。当前为本地修复，不表示已提交或发布。
+应用版本：15.0.0；阶段：V15 Deployment Preparation。package、锁文件与关于页使用同一版本。当前没有服务器、生产数据库或经过验证的公网网址；不标记 V15 RELEASED / LIVE。
+
+- 基于已发布的 V14，保留现有学习功能及视觉设计。本轮只准备部署、生产启动和上线验收，不增加学习模块或开始 V16。
+- 新增 Linux 多阶段 Dockerfile、Render Docker Web Service + PostgreSQL 17 同区模板、独立生产环境变量示例与部署说明。模板使用收费资源，本轮未创建或购买任何线上资源。
+- Next.js 使用 standalone；明确补齐 public（含所有听力音频）与 .next/static。部署包剔除本地环境文件；Docker 构建上下文排除环境、Windows 依赖和验收产物。
+- 生产启动先检查 PostgreSQL URL、独立登录密钥、HTTPS 登录来源及可信代理设置；默认启动 standalone server。数据库迁移单独使用 prisma migrate deploy，不在每次启动时隐式执行。
+- /api/health 返回存活状态及版本；/api/ready 只读检查数据库与全部 17 张业务表，失败或超时返回 503；不返回连接或错误详情。
+- 本地 1364/1364 自动测试（新增 24）、typecheck、lint、生产构建和四项 content gates PASS；原 synthetic fixture 的 1 条允许音频占位警告保留。
+- 8 个已提交迁移成功应用到全新独立本地验收 schema；生产 standalone 预览使用独立 3055 端口，首页、题库、关于、health/ready 返回 200。既有开发服务及用户表保持原状。
+- Linux Docker / 全新 PostgreSQL 的 GitHub Actions 验证入口正在完成；真实执行结果及浏览器验收将在 V15_DEPLOYMENT_REPORT.md 记录，不提前宣称通过。
+- 分支 codex/v15-launch-deployment，基线 b922011d1833e2840bdea91dad085d3894915171；当前部署准备改动未提交。不上线、不合并 main、不创建或移动版本标签。
+- 用户准备 Render 账号、连接 GitHub 并确认创建页实际费用后，才执行真实资源创建和公网验收。操作见 DEPLOYMENT.md。
+
+## 历史版本：V14.10.2 学习记录返回修补版（14.10.2，已发布 v14.0，2026-10-10）
+
+应用版本：14.10.2；阶段：V14.10.2 CET-6 Practice Records Return Fix。已提交并上传 feature/v14-real-content-rights，并以 v14.0 发布 GitHub Release；GitHub 发布不代表网站公网部署。
 
 ### 本轮修复
 
@@ -19,7 +34,7 @@
 - Chrome 浏览器 116/116 检查 PASS（主流程 102 + 原入口/倍速/版本补查 14），0 条非预期页面/控制台错误。375/390/430/768/1440px 无横向滚动或底部导航遮挡；筛选按钮至少 44px。独立访客测试存档已清理。
 - 本地实际地址 `http://localhost:3000`，沿用已运行的开发服务器；首页、记录及关于页可访问。生产构建单独通过，浏览器验证使用开发预览。
 - 当前报告 `V14_CET6_PRACTICE_RECORDS_RETURN_FIX_REPORT.md`；截图和检查证据在 `output/playwright/records-return-fix/`。
-- Git：分支 `feature/v14-real-content-rights`，基线/当前 HEAD `f9f42f63d3a4d852390c4332890fdf60a7cf093b`；本轮修复尚未提交，worktree 有本地修改。未重新核对远程，不宣称同步、Git FINALIZED 或发布；未 push/merge/tag/Release/部署。v12.0 仍为 `697772d9412d9d1a4253e099a001734a5230e264`。
+- Git：feature/v14-real-content-rights 的本地/远程最终提交 b922011d1833e2840bdea91dad085d3894915171，上传收尾时工作树干净。v14.0 指向该提交，GitHub Release：https://github.com/underfire666/cet-six-daily/releases/tag/v14.0。未合并 main、未公网部署；v12.0 仍为 697772d9412d9d1a4253e099a001734a5230e264。
 - 本轮返回修补完成，等待用户检查 UI。
 
 ## 历史版本：V14.10.1 真题学习记录修补版（浏览器复核未通过，缺口由 14.10.2 修复，2026-10-09）

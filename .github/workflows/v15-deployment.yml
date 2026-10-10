@@ -1,0 +1,120 @@
+name: V15 isolated production deployment validation
+
+on:
+  push:
+    branches:
+      - codex/v15-launch-deployment
+    paths:
+      - .github/workflows/v15-deployment.yml
+      - Dockerfile
+      - .dockerignore
+      - render.yaml
+      - next.config.ts
+      - package.json
+      - package-lock.json
+      - prisma/**
+      - scripts/deploy-*.mjs
+      - scripts/start-production.mjs
+      - scripts/prepare-standalone.mjs
+      - src/app/api/**
+      - src/lib/deployment/**
+      - src/lib/auth/**
+      - src/lib/db/**
+      - src/lib/sync/**
+      - src/content/**
+      - public/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v15-deployment-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  isolated-docker-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Name the isolated resources
+        shell: bash
+        run: |
+          printf 'CI_NETWORK=cet-v15-%s-%s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          printf 'CI_DB=cet-v15-db-%s-%s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          printf 'CI_APP=cet-v15-app-%s-%s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+
+      - name: Build the real Linux production image
+        shell: bash
+        run: docker build --tag cet-six-daily:v15-ci .
+
+      - name: Start a fresh isolated PostgreSQL database and application
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/cet-v15-smoke"
+          ci_password=$(openssl rand -hex 24)
+          ci_auth_secret=$(openssl rand -hex 32)
+          printf '::add-mask::%s\n' "$ci_password"
+          printf '::add-mask::%s\n' "$ci_auth_secret"
+          printf 'POSTGRES_PASSWORD=%s\nPOSTGRES_USER=cet_ci\nPOSTGRES_DB=cet_v15_ci\n' "$ci_password" > "$RUNNER_TEMP/cet-v15-db.env"
+          printf 'DATABASE_URL=postgresql://cet_ci:%s@db:5432/cet_v15_ci\nAUTH_SECRET=%s\nAUTH_URL=http://127.0.0.1:3180\nAUTH_TRUST_HOST=true\nNODE_ENV=production\nHOSTNAME=0.0.0.0\nPORT=3000\n' "$ci_password" "$ci_auth_secret" > "$RUNNER_TEMP/cet-v15-app.env"
+          docker network create "$CI_NETWORK"
+          docker run --detach --name "$CI_DB" --memory=256m --memory-swap=256m --cpus=0.1 --network "$CI_NETWORK" --network-alias db --env-file "$RUNNER_TEMP/cet-v15-db.env" postgres:17-bookworm
+          ci_db_ready=false
+          for attempt in $(seq 1 60); do
+            if docker exec "$CI_DB" pg_isready -U cet_ci -d cet_v15_ci > /dev/null 2>&1; then
+              ci_db_ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ci_db_ready" != true ]; then
+            printf 'The isolated PostgreSQL database did not become ready.\n' >&2
+            exit 1
+          fi
+          docker run --detach --name "$CI_APP" --memory=512m --memory-swap=512m --cpus=0.5 --network "$CI_NETWORK" --publish 127.0.0.1:3180:3000 --env-file "$RUNNER_TEMP/cet-v15-app.env" cet-six-daily:v15-ci node scripts/start-production.mjs --standalone --allow-local
+
+      - name: Verify liveness does not mistake an empty database for readiness
+        shell: bash
+        run: |
+          docker run --rm --network host --volume "$GITHUB_WORKSPACE/scripts:/smoke:ro" node:24.15.0-bookworm-slim node /smoke/deploy-smoke.mjs --base-url http://127.0.0.1:3180 --phase pre-migration
+
+      - name: Run the independent migration command
+        shell: bash
+        run: |
+          docker run --rm --network "$CI_NETWORK" --env-file "$RUNNER_TEMP/cet-v15-app.env" cet-six-daily:v15-ci npm run db:migrate
+
+      - name: Verify assets, registration, credentials and owner-scoped synchronization
+        shell: bash
+        run: |
+          docker run --rm --network host --volume "$GITHUB_WORKSPACE/scripts:/smoke:ro" --volume "$RUNNER_TEMP/cet-v15-smoke:/state" --env DEPLOY_SMOKE_ISOLATED_TEST_DB=1 node:24.15.0-bookworm-slim node /smoke/deploy-smoke.mjs --base-url http://127.0.0.1:3180 --phase full --state-file /state/cet-v15-smoke-state.json
+
+      - name: Restart both temporary processes and verify persisted state
+        shell: bash
+        run: |
+          docker restart "$CI_DB" "$CI_APP"
+          docker run --rm --network host --volume "$GITHUB_WORKSPACE/scripts:/smoke:ro" --volume "$RUNNER_TEMP/cet-v15-smoke:/state" --env DEPLOY_SMOKE_ISOLATED_TEST_DB=1 node:24.15.0-bookworm-slim node /smoke/deploy-smoke.mjs --base-url http://127.0.0.1:3180 --phase after-restart --state-file /state/cet-v15-smoke-state.json
+
+      - name: Show temporary container diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          if [ -n "${CI_APP:-}" ]; then docker logs --tail 160 "$CI_APP" 2>&1 || true; fi
+          if [ -n "${CI_DB:-}" ]; then docker logs --tail 80 "$CI_DB" 2>&1 || true; fi
+
+      - name: Remove isolated containers, volumes, network and temporary credentials
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${CI_APP:-}" ]; then docker rm --force --volumes "$CI_APP" > /dev/null 2>&1 || true; fi
+          if [ -n "${CI_DB:-}" ]; then docker rm --force --volumes "$CI_DB" > /dev/null 2>&1 || true; fi
+          if [ -n "${CI_NETWORK:-}" ]; then docker network rm "$CI_NETWORK" > /dev/null 2>&1 || true; fi
+          rm -f -- "$RUNNER_TEMP/cet-v15-db.env" "$RUNNER_TEMP/cet-v15-app.env" "$RUNNER_TEMP/cet-v15-smoke/cet-v15-smoke-state.json"
+          rmdir -- "$RUNNER_TEMP/cet-v15-smoke" 2> /dev/null || true
