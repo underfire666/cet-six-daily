@@ -115,6 +115,12 @@ V15 分支的 GitHub Actions 工作流会使用 Linux Docker 和全新隔离 Pos
 
 此验证使用独立临时数据库和验证用环境设置，不需要生产秘密，不使用用户的本地数据库，也不会创建 Render 资源或自动上线。成功说明对应镜像与隔离环境通过检查，实际 Render 数据库、HTTPS 地址和业务流程仍需要线上验收。
 
+### 依赖安全检查
+
+V15 将 Next.js 和配套 ESLint 配置更新到 16.3.8，锁定 sharp 0.35.5、source-map-js 1.2.2；Prisma 仍为 6.19.3，其配置依赖 deepmerge-ts 使用限定范围的 8.0.0 override。Docker 对应用生产依赖和独立迁移工具分别执行 npm audit，高或严重漏洞会阻止构建。
+
+当前应用生产依赖审计为 0 项。开发工具 ESLint 的 braces/glob 链仍对应 [一条没有修补版本的 DoS 公告](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)，完整依赖审计显示 5 个关联的高风险节点；该开发工具链不进入生产镜像。不能把生产审计为 0 写成全部依赖审计为 0。Prisma 的 override 保留在迁移工具阶段，不能在裁剪时丢弃；未来新增自定义 Prisma 配置时应回归验证合并行为。
+
 ## 线上验证与上线状态
 
 在真实 HTTPS 地址检查：

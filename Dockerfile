@@ -11,7 +11,8 @@ FROM base AS deps
 COPY package.json package-lock.json ./
 COPY prisma/schema.prisma ./prisma/schema.prisma
 RUN npm ci --include=dev \
-    && npm run db:generate
+    && npm run db:generate \
+    && npm audit --omit=dev --audit-level=high
 
 FROM deps AS build
 COPY . .
@@ -23,10 +24,11 @@ RUN npm run build
 # Keep the locked Prisma CLI and its transitive dependencies for the separate
 # pre-deploy migration command, without copying the development toolchain.
 FROM deps AS migration-deps
-RUN node -e 'const fs = require("node:fs"); const p = require("./package.json"); fs.writeFileSync("package.json", JSON.stringify({ name: "cet-six-daily-migration-tools", private: true, dependencies: { prisma: p.dependencies.prisma || p.devDependencies.prisma } }));' \
+RUN node -e 'const fs = require("node:fs"); const p = require("./package.json"); fs.writeFileSync("package.json", JSON.stringify({ name: "cet-six-daily-migration-tools", private: true, dependencies: { prisma: p.dependencies.prisma || p.devDependencies.prisma }, overrides: p.overrides }));' \
     && npm prune --omit=dev --ignore-scripts \
     && test -x node_modules/.bin/prisma \
     && node -e 'require.resolve("@prisma/engines");' \
+    && npm audit --audit-level=high \
     && npm cache clean --force
 
 FROM base AS runner
