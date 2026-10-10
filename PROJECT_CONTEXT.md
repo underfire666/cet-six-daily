@@ -1,6 +1,6 @@
 # 六级日常项目上下文
 
-## 当前开发版本：V15 上线准备（15.0.0，尚未公网部署，2026-10-10）
+## 当前开发版本：V15 上线准备（15.0.0，准备验收 PASS，尚未公网部署，2026-10-10）
 
 应用版本：15.0.0；阶段：V15 Deployment Preparation。package、锁文件与关于页使用同一版本。当前没有服务器、生产数据库或经过验证的公网网址；不标记 V15 RELEASED / LIVE。
 
@@ -9,10 +9,13 @@
 - Next.js 使用 standalone；明确补齐 public（含所有听力音频）与 .next/static。部署包剔除本地环境文件；Docker 构建上下文排除环境、Windows 依赖和验收产物。
 - 生产启动先检查 PostgreSQL URL、独立登录密钥、HTTPS 登录来源及可信代理设置；默认启动 standalone server。数据库迁移单独使用 prisma migrate deploy，不在每次启动时隐式执行。
 - /api/health 返回存活状态及版本；/api/ready 只读检查数据库与全部 17 张业务表，失败或超时返回 503；不返回连接或错误详情。
-- 本地 1364/1364 自动测试（新增 24）、typecheck、lint、生产构建和四项 content gates PASS；原 synthetic fixture 的 1 条允许音频占位警告保留。
-- 8 个已提交迁移成功应用到全新独立本地验收 schema；生产 standalone 预览使用独立 3055 端口，首页、题库、关于、health/ready 返回 200。既有开发服务及用户表保持原状。
-- Linux Docker / 全新 PostgreSQL 的 GitHub Actions 验证入口正在完成；真实执行结果及浏览器验收将在 V15_DEPLOYMENT_REPORT.md 记录，不提前宣称通过。
-- 分支 codex/v15-launch-deployment，基线 b922011d1833e2840bdea91dad085d3894915171；当前部署准备改动未提交。不上线、不合并 main、不创建或移动版本标签。
+- 安全修补：Next.js 与配套 ESLint 配置 16.3.8，sharp 0.35.5、source-map-js 1.2.2；Prisma 6.19.3 保持，@prisma/config 的 deepmerge-ts override 为 8.0.0。客户端生成及 8 个迁移均实测成功。应用生产依赖与镜像迁移工具审计均 0 项；完整树残留 5 个开发工具节点，均来自未有修补版本的同一 braces/glob DoS 公告，该链不进入生产镜像。详见 DEPLOYMENT.md。
+- 最终本地 1364/1364 自动测试（新增 24）、typecheck、lint 0/0、Next.js 16.3.8 生产构建 PASS；四项 content gates PASS，原 synthetic fixture 的 1 条允许音频占位警告保留。
+- 8 个已提交迁移成功应用到全新独立本地验收 schema；生产 standalone 在独立 3055 端口实测，12/12 只读烟测及 58/58 最终 Chrome 检查 PASS。首页和 33 套题库在五种宽度正常，关于页真实显示 15.0.0；无页面/控制台错误。完整登录/同步本地烟测 23/23 PASS；最终补丁后的完整写入及重启验证见 Linux CI。
+- Linux Docker / 全新 PostgreSQL 验证 48/48 检查 PASS：空库 health 200 / ready 503、独立迁移、注册、登录、同步写读及去重、真实 MP3 Range、DB 与应用重启后的原登录会话/重新登录及数据保留。应用限制 512 MB/0.5 CPU，数据库限制 256 MB/0.1 CPU，无交换空间；这是功能烟测，不宣称并发负载验收。
+- 已验证代码提交 dcf423d19a0de2791dd438fb4cd0c7831b80e7e9，CI：https://github.com/underfire666/cet-six-daily/actions/runs/38016686720。分支 codex/v15-launch-deployment 已上传；最终文档收尾后再次核对本地/远程 HEAD 与工作树，Git 闭环现场值记录在本地报告。
+- 临时验收 schema、账号和浏览器会话已清理；3055 临时服务已关闭。本机 3000 开发预览已恢复并实际确认首页及关于页 200：http://127.0.0.1:3000。该地址仅用于本机访问。
+- 本地报告 output/v15-launch/V15_DEPLOYMENT_REPORT.md；最终浏览器截图 output/playwright/v15-launch/。报告不作为公开 Release 附件上传。未购买或创建线上资源、未合并 main、未创建 v15.0 标签/Release；v14.0 和 v12.0 不变。
 - 用户准备 Render 账号、连接 GitHub 并确认创建页实际费用后，才执行真实资源创建和公网验收。操作见 DEPLOYMENT.md。
 
 ## 历史版本：V14.10.2 学习记录返回修补版（14.10.2，已发布 v14.0，2026-10-10）

@@ -24,7 +24,7 @@ Render 可同时托管 Node.js 应用和 PostgreSQL，适合目前没有服务�
 ### 最少操作步骤
 
 1. 注册 [Render](https://dashboard.render.com/) 账号，使用 GitHub 登录或连接 GitHub，授权访问 `underfire666/cet-six-daily` 仓库。当前还未准备 Render 账号。
-2. 等待 V15 部署文件提交并上传 GitHub 后，选择 **New → Blueprint**，连接此仓库；分支选择 **`codex/v15-launch-deployment`**，Blueprint 文件使用根目录 `render.yaml`。不要误选仍不含 V15 配置的其他分支。[Blueprint 创建说明](https://render.com/docs/infrastructure-as-code)
+2. V15 部署文件已上传 GitHub。选择 **New → Blueprint**，连接此仓库；分支选择 **`codex/v15-launch-deployment`**，Blueprint 文件使用根目录 `render.yaml`。不要误选仍不含 V15 配置的其他分支。[Blueprint 创建说明](https://render.com/docs/infrastructure-as-code)
 3. 查看即将创建的 Web Service、PostgreSQL、Singapore 区域和费用。确认自己接受创建页费用后，再点击 **Deploy Blueprint**。
 4. 模板会绑定 `DATABASE_URL`、生成独立 `AUTH_SECRET`，并提供生产运行设置。核对 `AUTH_URL` 使用该服务实际 HTTPS 地址；首次使用 Render 分配的网址即可，无需先购买域名。
 5. 等待构建、预部署迁移及服务启动完成。迁移失败时先处理失败原因，不能跳过迁移直接上线。
@@ -111,7 +111,7 @@ docker run --rm --name cet-daily --env-file .env.production.local -p 127.0.0.1:3
 
 ## Linux 镜像验证入口
 
-V15 分支的 GitHub Actions 工作流会使用 Linux Docker 和全新隔离 PostgreSQL，验证镜像构建、已提交迁移、`/api/health`、`/api/ready`、注册登录及音频资源。上传 V15 分支后，在仓库 **Actions** 页面查看具体运行及结果；工作流完成前不标记为通过。
+V15 分支的 GitHub Actions 工作流使用 Linux Docker 和全新隔离 PostgreSQL，验证镜像构建、已提交迁移、`/api/health`、`/api/ready`、注册登录及音频资源。[最终运行 38016686720](https://github.com/underfire666/cet-six-daily/actions/runs/38016686720) 已通过，验证代码提交为 `dcf423d19a0de2791dd438fb4cd0c7831b80e7e9`；48 项检查包含同步去重和应用/数据库重启后的登录及数据保留。应用使用 512 MB / 0.5 CPU、数据库使用 256 MB / 0.1 CPU 容器限制，这属于功能检查，未做并发容量验收。
 
 此验证使用独立临时数据库和验证用环境设置，不需要生产秘密，不使用用户的本地数据库，也不会创建 Render 资源或自动上线。成功说明对应镜像与隔离环境通过检查，实际 Render 数据库、HTTPS 地址和业务流程仍需要线上验收。
 
