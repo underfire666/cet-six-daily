@@ -30,7 +30,9 @@ export function validateDeploymentEnv(env, { allowLocal = false } = {}) {
       const password = decodeURIComponent(database.password);
       if (!/^[a-f0-9]{64}$/i.test(password)) errors.push("The Compose database password must contain exactly 64 hexadecimal characters.");
       if (password === env.AUTH_SECRET) errors.push("The database password and AUTH_SECRET must be generated independently.");
-    } catch { /* The general DATABASE_URL check below reports invalid URLs. */ }
+    } catch {
+      errors.push("The Compose database URL must contain valid hexadecimal credentials.");
+    }
     if (!/^[a-f0-9]{64}$/i.test(env.AUTH_SECRET ?? "")) errors.push("The Compose AUTH_SECRET must contain exactly 64 hexadecimal characters.");
     try {
       const auth = new URL(env.AUTH_URL ?? "");

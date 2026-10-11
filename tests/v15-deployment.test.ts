@@ -35,6 +35,7 @@ test("V15 China Compose rejects mismatched auth origins and weak or shared secre
     { AUTH_SECRET: "b".repeat(63) }, { AUTH_SECRET: "a".repeat(64) },
     { DATABASE_URL: "postgresql://cet_daily:short@db:5432/cet_daily" },
     { DATABASE_URL: `postgresql://cet_daily:${"%40".repeat(64)}@db:5432/cet_daily` },
+    { DATABASE_URL: "postgresql://cet_daily:%GG@db:5432/cet_daily" },
   ]) assert.equal(validateDeploymentEnv({ ...china, ...changes }).ok, false);
 });
 
