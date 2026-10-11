@@ -83,3 +83,9 @@ sha256sum --check ./cet6-指定时间.dump.sha256
 后续发布先备份、验证新镜像并单独运行已提交迁移，再更新 app。保持同一 Compose 项目名和卷，不把生产数据库复制到应用镜像。应用回退只切换到兼容当前数据库的已验证旧镜像，不降级 schema 或删表。新的公网域名不会自动搬迁本地地址下的浏览器存档。
 
 本机测试、GitHub CI、本机证书和公网验收分别记录。本轮未创建云资源、未注册域名、未申请备案，也未提供经过验证的公网访问地址。
+
+## 本次验证记录（2026-10-11）
+
+最终部署代码 `b57c2566dba5ef3c0b349b160708460076ee7c41`：[Compose / TLS / 备份恢复验证](https://github.com/underfire666/cet-six-daily/actions/runs/38105224279) SUCCESS；HTTPS full 24/24、容器重建后 24/24，另实测无 app/数据库宿主端口、HTTP 跳转、权限 600 私有备份、SHA-256 及恢复到隔离新库后三张账号/同步相关表行数一致。[通用 Linux 部署验证](https://github.com/underfire666/cet-six-daily/actions/runs/38105224248) 48/48 PASS。
+
+本地 1369 项自动测试、类型检查、零警告 lint、生产构建通过；最终预检边界补充针对性 15 项通过。Linux 验证使用 GitHub 隔离临时资源和 localhost 受信本机 CA，不验证大陆访问速度、真实域名证书或备案，也不自动公开网站。

@@ -68,4 +68,4 @@ V14 基线验收为 1340 项自动测试及 116 项 Chrome 浏览器检查通过
 
 应用生产依赖和镜像迁移工具审计均为 0 项；开发期 ESLint 的一条未修补 braces 告警仍存在，细节见部署指南。V15 本地、Linux 镜像及公网验收分别记录，当前尚未完成公网部署。
 
-V15.0.1 国内部署补充：1369 项自动测试、类型检查、零警告 lint 和生产构建通过；Compose、HTTPS 与备份恢复的实际 Linux 验证另行记录。真实大陆服务器、域名备案及公网业务验收仍待资源开通。
+V15.0.1 国内部署补充：1369 项自动测试、类型检查、零警告 lint 和生产构建通过；[Linux Compose 验证](https://github.com/underfire666/cet-six-daily/actions/runs/38105224279) 已通过：48 项 HTTPS 业务检查，以及私有备份、校验和隔离恢复、容器重建后数据保留；[通用 Linux 检查](https://github.com/underfire666/cet-six-daily/actions/runs/38105224248) 48 项通过。真实大陆服务器、域名备案及公网业务验收仍待资源开通。

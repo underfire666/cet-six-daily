@@ -1,6 +1,6 @@
 # 六级日常项目上下文
 
-## 当前开发版本：V15 国内上线准备（15.0.1，本地检查 PASS，Linux Compose 验证待记录，尚未公网部署，2026-10-11）
+## 当前开发版本：V15 国内上线准备（15.0.1，本地及 Linux Compose 验证 PASS，尚未公网部署，2026-10-11）
 
 应用版本：15.0.1；阶段：V15 Mainland Deployment Preparation。用户已明确中国大陆上线，目前没有域名、服务器和生产数据库。未标记 LIVE / RELEASED，未开始 V16。
 
@@ -8,7 +8,9 @@
 - 新增 .env.china.example 和 DEPLOYMENT_CHINA.md；真实 .env.china.local 及 backups/ 排除 Git/镜像。加强域名、AUTH_URL 匹配、64 位独立十六进制密钥预检，不打印秘密。
 - scripts/china-backup.sh 私有导出、无覆盖发布及 SHA-256；实际服务器日常调度、异机加密备份尚未部署。
 - .github/workflows/v15-china.yml 验证真实 Compose、本机受信 TLS、Secure/HttpOnly 登录 cookie、同步及真实 MP3 Range、备份隔离恢复、移除容器后持久卷保留；CI override 仅限 localhost，不用于生产。
-- 本地自动测试 1369/1369、typecheck、lint 0/0、15.0.1 生产构建 PASS；Linux Compose 运行结果完成后补记。不宣称已验证国内网络或公网证书。
+- 本地自动测试 1369/1369、typecheck、lint 0/0、15.0.1 生产构建 PASS；最终预检边界补充针对性 15/15 PASS。Linux Compose 与通用 Linux 部署验证均 PASS；不宣称已验证国内网络或公网证书。
+- 最终部署代码 b57c2566dba5ef3c0b349b160708460076ee7c41：Compose CI https://github.com/underfire666/cet-six-daily/actions/runs/38105224279 ，HTTPS full 24/24 + 重建后 24/24；额外通过 HTTP 跳转、数据库/app 无宿主端口、600 权限备份、SHA-256 及隔离恢复后三表行数匹配。通用 CI https://github.com/underfire666/cet-six-daily/actions/runs/38105224248 ，48/48 PASS。
+- 本机预览已恢复 http://127.0.0.1:3000：首页 200，health 200 且版本 15.0.1，仅供本机访问。最终文档与现场 Git 状态记录在 output/v15-china/V15_CHINA_DEPLOYMENT_REPORT.md；报告仅保留本地。
 - 用户需先准备实名域名、实际云账号及可备案的大陆 Linux 服务器，并在接入商完成备案。当前未购买资源、未申请备案、未修改学习视觉设计、未创建 V15 tag/Release 或合并 main。原 Render 海外配置保留。
 
 ## 历史验证：V15 上线准备（15.0.0，准备验收 PASS，尚未公网部署，2026-10-10）
