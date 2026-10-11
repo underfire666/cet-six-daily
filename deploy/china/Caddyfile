@@ -1,0 +1,14 @@
+# Caddy obtains and renews certificates for SITE_DOMAIN automatically.
+# Point the domain to this server and allow inbound TCP 80/443 first.
+{$SITE_DOMAIN} {
+
+	encode zstd gzip
+
+	# The HTTP upstream keeps the original Host; Caddy supplies trusted
+	# X-Forwarded-For/Proto/Host and ignores spoofed incoming forwarded headers.
+	# Immediate flushing supports Next.js streamed responses. Range headers and
+	# audio Content-Range responses pass through without rewrites or buffering.
+	reverse_proxy app:3000 {
+		flush_interval -1
+	}
+}

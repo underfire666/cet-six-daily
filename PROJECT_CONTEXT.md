@@ -1,6 +1,17 @@
 # 六级日常项目上下文
 
-## 当前开发版本：V15 上线准备（15.0.0，准备验收 PASS，尚未公网部署，2026-10-10）
+## 当前开发版本：V15 国内上线准备（15.0.1，本地检查 PASS，Linux Compose 验证待记录，尚未公网部署，2026-10-11）
+
+应用版本：15.0.1；阶段：V15 Mainland Deployment Preparation。用户已明确中国大陆上线，目前没有域名、服务器和生产数据库。未标记 LIVE / RELEASED，未开始 V16。
+
+- 国内默认：compose.china.yaml + PostgreSQL 17 + Caddy 2.11.7；应用/数据库不发布宿主机端口，仅 HTTPS 网关开放 80/443。数据库、证书持久卷及日志轮转；生产启动仍单独迁移。
+- 新增 .env.china.example 和 DEPLOYMENT_CHINA.md；真实 .env.china.local 及 backups/ 排除 Git/镜像。加强域名、AUTH_URL 匹配、64 位独立十六进制密钥预检，不打印秘密。
+- scripts/china-backup.sh 私有导出、无覆盖发布及 SHA-256；实际服务器日常调度、异机加密备份尚未部署。
+- .github/workflows/v15-china.yml 验证真实 Compose、本机受信 TLS、Secure/HttpOnly 登录 cookie、同步及真实 MP3 Range、备份隔离恢复、移除容器后持久卷保留；CI override 仅限 localhost，不用于生产。
+- 本地自动测试 1369/1369、typecheck、lint 0/0、15.0.1 生产构建 PASS；Linux Compose 运行结果完成后补记。不宣称已验证国内网络或公网证书。
+- 用户需先准备实名域名、实际云账号及可备案的大陆 Linux 服务器，并在接入商完成备案。当前未购买资源、未申请备案、未修改学习视觉设计、未创建 V15 tag/Release 或合并 main。原 Render 海外配置保留。
+
+## 历史验证：V15 上线准备（15.0.0，准备验收 PASS，尚未公网部署，2026-10-10）
 
 应用版本：15.0.0；阶段：V15 Deployment Preparation。package、锁文件与关于页使用同一版本。当前没有服务器、生产数据库或经过验证的公网网址；不标记 V15 RELEASED / LIVE。
 

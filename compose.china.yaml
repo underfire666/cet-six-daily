@@ -1,0 +1,110 @@
+# Single-server production template. Fill and validate .env.china.local before use.
+# Database migrations are a separate, explicit operation; startup never runs them.
+name: cet-six-daily-china
+
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cet_daily
+      POSTGRES_USER: cet_daily
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a new 64-character hex POSTGRES_PASSWORD in .env.china.local}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 0.5
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    image: ${CET_IMAGE:-cet-six-daily:v15-china}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      NEXT_TELEMETRY_DISABLED: "1"
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set the real site domain in .env.china.local}
+      DATABASE_URL: postgresql://cet_daily:${POSTGRES_PASSWORD:?Set a new 64-character hex POSTGRES_PASSWORD in .env.china.local}@db:5432/cet_daily
+      AUTH_SECRET: ${AUTH_SECRET:?Set an independent random AUTH_SECRET in .env.china.local}
+      AUTH_URL: https://${SITE_DOMAIN:?Set the real site domain in .env.china.local}
+      AUTH_TRUST_HOST: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          require("node:http").get({ hostname: "127.0.0.1", port: process.env.PORT || 3000, path: "/api/ready", timeout: 4000 }, r => { r.resume(); process.exit(r.statusCode === 200 ? 0 : 1); }).on("timeout", () => process.exit(1)).on("error", () => process.exit(1));
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    mem_limit: 1g
+    memswap_limit: 1g
+    cpus: 1.0
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  gateway:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set the real site domain in .env.china.local}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/china/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - backend
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    stop_grace_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

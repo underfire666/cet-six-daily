@@ -4,7 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
-const options = { baseUrl: "http://127.0.0.1:3180", phase: "full", expectedVersion: "15.0.0", readOnly: false };
+const options = { baseUrl: "http://127.0.0.1:3180", phase: "full", expectedVersion: "15.0.1", readOnly: false };
 const args = process.argv.slice(2);
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -132,6 +132,11 @@ async function login(user, credentials) {
     body: new URLSearchParams({ csrfToken, email: credentials.email, password: credentials.password, callbackUrl: base.href }),
   });
   status(callback, 200, "credentials sign-in response");
+  if (base.protocol === "https:") {
+    const sessionCookie = callback.headers.getSetCookie().find((cookie) => /^__Secure-authjs\.session-token(?:\.\d+)?=/.test(cookie));
+    assert.ok(sessionCookie && /;\s*Secure(?:;|$)/i.test(sessionCookie) && /;\s*HttpOnly(?:;|$)/i.test(sessionCookie), "HTTPS login uses a Secure, HttpOnly session cookie");
+    passed("HTTPS session cookie is Secure and HttpOnly");
+  }
   await callback.arrayBuffer();
   const response = await user.call("/api/auth/session");
   status(response, 200, "authenticated session endpoint");

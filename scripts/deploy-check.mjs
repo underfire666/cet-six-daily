@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { isIP } from "node:net";
 import { fileURLToPath } from "node:url";
 
 const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
@@ -13,6 +14,31 @@ const placeholder = /replace-with|change-me|changeme|your-database-host|your-app
  */
 export function validateDeploymentEnv(env, { allowLocal = false } = {}) {
   const errors = [];
+  // The Compose template interpolates the database password into a URL and the
+  // domain into both AUTH_URL and Caddy configuration. Reject unsafe substitutions.
+  if (env.SITE_DOMAIN !== undefined) {
+    const domain = env.SITE_DOMAIN;
+    const local = allowLocal && loopbackHosts.has(domain);
+    const labels = domain.split(".");
+    const validDomain = domain.length <= 253 && labels.length >= 2
+      && labels.every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label))
+      && !isIP(domain) && !/\.(?:local|localhost|internal|test|invalid)$/i.test(domain)
+      && !placeholder.test(domain);
+    if (!local && !validDomain) errors.push("SITE_DOMAIN must be a real DNS hostname without a protocol, port or path.");
+    try {
+      const database = new URL(env.DATABASE_URL ?? "");
+      const password = decodeURIComponent(database.password);
+      if (!/^[a-f0-9]{64}$/i.test(password)) errors.push("The Compose database password must contain exactly 64 hexadecimal characters.");
+      if (password === env.AUTH_SECRET) errors.push("The database password and AUTH_SECRET must be generated independently.");
+    } catch { /* The general DATABASE_URL check below reports invalid URLs. */ }
+    if (!/^[a-f0-9]{64}$/i.test(env.AUTH_SECRET ?? "")) errors.push("The Compose AUTH_SECRET must contain exactly 64 hexadecimal characters.");
+    try {
+      const auth = new URL(env.AUTH_URL ?? "");
+      if (auth.hostname !== domain.toLowerCase() || auth.pathname !== "/" || (!local && auth.port)) {
+        errors.push("AUTH_URL must match the Compose SITE_DOMAIN HTTPS origin.");
+      }
+    } catch { /* The general AUTH_URL check below reports invalid URLs. */ }
+  }
   try {
     const database = new URL(env.DATABASE_URL ?? "");
     if (!["postgres:", "postgresql:"].includes(database.protocol)

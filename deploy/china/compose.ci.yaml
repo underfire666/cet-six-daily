@@ -1,0 +1,11 @@
+# CI only: local CA and loopback ports. Never use this override on a public server.
+# !override requires Docker Compose 2.24.4 or newer.
+services:
+  app:
+    command: ["node", "scripts/start-production.mjs", "--standalone", "--allow-local"]
+    environment:
+      AUTH_URL: https://localhost:3243
+  gateway:
+    ports: !override
+      - "127.0.0.1:3240:80"
+      - "127.0.0.1:3243:443"

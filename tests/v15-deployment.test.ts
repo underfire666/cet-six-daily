@@ -11,6 +11,46 @@ const valid = {
   NODE_ENV: "production",
 };
 
+const china = {
+  ...valid,
+  SITE_DOMAIN: "cet-daily.cn",
+  AUTH_URL: "https://cet-daily.cn",
+  DATABASE_URL: `postgresql://cet_daily:${"a".repeat(64)}@db:5432/cet_daily`,
+  AUTH_SECRET: "b".repeat(64),
+};
+
+test("V15 China Compose accepts independent hex secrets and a matching domain", () => {
+  assert.equal(validateDeploymentEnv(china).ok, true);
+});
+
+test("V15 China Compose refuses unsafe or placeholder domain substitutions", () => {
+  for (const SITE_DOMAIN of ["", "https://cet-daily.cn", "cet-daily.cn:443", "cet-daily.cn/path", "*.cet-daily.cn", "127.0.0.1", "localhost", "site.internal", "your-app.example.com", "cet-daily.cn\nother.cn", "-bad.cn"]) {
+    assert.equal(validateDeploymentEnv({ ...china, SITE_DOMAIN }).ok, false, SITE_DOMAIN);
+  }
+});
+
+test("V15 China Compose rejects mismatched auth origins and weak or shared secrets", () => {
+  for (const changes of [
+    { AUTH_URL: "https://other.cn" }, { AUTH_URL: "https://cet-daily.cn/login" }, { AUTH_URL: "https://cet-daily.cn:8443" },
+    { AUTH_SECRET: "b".repeat(63) }, { AUTH_SECRET: "a".repeat(64) },
+    { DATABASE_URL: "postgresql://cet_daily:short@db:5432/cet_daily" },
+    { DATABASE_URL: `postgresql://cet_daily:${"%40".repeat(64)}@db:5432/cet_daily` },
+  ]) assert.equal(validateDeploymentEnv({ ...china, ...changes }).ok, false);
+});
+
+test("V15 China local TLS validation requires the explicit CI override", () => {
+  const preview = { ...china, SITE_DOMAIN: "localhost", AUTH_URL: "https://localhost:3243" };
+  assert.equal(validateDeploymentEnv(preview).ok, false);
+  assert.equal(validateDeploymentEnv(preview, { allowLocal: true }).ok, true);
+});
+
+test("V15 China preflight errors never reveal secrets", () => {
+  const marker = "private-do-not-print-this-password";
+  const result = validateDeploymentEnv({ ...china, DATABASE_URL: `postgresql://cet_daily:${marker}@db/cet_daily`, AUTH_SECRET: marker });
+  assert.equal(result.ok, false);
+  assert.equal(JSON.stringify(result).includes(marker), false);
+});
+
 test("V15 deployment accepts managed PostgreSQL and a configured HTTPS origin", () => {
   assert.deepEqual(validateDeploymentEnv(valid), { ok: true, errors: [] });
 });

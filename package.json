@@ -1,7 +1,7 @@
 {
   "name": "cet-six-daily",
-  "version": "15.0.0",
-  "appPhase": "V15 Deployment Preparation",
+  "version": "15.0.1",
+  "appPhase": "V15 Mainland Deployment Preparation",
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",

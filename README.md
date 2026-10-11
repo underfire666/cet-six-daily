@@ -2,7 +2,7 @@
 
 六级日常是一个提供每日学习、历年真题选练、学习记录和私有内容学习的网站。
 
-当前应用版本为 **15.0.0**，阶段为 **V15 Deployment Preparation**。V14 的功能与返回修补已完成验收；V15 已补齐 Node.js、Docker 和 Render 部署配置，并通过上线准备验证。**本地构建或部署检查通过不等于网站已上线**：当前尚未创建 Render 服务或生产数据库，也没有经过验证的线上访问地址。
+当前应用版本为 **15.0.1**，阶段为 **V15 Mainland Deployment Preparation**。V14 功能已完成验收，V15 默认按中国大陆服务器上线准备，提供 Docker Compose、PostgreSQL 和 HTTPS 配置。**部署检查通过不等于网站已上线**：当前还没有域名、服务器或经过验证的公网访问地址。
 
 ## 已有功能
 
@@ -33,7 +33,7 @@ npm run dev
 
 ## 准备上线
 
-无需自行购买服务器的推荐路径是 Render Docker Web Service + Render PostgreSQL。仓库提供 `render.yaml` 模板；按 [DEPLOYMENT.md](./DEPLOYMENT.md) 连接 GitHub，选择 `codex/v15-launch-deployment` 分支，并在创建页面确认服务、数据库及实际费用。
+国内默认方案为中国大陆 Linux 服务器 + Docker Compose，应用、PostgreSQL 和 HTTPS 网关同机运行。按 [国内上线指南](./DEPLOYMENT_CHINA.md) 准备域名、可备案服务器与 ICP 备案，再部署和验证。配置在 `codex/v15-launch-deployment` 分支，当前未替用户购买任何资源。原 Render Singapore 模板作为海外替代方案保留，见 [通用部署指南](./DEPLOYMENT.md)。
 
 生产环境需要独立的 `DATABASE_URL`、`AUTH_SECRET` 和正确的 HTTPS 登录来源。项目支持以下命令：
 
@@ -53,7 +53,8 @@ npm run dev
 ## 项目说明与检查
 
 - [项目当前状态与功能边界](./PROJECT_CONTEXT.md)
-- [部署、环境配置、备份和回退指南](./DEPLOYMENT.md)
+- [中国大陆部署、域名与备案、备份指南](./DEPLOYMENT_CHINA.md)
+- [通用部署、环境配置和回退指南](./DEPLOYMENT.md)
 - [V14.10.2 返回修补验收报告](./V14_CET6_PRACTICE_RECORDS_RETURN_FIX_REPORT.md)
 
 ```sh
@@ -66,3 +67,5 @@ npm run build
 V14 基线验收为 1340 项自动测试及 116 项 Chrome 浏览器检查通过。V15 最终验证：1364 项自动测试、58 项生产浏览器检查、Linux Docker + 全新隔离 PostgreSQL 的 48 项部署检查通过；[对应 GitHub Actions](https://github.com/underfire666/cet-six-daily/actions/runs/38016686720) 验证迁移、健康接口、注册登录、同步、音频与重启后数据保留。该验证不使用生产秘密或线上用户数据，不自动部署网站。
 
 应用生产依赖和镜像迁移工具审计均为 0 项；开发期 ESLint 的一条未修补 braces 告警仍存在，细节见部署指南。V15 本地、Linux 镜像及公网验收分别记录，当前尚未完成公网部署。
+
+V15.0.1 国内部署补充：1369 项自动测试、类型检查、零警告 lint 和生产构建通过；Compose、HTTPS 与备份恢复的实际 Linux 验证另行记录。真实大陆服务器、域名备案及公网业务验收仍待资源开通。

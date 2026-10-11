@@ -18,3 +18,5 @@ shots/
 .env.production
 prisma/*.db
 prisma/*.db-journal
+# Production database exports stay private.
+backups/

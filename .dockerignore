@@ -15,6 +15,7 @@ node_modules
 **/*.pem
 **/*.key
 output
+backups
 shots
 notes
 tests

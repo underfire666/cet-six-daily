@@ -1,0 +1,128 @@
+name: V15 China Compose deployment validation
+
+on:
+  push:
+    branches: [codex/v15-launch-deployment]
+    paths:
+      - .github/workflows/v15-china.yml
+      - compose.china.yaml
+      - deploy/china/**
+      - .env.china.example
+      - Dockerfile
+      - .dockerignore
+      - package.json
+      - package-lock.json
+      - scripts/deploy-*.mjs
+      - scripts/start-production.mjs
+      - scripts/china-backup.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v15-china-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compose-tls-backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Prepare private, isolated CI configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          ci_project="cet-v15-china-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          printf 'COMPOSE_PROJECT_NAME=%s\n' "$ci_project" >> "$GITHUB_ENV"
+          ci_state="$RUNNER_TEMP/cet-v15-china"
+          mkdir -p "$ci_state"
+          ci_db_secret=$(openssl rand -hex 32)
+          ci_auth_secret=$(openssl rand -hex 32)
+          printf '::add-mask::%s\n' "$ci_db_secret" "$ci_auth_secret"
+          printf 'SITE_DOMAIN=localhost\nPOSTGRES_PASSWORD=%s\nAUTH_SECRET=%s\nCET_IMAGE=cet-six-daily:v15-china-ci\n' "$ci_db_secret" "$ci_auth_secret" > "$ci_state/env"
+          docker compose version
+          docker compose --env-file "$ci_state/env" -f compose.china.yaml -f deploy/china/compose.ci.yaml config --quiet
+          bash -n scripts/china-backup.sh
+
+      - name: Build the production image, validate Caddy and migrate a new database
+        shell: bash
+        run: |
+          set -euo pipefail
+          dc=(docker compose --env-file "$RUNNER_TEMP/cet-v15-china/env" -f compose.china.yaml -f deploy/china/compose.ci.yaml)
+          "${dc[@]}" build app
+          "${dc[@]}" run --rm --no-deps app node scripts/deploy-check.mjs --allow-local
+          "${dc[@]}" run --rm --no-deps gateway caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+          "${dc[@]}" up -d --wait db
+          "${dc[@]}" run --rm app npm run db:migrate
+          "${dc[@]}" up -d --wait --wait-timeout 180 app gateway
+
+      - name: Verify HTTPS, isolated ports, login, sync and real audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          dc=(docker compose --env-file "$RUNNER_TEMP/cet-v15-china/env" -f compose.china.yaml -f deploy/china/compose.ci.yaml)
+          ci_state="$RUNNER_TEMP/cet-v15-china"
+          for attempt in $(seq 1 30); do
+            if "${dc[@]}" exec -T gateway cat /data/caddy/pki/authorities/local/root.crt > "$ci_state/root.crt" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          test -s "$ci_state/root.crt"
+          test -z "$(docker port "$("${dc[@]}" ps -q db)")"
+          test -z "$(docker port "$("${dc[@]}" ps -q app)")"
+          curl --silent --show-error --head http://localhost:3240/ | grep -Ei '^location: https://localhost/'
+          printf 'PASS database/application have no host ports; HTTP redirects to HTTPS\n'
+          docker run --rm --network host --volume "$GITHUB_WORKSPACE/scripts:/smoke:ro" --volume "$ci_state:/state" --env NODE_EXTRA_CA_CERTS=/state/root.crt --env DEPLOY_SMOKE_ISOLATED_TEST_DB=1 node:24.15.0-bookworm-slim node /smoke/deploy-smoke.mjs --base-url https://localhost:3243 --phase full --state-file /state/session.json
+
+      - name: Export and restore a backup in a separate temporary database
+        shell: bash
+        run: |
+          set -euo pipefail
+          ci_state="$RUNNER_TEMP/cet-v15-china"
+          dc=(docker compose --env-file "$ci_state/env" -f compose.china.yaml -f deploy/china/compose.ci.yaml)
+          bash scripts/china-backup.sh --env-file "$ci_state/env" --output-dir "$ci_state/backups"
+          dump_files=("$ci_state/backups/"*.dump)
+          test "${#dump_files[@]}" -eq 1
+          test "$(stat -c '%a' "${dump_files[0]}")" = 600
+          (cd "$ci_state/backups" && sha256sum --check ./*.sha256)
+          "${dc[@]}" exec -T db createdb -U cet_daily cet_restore_check
+          "${dc[@]}" exec -T db pg_restore --exit-on-error -U cet_daily -d cet_restore_check < "${dump_files[0]}"
+          for table in User UserSettings SyncMutation; do
+            ci_sql="SELECT COUNT(*) FROM \"$table\";"
+            source_count=$("${dc[@]}" exec -T db psql -U cet_daily -d cet_daily -Atc "$ci_sql")
+            restored_count=$("${dc[@]}" exec -T db psql -U cet_daily -d cet_restore_check -Atc "$ci_sql")
+            test "$source_count" -gt 0
+            test "$source_count" = "$restored_count"
+          done
+          printf 'PASS private export, checksum and isolated restore preserve account, settings and sync rows\n'
+
+      - name: Recreate containers without deleting volumes and verify persisted sessions and data
+        shell: bash
+        run: |
+          set -euo pipefail
+          dc=(docker compose --env-file "$RUNNER_TEMP/cet-v15-china/env" -f compose.china.yaml -f deploy/china/compose.ci.yaml)
+          "${dc[@]}" down
+          "${dc[@]}" up -d --wait --wait-timeout 180
+          docker run --rm --network host --volume "$GITHUB_WORKSPACE/scripts:/smoke:ro" --volume "$RUNNER_TEMP/cet-v15-china:/state" --env NODE_EXTRA_CA_CERTS=/state/root.crt --env DEPLOY_SMOKE_ISOLATED_TEST_DB=1 node:24.15.0-bookworm-slim node /smoke/deploy-smoke.mjs --base-url https://localhost:3243 --phase after-restart --state-file /state/session.json
+
+      - name: Show bounded diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          docker compose --env-file "$RUNNER_TEMP/cet-v15-china/env" -f compose.china.yaml -f deploy/china/compose.ci.yaml logs --tail 80 app gateway db || true
+
+      - name: Clean only the isolated CI project and private temporary files
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${COMPOSE_PROJECT_NAME:-}" == "cet-v15-china-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" ]]; then
+            docker compose --env-file "$RUNNER_TEMP/cet-v15-china/env" -f compose.china.yaml -f deploy/china/compose.ci.yaml down --volumes --remove-orphans || true
+          fi
+          if [[ -n "${RUNNER_TEMP:-}" && -d "$RUNNER_TEMP/cet-v15-china" ]]; then rm -rf -- "$RUNNER_TEMP/cet-v15-china"; fi
